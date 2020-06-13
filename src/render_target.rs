@@ -2,7 +2,7 @@ use raw_window_handle::HasRawWindowHandle;
 
 use crate::{Renderer, Texture, TextureFormat};
 
-pub trait RenderTarget {
+pub trait RenderTarget: Sync + Send {
     fn size(&self) -> (u32, u32);
     fn color_attachment(&self) -> &wgpu::TextureView;
     fn depth_attachment(&self) -> &wgpu::TextureView;
