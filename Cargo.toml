@@ -16,3 +16,7 @@ squish = { version = "^1", default-features = false }
 raw-window-handle = { version = "^0.3", default-features = false }
 hashbrown = { version = "^0.7", features = ["ahash", "inline-more"], default-features = false }
 spinning_top = { version = "^0.1", default-features = false }
+
+[dev-dependencies]
+async-std = { version = "^1.6" }
+winit = { version = "^0.22" }
