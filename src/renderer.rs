@@ -1,4 +1,4 @@
-use alloc::{sync::Arc, vec, vec::Vec};
+use alloc::{sync::Arc, vec::Vec};
 
 use nalgebra::Matrix4;
 use spinning_top::Spinlock;
@@ -10,7 +10,6 @@ type TextureUploadItem = (wgpu::Buffer, wgpu::Texture, usize, wgpu::Extent3d);
 
 pub struct Renderer {
     pub(crate) device: Arc<wgpu::Device>,
-    pub(crate) empty_texture: wgpu::TextureView,
     pub(crate) mvp_buf: Buffer,
     pub(crate) buffer_pool: BufferPool,
 
@@ -41,8 +40,6 @@ impl Renderer {
             .await;
 
         let device = Arc::new(device);
-        let texture_upload_item = Self::create_empty_texture(&device);
-        let empty_texture = texture_upload_item.1.create_default_view();
         let buffer_pool = BufferPool::new(device.clone());
 
         let mvp_buf = buffer_pool.alloc(64);
@@ -50,8 +47,7 @@ impl Renderer {
         Self {
             device,
             queue,
-            texture_upload_queue: Spinlock::new(vec![texture_upload_item]),
-            empty_texture,
+            texture_upload_queue: Spinlock::new(Vec::new()),
             buffer_pool,
             mvp_buf,
         }
@@ -140,27 +136,5 @@ impl Renderer {
 
         let projection = nalgebra::Matrix4::new_perspective(aspect_ratio, 45.0 * PI / 180.0, 1.0, 10.0);
         correction * projection * camera.view()
-    }
-
-    fn create_empty_texture(device: &wgpu::Device) -> TextureUploadItem {
-        let extent = wgpu::Extent3d {
-            width: 1,
-            height: 1,
-            depth: 1,
-        };
-        let texture = device.create_texture(&wgpu::TextureDescriptor {
-            size: extent,
-            array_layer_count: 1,
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
-            label: None,
-        });
-
-        let buffer = device.create_buffer_with_data(&[0, 0, 0, 0], wgpu::BufferUsage::COPY_SRC);
-
-        (buffer, texture, 4, extent)
     }
 }
