@@ -51,10 +51,7 @@ impl Material {
 
                         renderer.mvp_buf.binding_resource()
                     }
-                    ShaderBindingType::Texture2D => wgpu::BindingResource::TextureView(match textures.get(binding_name) {
-                        Some(x) => &x.texture_view,
-                        None => &renderer.empty_texture,
-                    }),
+                    ShaderBindingType::Texture2D => wgpu::BindingResource::TextureView(&textures.get(binding_name).unwrap().texture_view),
                     ShaderBindingType::Sampler => wgpu::BindingResource::Sampler(&sampler),
                 };
 
