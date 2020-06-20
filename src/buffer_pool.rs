@@ -1,4 +1,4 @@
-use alloc::{sync::Arc, vec::Vec};
+use alloc::{collections::BTreeMap, sync::Arc, vec::Vec};
 
 use spinning_top::Spinlock;
 
@@ -8,9 +8,9 @@ const BUFFER_SIZE: usize = 10485760;
 
 struct BufferPoolItem {
     buffer: Arc<wgpu::Buffer>,
-    offset: usize,
     size: usize,
     allocated: usize,
+    allocations: BTreeMap<usize, usize>,
 }
 
 impl BufferPoolItem {
@@ -21,29 +21,60 @@ impl BufferPoolItem {
             label: None,
         }));
 
+        let mut allocations = BTreeMap::new();
+        allocations.insert(BUFFER_SIZE, 0);
+
         Self {
             buffer,
-            offset: 0,
             size: BUFFER_SIZE,
             allocated: 0,
+            allocations,
         }
     }
 
     pub fn alloc(&mut self, size: usize) -> Option<(Arc<wgpu::Buffer>, usize)> {
-        if self.allocated + size > self.size {
-            None
-        } else {
-            let offset = self.offset;
-            self.offset += size;
-            self.allocated += size;
+        let alignment = 64; // TODO fetch from gpu limits
+        let rounded_size = Self::round_up(size, alignment);
 
-            Some((self.buffer.clone(), offset))
-        }
+        let offset = self.find_offset(rounded_size)?;
+
+        self.allocated += size;
+        self.allocations.insert(offset, size);
+
+        Some((self.buffer.clone(), offset))
     }
 
-    #[allow(unused_variables)]
-    pub fn free(&mut self, offset: usize) {
-        // TODO
+    pub fn free(&mut self, offset: usize, size: usize) {
+        self.allocated -= size;
+        self.allocations.remove(&offset);
+    }
+
+    // simple allocator. may fragment a lot.
+    fn find_offset(&self, size: usize) -> Option<usize> {
+        let mut cursor = 0;
+        while cursor < self.size {
+            let (&allocation_offset, &allocation_size) = self.allocations.range(cursor..).next()?;
+
+            if allocation_offset - cursor >= size {
+                return Some(cursor);
+            } else {
+                cursor = allocation_offset + allocation_size;
+            }
+        }
+        None
+    }
+
+    fn round_up(num_to_round: usize, multiple: usize) -> usize {
+        if multiple == 0 {
+            return num_to_round;
+        }
+
+        let remainder = num_to_round % multiple;
+        if remainder == 0 {
+            num_to_round
+        } else {
+            num_to_round + multiple - remainder
+        }
     }
 }
 
@@ -78,7 +109,7 @@ impl BufferPool {
 
         let buffer_item = buffer_item.clone();
         Some(Buffer::new(self.device.clone(), buffer, offset, size, move || {
-            buffer_item.lock().free(offset)
+            buffer_item.lock().free(offset, size)
         }))
     }
 }
