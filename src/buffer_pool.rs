@@ -30,7 +30,7 @@ impl BufferPoolItem {
     }
 
     pub fn alloc(&mut self, size: usize) -> Option<(Arc<wgpu::Buffer>, usize)> {
-        if self.allocated > self.size {
+        if self.allocated + size > self.size {
             None
         } else {
             let offset = self.offset;
