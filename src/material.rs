@@ -12,7 +12,12 @@ pub struct Material {
 }
 
 impl Material {
-    pub fn new(renderer: &Renderer, textures: HashMap<&'static str, Arc<Texture>>, vertex_shader: Arc<Shader>, fragment_shader: Arc<Shader>) -> Self {
+    pub fn new(
+        renderer: &Renderer,
+        textures: &HashMap<&'static str, Arc<Texture>>,
+        vertex_shader: Arc<Shader>,
+        fragment_shader: Arc<Shader>,
+    ) -> Self {
         let vs_bindings = vertex_shader.wgpu_bindings(wgpu::ShaderStage::VERTEX);
         let fs_bindings = fragment_shader.wgpu_bindings(wgpu::ShaderStage::FRAGMENT);
 

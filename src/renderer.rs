@@ -6,7 +6,7 @@ use zerocopy::AsBytes;
 
 use crate::{buffer::Buffer, buffer_pool::BufferPool, Camera, RenderContext, RenderTarget, Scene};
 
-type TextureUploadItem = (wgpu::Buffer, wgpu::Texture, usize, wgpu::Extent3d);
+type TextureUploadItem = (Buffer, wgpu::Texture, usize, wgpu::Extent3d);
 
 pub struct Renderer {
     pub(crate) device: Arc<wgpu::Device>,
@@ -94,7 +94,7 @@ impl Renderer {
         target.submit();
     }
 
-    pub(crate) fn enqueue_texture_upload(&self, buffer: wgpu::Buffer, texture: wgpu::Texture, bytes_per_row: usize, extent: wgpu::Extent3d) {
+    pub(crate) fn enqueue_texture_upload(&self, buffer: Buffer, texture: wgpu::Texture, bytes_per_row: usize, extent: wgpu::Extent3d) {
         let mut texture_upload_queue = self.texture_upload_queue.lock();
         texture_upload_queue.push((buffer, texture, bytes_per_row, extent));
     }
@@ -106,8 +106,8 @@ impl Renderer {
         for (buffer, texture, bytes_per_row, extent) in queue.into_inner() {
             command_encoder.copy_buffer_to_texture(
                 wgpu::BufferCopyView {
-                    buffer: &buffer,
-                    offset: 0,
+                    buffer: &buffer.buffer,
+                    offset: buffer.offset as u64,
                     bytes_per_row: bytes_per_row as u32,
                     rows_per_image: 0,
                 },

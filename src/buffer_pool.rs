@@ -4,7 +4,7 @@ use spinning_top::Spinlock;
 
 use crate::buffer::Buffer;
 
-const BUFFER_SIZE: usize = 1048576;
+const BUFFER_SIZE: usize = 10485760;
 
 struct BufferPoolItem {
     buffer: Arc<wgpu::Buffer>,
