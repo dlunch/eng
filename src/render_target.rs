@@ -33,7 +33,7 @@ impl WindowRenderTarget {
         );
         let frame = swap_chain.get_next_texture().unwrap();
 
-        let depth = Texture::new(&renderer, width, height, None, TextureFormat::Depth32);
+        let depth = Texture::new(&renderer, width, height, TextureFormat::Depth32);
 
         Self {
             swap_chain,

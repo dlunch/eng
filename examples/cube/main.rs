@@ -55,7 +55,7 @@ fn main() {
         let mesh = Mesh::new(&renderer, &vertex_data, &[24], index_data.as_bytes(), vec![vertex_format]).await;
 
         let texture_data = create_texels(512, 512);
-        let texture = Texture::new(&renderer, 512, 512, Some(&texture_data), TextureFormat::Rgba8Unorm);
+        let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm).await;
 
         let vs = Shader::new(
             &renderer,
@@ -78,7 +78,7 @@ fn main() {
             HashMap::new(),
         );
 
-        let material = Material::new(&renderer, hashmap! {"Texture" => Arc::new(texture)}, Arc::new(vs), Arc::new(fs));
+        let material = Material::new(&renderer, &hashmap! {"Texture" => Arc::new(texture)}, Arc::new(vs), Arc::new(fs));
         let model = Model::new(&renderer, mesh, material, vec![MeshPart::new(0, index_data.len() as u32)]);
 
         let camera = Camera::new(Point3::new(5.0, 5.0, 5.0), Point3::new(0.0, 0.0, 0.0));
