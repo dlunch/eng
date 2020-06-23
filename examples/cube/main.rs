@@ -13,8 +13,8 @@ use winit::{
 use zerocopy::AsBytes;
 
 use renderer::{
-    Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, Texture, TextureFormat, VertexFormat,
-    VertexFormatItem, VertexItemType, WindowRenderTarget,
+    Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, Texture, TextureFormat, VertexFormat, VertexFormatItem,
+    VertexItemType, WindowRenderTarget,
 };
 
 // Copied from https://github.com/bluss/maplit/blob/master/src/lib.rs#L46
