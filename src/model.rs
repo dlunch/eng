@@ -1,17 +1,18 @@
 use alloc::vec::Vec;
+use core::ops::Range;
 
-use crate::{Material, Mesh, MeshPart, RenderContext, Renderable, Renderer};
+use crate::{Material, Mesh, RenderContext, Renderable, Renderer};
 
 pub struct Model {
     mesh: Mesh,
     material: Material,
-    mesh_parts: Vec<MeshPart>,
+    mesh_parts: Vec<Range<u32>>,
 
     pipeline: wgpu::RenderPipeline,
 }
 
 impl Model {
-    pub fn new(renderer: &Renderer, mesh: Mesh, material: Material, mesh_parts: Vec<MeshPart>) -> Self {
+    pub fn new(renderer: &Renderer, mesh: Mesh, material: Material, mesh_parts: Vec<Range<u32>>) -> Self {
         let attributes = mesh
             .vertex_formats
             .iter()
@@ -94,15 +95,15 @@ impl Renderable for Model {
                 .set_vertex_buffer(i as u32, &vertex_buffer.buffer, vertex_buffer.offset as u64, vertex_buffer.size as u64);
         }
 
-        let mut last_begin = self.mesh_parts[0].begin;
-        let mut last_end = self.mesh_parts[0].begin;
+        let mut last_start = self.mesh_parts[0].start;
+        let mut last_end = self.mesh_parts[0].start;
         for mesh_part in &self.mesh_parts {
-            if last_end != mesh_part.begin {
-                render_context.render_pass.draw_indexed(last_begin..last_end, 0, 0..1);
-                last_begin = mesh_part.begin;
+            if last_end != mesh_part.start {
+                render_context.render_pass.draw_indexed(last_start..last_end, 0, 0..1);
+                last_start = mesh_part.start;
             }
-            last_end = mesh_part.begin + mesh_part.count;
+            last_end = mesh_part.end;
         }
-        render_context.render_pass.draw_indexed(last_begin..last_end, 0, 0..1);
+        render_context.render_pass.draw_indexed(last_start..last_end, 0, 0..1);
     }
 }
