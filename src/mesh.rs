@@ -2,17 +2,6 @@ use alloc::vec::Vec;
 
 use crate::{buffer::Buffer, Renderer, VertexFormat};
 
-pub struct MeshPart {
-    pub(crate) begin: u32,
-    pub(crate) count: u32,
-}
-
-impl MeshPart {
-    pub fn new(begin: u32, count: u32) -> Self {
-        Self { begin, count }
-    }
-}
-
 pub struct Mesh {
     pub(crate) vertex_buffers: Vec<Buffer>,
     pub(crate) strides: Vec<usize>,
