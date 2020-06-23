@@ -13,7 +13,7 @@ use winit::{
 use zerocopy::AsBytes;
 
 use renderer::{
-    Camera, Material, Mesh, MeshPart, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, Texture, TextureFormat, VertexFormat,
+    Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, Texture, TextureFormat, VertexFormat,
     VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
 
@@ -79,7 +79,7 @@ fn main() {
         );
 
         let material = Material::new(&renderer, &hashmap! {"Texture" => Arc::new(texture)}, Arc::new(vs), Arc::new(fs));
-        let model = Model::new(&renderer, mesh, material, vec![MeshPart::new(0, index_data.len() as u32)]);
+        let model = Model::new(&renderer, mesh, material, vec![0..index_data.len() as u32]);
 
         let camera = Camera::new(Point3::new(5.0, 5.0, 5.0), Point3::new(0.0, 0.0, 0.0));
         let mut scene = Scene::new(camera);
