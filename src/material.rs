@@ -2,7 +2,7 @@ use alloc::{sync::Arc, vec::Vec};
 
 use hashbrown::HashMap;
 
-use crate::{Renderer, Shader, ShaderBindingType, Texture};
+use crate::{buffer::Buffer, Renderer, Shader, ShaderBindingType, Texture};
 
 pub struct Material {
     pub(crate) vertex_shader: Arc<Shader>,
@@ -15,6 +15,7 @@ impl Material {
     pub fn new(
         renderer: &Renderer,
         textures: &HashMap<&'static str, Arc<Texture>>,
+        uniforms: &HashMap<&'static str, Arc<Buffer>>,
         vertex_shader: Arc<Shader>,
         fragment_shader: Arc<Shader>,
     ) -> Self {
@@ -50,11 +51,15 @@ impl Material {
             .map(|(binding_name, binding)| {
                 let resource = match binding.binding_type {
                     ShaderBindingType::UniformBuffer => {
-                        if *binding_name != "Locals" {
-                            panic!() // TODO
+                        if *binding_name == "Mvp" {
+                            renderer.mvp_buf.binding_resource()
+                        } else {
+                            let buffer = uniforms.get(binding_name);
+                            match buffer {
+                                Some(x) => x.binding_resource(),
+                                None => panic!("No such buffer named {}", binding_name),
+                            }
                         }
-
-                        renderer.mvp_buf.binding_resource()
                     }
                     ShaderBindingType::Texture2D => {
                         let texture = textures.get(binding_name);
