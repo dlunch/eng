@@ -78,7 +78,13 @@ fn main() {
             HashMap::new(),
         );
 
-        let material = Material::new(&renderer, &hashmap! {"Texture" => Arc::new(texture)}, Arc::new(vs), Arc::new(fs));
+        let material = Material::new(
+            &renderer,
+            &hashmap! {"Texture" => Arc::new(texture)},
+            &HashMap::new(),
+            Arc::new(vs),
+            Arc::new(fs),
+        );
         let model = Model::new(&renderer, mesh, material, vec![0..index_data.len() as u32]);
 
         let camera = Camera::new(Point3::new(5.0, 5.0, 5.0), Point3::new(0.0, 0.0, 0.0));
