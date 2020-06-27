@@ -61,7 +61,7 @@ fn main() {
             &renderer,
             include_bytes!("vertex.vert.spv"),
             "main",
-            hashmap! {"Locals" => ShaderBinding::new(0, ShaderBindingType::UniformBuffer)},
+            hashmap! {"Mvp" => ShaderBinding::new(0, ShaderBindingType::UniformBuffer)},
             hashmap! {
                     "Position" => 0,
                     "TexCoord" => 1,
