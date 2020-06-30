@@ -11,7 +11,7 @@ type TextureUploadItem = (Buffer, wgpu::Texture, usize, wgpu::Extent3d);
 pub struct Renderer {
     pub(crate) device: Arc<wgpu::Device>,
     pub(crate) mvp_buf: Buffer,
-    pub(crate) buffer_pool: BufferPool,
+    pub buffer_pool: BufferPool,
 
     queue: wgpu::Queue,
 
