@@ -15,7 +15,7 @@ impl Material {
     pub fn new(
         renderer: &Renderer,
         textures: &HashMap<&'static str, Arc<Texture>>,
-        uniforms: &HashMap<&'static str, Arc<Buffer>>,
+        uniforms: &HashMap<&'static str, Buffer>,
         vertex_shader: Arc<Shader>,
         fragment_shader: Arc<Shader>,
     ) -> Self {
