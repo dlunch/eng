@@ -8,7 +8,6 @@ const BUFFER_SIZE: usize = 10485760;
 
 struct BufferPoolItem {
     buffer: Arc<wgpu::Buffer>,
-    size: usize,
     allocated: usize,
     allocations: BTreeMap<usize, usize>,
 }
@@ -26,7 +25,6 @@ impl BufferPoolItem {
 
         Self {
             buffer,
-            size: BUFFER_SIZE,
             allocated: 0,
             allocations,
         }
@@ -52,9 +50,7 @@ impl BufferPoolItem {
     // simple allocator. may fragment a lot.
     fn find_offset(&self, size: usize) -> Option<usize> {
         let mut cursor = 0;
-        while cursor < self.size {
-            let (&allocation_offset, &allocation_size) = self.allocations.range(cursor..).next()?;
-
+        for (allocation_offset, allocation_size) in self.allocations.iter() {
             if allocation_offset - cursor >= size {
                 return Some(cursor);
             } else {
