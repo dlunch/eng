@@ -38,8 +38,8 @@ impl BufferPoolItem {
 
         let offset = self.find_offset(rounded_size)?;
 
-        self.allocated += size;
-        self.allocations.insert(offset, size);
+        self.allocated += rounded_size;
+        self.allocations.insert(offset, rounded_size);
 
         Some((self.buffer.clone(), offset))
     }
