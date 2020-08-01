@@ -80,8 +80,8 @@ fn main() {
 
         let material = Material::new(
             &renderer,
-            &hashmap! {"Texture" => Arc::new(texture)},
-            &HashMap::new(),
+            hashmap! {"Texture" => Arc::new(texture)},
+            HashMap::new(),
             Arc::new(vs),
             Arc::new(fs),
         );
