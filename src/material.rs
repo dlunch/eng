@@ -9,13 +9,16 @@ pub struct Material {
     pub(crate) fragment_shader: Arc<Shader>,
     pub(crate) pipeline_layout: wgpu::PipelineLayout,
     pub(crate) bind_group: wgpu::BindGroup,
+
+    _textures: HashMap<&'static str, Arc<Texture>>,
+    _uniforms: HashMap<&'static str, Arc<Buffer>>,
 }
 
 impl Material {
     pub fn new(
         renderer: &Renderer,
-        textures: &HashMap<&'static str, Arc<Texture>>,
-        uniforms: &HashMap<&'static str, Arc<Buffer>>,
+        textures: HashMap<&'static str, Arc<Texture>>,
+        uniforms: HashMap<&'static str, Arc<Buffer>>,
         vertex_shader: Arc<Shader>,
         fragment_shader: Arc<Shader>,
     ) -> Self {
@@ -89,6 +92,8 @@ impl Material {
             fragment_shader,
             pipeline_layout,
             bind_group,
+            _textures: textures,
+            _uniforms: uniforms,
         }
     }
 }
