@@ -16,8 +16,9 @@ impl BufferPoolItem {
     pub fn new(device: &wgpu::Device) -> Self {
         let buffer = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
             size: BUFFER_SIZE as u64,
-            usage: wgpu::BufferUsage::READ_ALL | wgpu::BufferUsage::WRITE_ALL,
+            usage: wgpu::BufferUsage::INDEX | wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
             label: None,
+            mapped_at_creation: false,
         }));
 
         let mut allocations = BTreeMap::new();
@@ -76,13 +77,15 @@ impl BufferPoolItem {
 
 pub struct BufferPool {
     device: Arc<wgpu::Device>,
+    queue: Arc<wgpu::Queue>,
     items: Spinlock<Vec<Arc<Spinlock<BufferPoolItem>>>>,
 }
 
 impl BufferPool {
-    pub fn new(device: Arc<wgpu::Device>) -> Self {
+    pub fn new(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>) -> Self {
         Self {
             device,
+            queue,
             items: Spinlock::new(Vec::new()),
         }
     }
@@ -104,7 +107,7 @@ impl BufferPool {
         let (buffer, offset) = buffer_item.lock().alloc(size)?;
 
         let buffer_item = buffer_item.clone();
-        Some(Buffer::new(self.device.clone(), buffer, offset, size, move || {
+        Some(Buffer::new(self.queue.clone(), buffer, offset, size, move || {
             buffer_item.lock().free(offset, size)
         }))
     }

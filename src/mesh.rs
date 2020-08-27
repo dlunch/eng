@@ -14,12 +14,12 @@ impl Mesh {
         let mut vertex_buffers = Vec::with_capacity(vertex_data.len());
         for vertex_datum in vertex_data {
             let buffer = renderer.buffer_pool.alloc(vertex_datum.len());
-            buffer.write(vertex_datum).await.unwrap();
+            buffer.write(vertex_datum);
 
             vertex_buffers.push(buffer);
         }
         let index_buffer = renderer.buffer_pool.alloc(index_data.len());
-        index_buffer.write(index_data).await.unwrap();
+        index_buffer.write(index_data);
 
         Self {
             vertex_buffers,

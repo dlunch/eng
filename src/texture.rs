@@ -53,7 +53,6 @@ impl Texture {
         let extent = wgpu::Extent3d { width, height, depth: 1 };
         let texture = renderer.device.create_texture(&wgpu::TextureDescriptor {
             size: extent,
-            array_layer_count: 1,
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -62,7 +61,7 @@ impl Texture {
             label: None,
         });
 
-        let texture_view = texture.create_default_view();
+        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         Self { texture_view }
     }
@@ -71,7 +70,6 @@ impl Texture {
         let extent = wgpu::Extent3d { width, height, depth: 1 };
         let texture = renderer.device.create_texture(&wgpu::TextureDescriptor {
             size: extent,
-            array_layer_count: 1,
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -80,11 +78,21 @@ impl Texture {
             label: None,
         });
 
-        let texture_view = texture.create_default_view();
-
-        let buffer = renderer.buffer_pool.alloc(texels.len());
-        buffer.write(texels).await.unwrap();
-        renderer.enqueue_texture_upload(buffer, texture, format.bytes_per_row() * extent.width as usize, extent);
+        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        renderer.queue.write_texture(
+            wgpu::TextureCopyView {
+                texture: &texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+            },
+            &texels,
+            wgpu::TextureDataLayout {
+                offset: 0,
+                bytes_per_row: format.bytes_per_row() as u32 * extent.width as u32,
+                rows_per_image: 0,
+            },
+            extent,
+        );
 
         Self { texture_view }
     }
