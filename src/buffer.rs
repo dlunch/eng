@@ -1,21 +1,21 @@
-use alloc::{boxed::Box, sync::Arc};
-use core::{ops::Drop, task::Poll};
+use alloc::{boxed::Box, sync::Arc, vec};
+use core::ops::Drop;
 
 pub struct Buffer {
-    device: Arc<wgpu::Device>,
+    queue: Arc<wgpu::Queue>,
     pub(crate) buffer: Arc<wgpu::Buffer>,
     pub(crate) offset: usize,
-    pub(crate) size: usize,
+    size: usize,
     free: Box<dyn Fn() + Sync + Send + 'static>,
 }
 
 impl Buffer {
-    pub(crate) fn new<F>(device: Arc<wgpu::Device>, buffer: Arc<wgpu::Buffer>, offset: usize, size: usize, free: F) -> Self
+    pub(crate) fn new<F>(queue: Arc<wgpu::Queue>, buffer: Arc<wgpu::Buffer>, offset: usize, size: usize, free: F) -> Self
     where
         F: Fn() + Sync + Send + 'static,
     {
         Self {
-            device,
+            queue,
             buffer,
             offset,
             size,
@@ -23,29 +23,25 @@ impl Buffer {
         }
     }
 
-    pub async fn write(&self, data: &[u8]) -> Result<(), wgpu::BufferAsyncErr> {
-        // TODO move poll to event loop
-        let mut future = self.buffer.map_write(self.offset as u64, self.size as u64);
+    pub fn write(&self, data: &[u8]) {
+        // TODO raise error or warn
+        if data.len() % wgpu::COPY_BUFFER_ALIGNMENT as usize != 0 {
+            let count = data.len() % wgpu::COPY_BUFFER_ALIGNMENT as usize;
+            let mut new_buf = vec![0; data.len() + count];
+            new_buf[..data.len()].copy_from_slice(data);
 
-        let mut mapping;
-        loop {
-            if let Poll::Ready(x) = futures::poll!(&mut future) {
-                mapping = x?;
-                break;
-            }
-            self.device.poll(wgpu::Maintain::Wait);
+            self.queue.write_buffer(&self.buffer, self.offset as u64, &new_buf)
+        } else {
+            self.queue.write_buffer(&self.buffer, self.offset as u64, data)
         }
-
-        mapping.as_slice().copy_from_slice(data);
-
-        Ok(())
     }
 
     pub(crate) fn binding_resource(&self) -> wgpu::BindingResource {
-        wgpu::BindingResource::Buffer {
-            buffer: &self.buffer,
-            range: self.offset as u64..self.offset as u64 + self.size as u64,
-        }
+        wgpu::BindingResource::Buffer(self.as_slice())
+    }
+
+    pub(crate) fn as_slice(&self) -> wgpu::BufferSlice {
+        self.buffer.slice(self.offset as u64..self.offset as u64 + self.size as u64)
     }
 }
 

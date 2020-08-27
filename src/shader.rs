@@ -13,7 +13,10 @@ pub enum ShaderBindingType {
 impl ShaderBindingType {
     pub fn wgpu_type(&self) -> wgpu::BindingType {
         match self {
-            ShaderBindingType::UniformBuffer => wgpu::BindingType::UniformBuffer { dynamic: false },
+            ShaderBindingType::UniformBuffer => wgpu::BindingType::UniformBuffer {
+                dynamic: false,
+                min_binding_size: None,
+            },
             ShaderBindingType::Texture2D => wgpu::BindingType::SampledTexture {
                 multisampled: false,
                 component_type: wgpu::TextureComponentType::Float,
@@ -39,6 +42,7 @@ impl ShaderBinding {
             binding: self.binding,
             visibility: stage,
             ty: self.binding_type.wgpu_type(),
+            count: None,
         }
     }
 }
@@ -61,7 +65,7 @@ impl Shader {
         let spv = (0..bytes.len() / 4)
             .map(|x| u32::from_le_bytes([bytes[x * 4], bytes[x * 4 + 1], bytes[x * 4 + 2], bytes[x * 4 + 3]]))
             .collect::<Vec<_>>();
-        let module = renderer.device.create_shader_module(&spv);
+        let module = renderer.device.create_shader_module(wgpu::ShaderModuleSource::SpirV(spv.into()));
 
         Self {
             module,

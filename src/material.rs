@@ -27,10 +27,12 @@ impl Material {
 
         // TODO split bind groups by stage..
         let bind_group_layout = renderer.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            bindings: &vs_bindings.into_iter().chain(fs_bindings.into_iter()).collect::<Vec<_>>(),
+            entries: &vs_bindings.into_iter().chain(fs_bindings.into_iter()).collect::<Vec<_>>(),
             label: None,
         });
         let pipeline_layout = renderer.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            push_constant_ranges: &[],
             bind_group_layouts: &[&bind_group_layout],
         });
 
@@ -44,10 +46,12 @@ impl Material {
             mipmap_filter: wgpu::FilterMode::Nearest,
             lod_min_clamp: -100.0,
             lod_max_clamp: 100.0,
-            compare: wgpu::CompareFunction::Undefined,
+            label: None,
+            anisotropy_clamp: None,
+            compare: None,
         });
 
-        let bindings = vertex_shader
+        let entries = vertex_shader
             .bindings
             .iter()
             .chain(fragment_shader.bindings.iter())
@@ -74,7 +78,7 @@ impl Material {
                     ShaderBindingType::Sampler => wgpu::BindingResource::Sampler(&sampler),
                 };
 
-                wgpu::Binding {
+                wgpu::BindGroupEntry {
                     binding: binding.binding,
                     resource,
                 }
@@ -83,7 +87,7 @@ impl Material {
 
         let bind_group = renderer.device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &bind_group_layout,
-            bindings: &bindings,
+            entries: &entries,
             label: None,
         });
 

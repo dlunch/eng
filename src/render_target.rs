@@ -11,7 +11,7 @@ pub trait RenderTarget: Sync + Send {
 
 pub struct WindowRenderTarget {
     swap_chain: wgpu::SwapChain,
-    frame: Option<wgpu::SwapChainOutput>,
+    frame: Option<wgpu::SwapChainFrame>,
     depth_view: wgpu::TextureView,
     width: u32,
     height: u32,
@@ -19,7 +19,7 @@ pub struct WindowRenderTarget {
 
 impl WindowRenderTarget {
     pub fn new<W: HasRawWindowHandle>(renderer: &Renderer, window: &W, width: u32, height: u32) -> Self {
-        let surface = wgpu::Surface::create(window);
+        let surface = unsafe { renderer.instance.create_surface(window) };
 
         let mut swap_chain = renderer.device.create_swap_chain(
             &surface,
@@ -31,7 +31,7 @@ impl WindowRenderTarget {
                 present_mode: wgpu::PresentMode::Mailbox,
             },
         );
-        let frame = swap_chain.get_next_texture().unwrap();
+        let frame = swap_chain.get_current_frame().unwrap();
 
         let depth = Texture::new(&renderer, width, height, TextureFormat::Depth32);
 
@@ -54,11 +54,11 @@ impl RenderTarget for WindowRenderTarget {
         // we must drop swapchainoutput first
         self.frame = None;
 
-        self.frame = Some(self.swap_chain.get_next_texture().unwrap())
+        self.frame = Some(self.swap_chain.get_current_frame().unwrap())
     }
 
     fn color_attachment(&self) -> &wgpu::TextureView {
-        &self.frame.as_ref().unwrap().view
+        &self.frame.as_ref().unwrap().output.view
     }
 
     fn depth_attachment(&self) -> &wgpu::TextureView {
