@@ -23,4 +23,9 @@ async-std = { version = "^1.6" }
 winit = { version = "^0.22" }
 
 [build-dependencies]
-shaderc = { version = "^0.6", default-features = false }
+shader_builder = { version = "^0.1", path = "./shader_builder" }
+
+[workspace]
+members = [
+    "shader_builder",
+]
