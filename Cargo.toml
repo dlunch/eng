@@ -12,7 +12,7 @@ futures = { version = "^0.3", features = ["async-await"], default-features = fal
 log = { version = "^0.4", default-features = false }
 wgpu = { version = "^0.6", default-features = false }
 zerocopy = { version = "^0.3", default-features = false }
-nalgebra = { version = "^0.22", features = ["libm"], default-features = false }
+nalgebra = { version = "^0.23", features = ["libm"], default-features = false }
 squish = { version = "^1", default-features = false }
 raw-window-handle = { version = "^0.3", default-features = false }
 hashbrown = { version = "^0.9", features = ["ahash", "inline-more"], default-features = false }
