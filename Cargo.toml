@@ -20,7 +20,7 @@ spinning_top = { version = "^0.2", default-features = false }
 
 [dev-dependencies]
 async-std = { version = "^1.6" }
-winit = { version = "^0.23" }
+winit = { version = "^0.24" }
 
 [build-dependencies]
 shader_builder = { version = "^0.1", path = "./shader_builder" }
