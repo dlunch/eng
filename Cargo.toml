@@ -10,9 +10,9 @@ doctest = false
 [dependencies]
 futures = { version = "^0.3", features = ["async-await"], default-features = false }
 log = { version = "^0.4", default-features = false }
-wgpu = { version = "^0.6", default-features = false }
+wgpu = { version = "^0.7", features = ["webgl"], default-features = false }
 zerocopy = { version = "^0.3", default-features = false }
-nalgebra = { version = "^0.24", features = ["libm"], default-features = false }
+nalgebra = { version = "^0.25", features = ["libm"], default-features = false }
 squish = { version = "^1", default-features = false }
 raw-window-handle = { version = "^0.3", default-features = false }
 hashbrown = { version = "^0.9", features = ["ahash", "inline-more"], default-features = false }

@@ -37,7 +37,11 @@ impl Buffer {
     }
 
     pub(crate) fn binding_resource(&self) -> wgpu::BindingResource {
-        wgpu::BindingResource::Buffer(self.as_slice())
+        wgpu::BindingResource::Buffer {
+            buffer: &self.buffer,
+            offset: self.offset as wgpu::BufferAddress,
+            size: wgpu::BufferSize::new(self.size as u64),
+        }
     }
 
     pub(crate) fn as_slice(&self) -> wgpu::BufferSlice {

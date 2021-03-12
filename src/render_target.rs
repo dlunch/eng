@@ -21,10 +21,10 @@ impl WindowRenderTarget {
     pub fn new<W: HasRawWindowHandle>(renderer: &Renderer, window: &W, width: u32, height: u32) -> Self {
         let surface = unsafe { renderer.instance.create_surface(window) };
 
-        let mut swap_chain = renderer.device.create_swap_chain(
+        let swap_chain = renderer.device.create_swap_chain(
             &surface,
             &wgpu::SwapChainDescriptor {
-                usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+                usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
                 format: wgpu::TextureFormat::Bgra8Unorm,
                 width,
                 height,

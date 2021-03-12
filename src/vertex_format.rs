@@ -49,10 +49,10 @@ impl VertexFormat {
         Self { items }
     }
 
-    pub(crate) fn wgpu_attributes(&self, shader_inputs: &HashMap<&'static str, u32>) -> Vec<wgpu::VertexAttributeDescriptor> {
+    pub(crate) fn wgpu_attributes(&self, shader_inputs: &HashMap<&'static str, u32>) -> Vec<wgpu::VertexAttribute> {
         self.items
             .iter()
-            .map(|x| wgpu::VertexAttributeDescriptor {
+            .map(|x| wgpu::VertexAttribute {
                 format: x.item_type.wgpu_type(),
                 offset: x.offset as u64,
                 shader_location: *shader_inputs.get(x.shader_name).unwrap(),
