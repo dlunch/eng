@@ -13,16 +13,20 @@ pub enum ShaderBindingType {
 impl ShaderBindingType {
     pub fn wgpu_type(&self) -> wgpu::BindingType {
         match self {
-            ShaderBindingType::UniformBuffer => wgpu::BindingType::UniformBuffer {
-                dynamic: false,
+            ShaderBindingType::UniformBuffer => wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: false,
                 min_binding_size: None,
             },
-            ShaderBindingType::Texture2D => wgpu::BindingType::SampledTexture {
+            ShaderBindingType::Texture2D => wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
                 multisampled: false,
-                component_type: wgpu::TextureComponentType::Float,
-                dimension: wgpu::TextureViewDimension::D2,
+                view_dimension: wgpu::TextureViewDimension::D2,
             },
-            ShaderBindingType::Sampler => wgpu::BindingType::Sampler { comparison: false },
+            ShaderBindingType::Sampler => wgpu::BindingType::Sampler {
+                comparison: false,
+                filtering: true,
+            },
         }
     }
 }
@@ -65,7 +69,11 @@ impl Shader {
         let spv = (0..bytes.len() / 4)
             .map(|x| u32::from_le_bytes([bytes[x * 4], bytes[x * 4 + 1], bytes[x * 4 + 2], bytes[x * 4 + 3]]))
             .collect::<Vec<_>>();
-        let module = renderer.device.create_shader_module(wgpu::ShaderModuleSource::SpirV(spv.into()));
+        let module = renderer.device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+            label: None,
+            source: wgpu::ShaderSource::SpirV(spv.into()),
+            flags: wgpu::ShaderFlags::default(),
+        });
 
         Self {
             module,

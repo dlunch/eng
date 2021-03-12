@@ -20,7 +20,7 @@ impl Renderer {
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::Default,
+                power_preference: wgpu::PowerPreference::default(),
                 compatible_surface: None,
             })
             .await
@@ -31,7 +31,7 @@ impl Renderer {
                 &wgpu::DeviceDescriptor {
                     features: wgpu::Features::empty(),
                     limits: wgpu::Limits::default(),
-                    shader_validation: true,
+                    label: None,
                 },
                 None,
             )
@@ -81,6 +81,7 @@ impl Renderer {
                     }),
                     stencil_ops: None,
                 }),
+                label: None,
             });
             let mut render_context = RenderContext::new(render_pass);
 

@@ -49,6 +49,7 @@ impl Material {
             label: None,
             anisotropy_clamp: None,
             compare: None,
+            border_color: None,
         });
 
         let entries = vertex_shader
