@@ -28,6 +28,7 @@ impl TextureFormat {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 pub enum CompressedTextureFormat {
     BC1,
     BC2,
