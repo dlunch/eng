@@ -7,6 +7,7 @@ use crate::{buffer::Buffer, buffer_pool::BufferPool, Camera, RenderContext, Rend
 
 pub struct Renderer {
     pub(crate) instance: wgpu::Instance,
+    pub(crate) adapter: wgpu::Adapter,
     pub(crate) device: Arc<wgpu::Device>,
     pub(crate) mvp_buf: Buffer,
     pub buffer_pool: BufferPool,
@@ -46,6 +47,7 @@ impl Renderer {
 
         Self {
             instance,
+            adapter,
             device,
             queue,
             buffer_pool,
