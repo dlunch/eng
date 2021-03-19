@@ -1,20 +1,25 @@
+use alloc::sync::Arc;
+
 use raw_window_handle::HasRawWindowHandle;
 
-use crate::{Renderer, Texture, TextureFormat};
+use crate::{
+    constants::{INTERNAL_COLOR_ATTACHMENT_FORMAT, INTERNAL_DEPTH_ATTACHMENT_FORMAT},
+    Renderer, Texture,
+};
 
 pub trait RenderTarget: Sync + Send {
     fn size(&self) -> (u32, u32);
     fn color_attachment(&self) -> &wgpu::TextureView;
-    fn depth_attachment(&self) -> &wgpu::TextureView;
     fn submit(&mut self);
+    fn output_format(&self) -> wgpu::TextureFormat;
 }
 
 pub struct WindowRenderTarget {
     swap_chain: wgpu::SwapChain,
     frame: Option<wgpu::SwapChainFrame>,
-    depth_view: wgpu::TextureView,
     width: u32,
     height: u32,
+    format: wgpu::TextureFormat,
 }
 
 impl WindowRenderTarget {
@@ -34,12 +39,10 @@ impl WindowRenderTarget {
         );
         let frame = swap_chain.get_current_frame().unwrap();
 
-        let depth = Texture::new(&renderer, width, height, TextureFormat::Depth32);
-
         Self {
             swap_chain,
             frame: Some(frame),
-            depth_view: depth.texture_view,
+            format,
             width,
             height,
         }
@@ -62,7 +65,45 @@ impl RenderTarget for WindowRenderTarget {
         &self.frame.as_ref().unwrap().output.view
     }
 
-    fn depth_attachment(&self) -> &wgpu::TextureView {
-        &self.depth_view
+    fn output_format(&self) -> wgpu::TextureFormat {
+        self.format
+    }
+}
+
+pub struct OffscreenRenderTarget {
+    width: u32,
+    height: u32,
+
+    pub(crate) color_attachment: Arc<Texture>,
+    pub(crate) depth_attachment: Arc<Texture>,
+}
+
+impl OffscreenRenderTarget {
+    pub fn new(renderer: &Renderer, width: u32, height: u32) -> Self {
+        let color_attachment = Arc::new(Texture::new(renderer, width, height, INTERNAL_COLOR_ATTACHMENT_FORMAT));
+        let depth_attachment = Arc::new(Texture::new(&renderer, width, height, INTERNAL_DEPTH_ATTACHMENT_FORMAT));
+
+        Self {
+            width,
+            height,
+            color_attachment,
+            depth_attachment,
+        }
+    }
+}
+
+impl RenderTarget for OffscreenRenderTarget {
+    fn size(&self) -> (u32, u32) {
+        (self.width, self.height)
+    }
+
+    fn submit(&mut self) {}
+
+    fn color_attachment(&self) -> &wgpu::TextureView {
+        &self.color_attachment.texture_view
+    }
+
+    fn output_format(&self) -> wgpu::TextureFormat {
+        INTERNAL_COLOR_ATTACHMENT_FORMAT.wgpu_type()
     }
 }

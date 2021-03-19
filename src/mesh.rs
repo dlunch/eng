@@ -10,7 +10,7 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub async fn new(renderer: &Renderer, vertex_data: &[&[u8]], strides: &[usize], index_data: &[u8], vertex_formats: Vec<VertexFormat>) -> Self {
+    pub fn new(renderer: &Renderer, vertex_data: &[&[u8]], strides: &[usize], index_data: &[u8], vertex_formats: Vec<VertexFormat>) -> Self {
         let mut vertex_buffers = Vec::with_capacity(vertex_data.len());
         for vertex_datum in vertex_data {
             let buffer = renderer.buffer_pool.alloc(vertex_datum.len());

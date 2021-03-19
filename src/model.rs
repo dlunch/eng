@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 use core::ops::Range;
 
-use crate::{Material, Mesh, RenderContext, Renderable, Renderer};
+use crate::{constants::INTERNAL_COLOR_ATTACHMENT_FORMAT, Material, Mesh, RenderContext, Renderable, Renderer};
 
 pub struct Model {
     mesh: Mesh,
@@ -13,6 +13,24 @@ pub struct Model {
 
 impl Model {
     pub fn new(renderer: &Renderer, mesh: Mesh, material: Material, mesh_parts: Vec<Range<u32>>) -> Self {
+        Self::with_surface_and_depth_format(
+            renderer,
+            mesh,
+            material,
+            mesh_parts,
+            INTERNAL_COLOR_ATTACHMENT_FORMAT.wgpu_type(),
+            Some(wgpu::TextureFormat::Depth32Float),
+        )
+    }
+
+    pub(crate) fn with_surface_and_depth_format(
+        renderer: &Renderer,
+        mesh: Mesh,
+        material: Material,
+        mesh_parts: Vec<Range<u32>>,
+        surface_format: wgpu::TextureFormat,
+        depth_format: Option<wgpu::TextureFormat>,
+    ) -> Self {
         let attributes = mesh
             .vertex_formats
             .iter()
@@ -40,7 +58,7 @@ impl Model {
                 module: &material.fragment_shader.module,
                 entry_point: material.fragment_shader.entry,
                 targets: &[wgpu::ColorTargetState {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
+                    format: surface_format,
                     color_blend: wgpu::BlendState {
                         operation: wgpu::BlendOperation::Add,
                         src_factor: wgpu::BlendFactor::SrcAlpha,
@@ -56,8 +74,8 @@ impl Model {
                 polygon_mode: wgpu::PolygonMode::Fill,
                 ..Default::default()
             },
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: wgpu::TextureFormat::Depth32Float,
+            depth_stencil: depth_format.map(|x| wgpu::DepthStencilState {
+                format: x,
                 depth_write_enabled: true,
                 depth_compare: wgpu::CompareFunction::LessEqual,
                 stencil: wgpu::StencilState::default(),
