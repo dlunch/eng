@@ -52,7 +52,7 @@ fn main() {
             VertexFormatItem::new("TexCoord", VertexItemType::Float2, 16),
         ]);
         let vertex_data = [vertex_data.as_bytes()];
-        let mesh = Mesh::new(&renderer, &vertex_data, &[24], index_data.as_bytes(), vec![vertex_format]).await;
+        let mesh = Mesh::new(&renderer, &vertex_data, &[24], index_data.as_bytes(), vec![vertex_format]);
 
         let texture_data = create_texels(512, 512);
         let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm).await;
