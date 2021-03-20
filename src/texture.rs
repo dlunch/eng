@@ -67,7 +67,7 @@ impl Texture {
         Self { texture_view }
     }
 
-    pub async fn with_texels(renderer: &Renderer, width: u32, height: u32, texels: &[u8], format: TextureFormat) -> Self {
+    pub fn with_texels(renderer: &Renderer, width: u32, height: u32, texels: &[u8], format: TextureFormat) -> Self {
         let extent = wgpu::Extent3d { width, height, depth: 1 };
         let texture = renderer.device.create_texture(&wgpu::TextureDescriptor {
             size: extent,
@@ -98,10 +98,10 @@ impl Texture {
         Self { texture_view }
     }
 
-    pub async fn with_compressed_texels(renderer: &Renderer, width: u32, height: u32, data: &[u8], format: CompressedTextureFormat) -> Self {
+    pub fn with_compressed_texels(renderer: &Renderer, width: u32, height: u32, data: &[u8], format: CompressedTextureFormat) -> Self {
         let uncompressed = Self::decode_texture(data, width, height, &format);
 
-        Self::with_texels(renderer, width, height, &uncompressed, format.decoded_format()).await
+        Self::with_texels(renderer, width, height, &uncompressed, format.decoded_format())
     }
 
     fn decode_texture(data: &[u8], width: u32, height: u32, format: &CompressedTextureFormat) -> Vec<u8> {

@@ -82,7 +82,7 @@ impl Renderer {
         }
     }
 
-    pub async fn render(&mut self, scene: &Scene<'_>, target: &mut dyn RenderTarget) {
+    pub fn render(&mut self, scene: &Scene<'_>, target: &mut dyn RenderTarget) {
         let size = target.size();
 
         if self.offscreen_target.is_none() || self.offscreen_target.as_ref().unwrap().size() != target.size() {
