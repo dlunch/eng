@@ -38,6 +38,7 @@ pub struct Renderer {
 
     offscreen_target: Option<OffscreenRenderTarget>,
     offscreen_model: Option<Model>,
+    offscreen_size: Option<(u32, u32)>,
 }
 
 impl Renderer {
@@ -79,13 +80,14 @@ impl Renderer {
             mvp_buf,
             offscreen_target: None,
             offscreen_model: None,
+            offscreen_size: None,
         }
     }
 
     pub fn render(&mut self, scene: &Scene<'_>, target: &mut dyn RenderTarget) {
         let size = target.size();
 
-        if self.offscreen_target.is_none() || self.offscreen_target.as_ref().unwrap().size() != target.size() {
+        if self.offscreen_target.is_none() || self.offscreen_size.unwrap() != target.size() {
             self.reset_offscreen_pipeline(size, target.output_format());
         }
 
@@ -105,6 +107,7 @@ impl Renderer {
         let texture_height = Self::round_up_power_of_two(new_size.1);
 
         self.offscreen_target = Some(OffscreenRenderTarget::new(self, texture_width, texture_height));
+        self.offscreen_size = Some(new_size);
 
         let right = new_size.0 as f32 / texture_width as f32;
         let bottom = new_size.1 as f32 / texture_height as f32;
