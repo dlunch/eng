@@ -34,7 +34,7 @@ impl Model {
         let attributes = mesh
             .vertex_formats
             .iter()
-            .map(|x| x.wgpu_attributes(&material.vertex_shader.inputs))
+            .map(|x| x.wgpu_attributes(&material.shader.inputs))
             .collect::<Vec<_>>();
 
         let vertex_buffers = attributes
@@ -50,13 +50,13 @@ impl Model {
         let pipeline = renderer.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             layout: Some(&material.pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &material.vertex_shader.module,
-                entry_point: material.vertex_shader.entry,
+                module: &material.shader.module,
+                entry_point: material.shader.vs_entry,
                 buffers: &vertex_buffers,
             },
             fragment: Some(wgpu::FragmentState {
-                module: &material.fragment_shader.module,
-                entry_point: material.fragment_shader.entry,
+                module: &material.shader.module,
+                entry_point: material.shader.fs_entry,
                 targets: &[wgpu::ColorTargetState {
                     format: surface_format,
                     color_blend: wgpu::BlendState {

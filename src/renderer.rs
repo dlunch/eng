@@ -6,7 +6,7 @@ use zerocopy::AsBytes;
 
 use crate::{
     buffer::Buffer, buffer_pool::BufferPool, render_target::OffscreenRenderTarget, Camera, Material, Mesh, Model, RenderContext, RenderTarget,
-    Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, VertexFormat, VertexFormatItem, VertexItemType,
+    Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat, VertexFormatItem, VertexItemType,
 };
 
 // Copied from https://github.com/bluss/maplit/blob/master/src/lib.rs#L46
@@ -128,39 +128,31 @@ impl Renderer {
             &[core::mem::size_of::<f32>() * 4],
             [0u16, 1, 2, 3, 4, 5].as_bytes(),
             vec![VertexFormat::new(vec![
-                VertexFormatItem::new("Position", VertexItemType::Float2, 0),
-                VertexFormatItem::new("TexCoord", VertexItemType::Float2, core::mem::size_of::<f32>() * 2),
+                VertexFormatItem::new("position", VertexItemType::Float2, 0),
+                VertexFormatItem::new("tex_coord", VertexItemType::Float2, core::mem::size_of::<f32>() * 2),
             ])],
         );
 
-        let vs = Shader::new(
+        let shader = Shader::new(
             self,
-            include_bytes!("../shaders/vertex.vert.spv"),
-            "main",
-            HashMap::new(),
+            include_str!("../shaders/shader.wgsl"),
+            "vs_main",
+            "fs_main",
             hashmap! {
-                    "Position" => 0,
-                    "TexCoord" => 1,
+                "texture" => ShaderBinding::new(ShaderStage::Fragment, 1, ShaderBindingType::Texture2D),
+                "sampler" => ShaderBinding::new(ShaderStage::Fragment, 2, ShaderBindingType::Sampler),
             },
-        );
-
-        let fs = Shader::new(
-            self,
-            include_bytes!("../shaders/fragment.frag.spv"),
-            "main",
             hashmap! {
-                "Texture" => ShaderBinding::new(1, ShaderBindingType::Texture2D),
-                "Sampler" => ShaderBinding::new(2, ShaderBindingType::Sampler),
+                    "position" => 0,
+                    "tex_coord" => 1,
             },
-            HashMap::new(),
         );
 
         let material = Material::new(
             &self,
-            hashmap! {"Texture" => self.offscreen_target.as_ref().unwrap().color_attachment.clone()},
+            hashmap! {"texture" => self.offscreen_target.as_ref().unwrap().color_attachment.clone()},
             HashMap::new(),
-            Arc::new(vs),
-            Arc::new(fs),
+            Arc::new(shader),
         );
 
         self.offscreen_model = Some(Model::with_surface_and_depth_format(

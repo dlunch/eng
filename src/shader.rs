@@ -4,6 +4,20 @@ use hashbrown::HashMap;
 
 use crate::Renderer;
 
+pub enum ShaderStage {
+    Vertex,
+    Fragment,
+}
+
+impl ShaderStage {
+    pub fn wgpu_type(&self) -> wgpu::ShaderStage {
+        match self {
+            ShaderStage::Vertex => wgpu::ShaderStage::VERTEX,
+            ShaderStage::Fragment => wgpu::ShaderStage::FRAGMENT,
+        }
+    }
+}
+
 pub enum ShaderBindingType {
     UniformBuffer,
     Texture2D,
@@ -32,19 +46,24 @@ impl ShaderBindingType {
 }
 
 pub struct ShaderBinding {
+    pub(crate) stage: ShaderStage,
     pub(crate) binding: u32,
     pub(crate) binding_type: ShaderBindingType,
 }
 
 impl ShaderBinding {
-    pub fn new(binding: u32, binding_type: ShaderBindingType) -> Self {
-        Self { binding, binding_type }
+    pub fn new(stage: ShaderStage, binding: u32, binding_type: ShaderBindingType) -> Self {
+        Self {
+            stage,
+            binding,
+            binding_type,
+        }
     }
 
-    pub fn wgpu_entry(&self, stage: wgpu::ShaderStage) -> wgpu::BindGroupLayoutEntry {
+    pub fn wgpu_entry(&self) -> wgpu::BindGroupLayoutEntry {
         wgpu::BindGroupLayoutEntry {
             binding: self.binding,
-            visibility: stage,
+            visibility: self.stage.wgpu_type(),
             ty: self.binding_type.wgpu_type(),
             count: None,
         }
@@ -53,7 +72,8 @@ impl ShaderBinding {
 
 pub struct Shader {
     pub(crate) module: wgpu::ShaderModule,
-    pub(crate) entry: &'static str,
+    pub(crate) vs_entry: &'static str,
+    pub(crate) fs_entry: &'static str,
     pub(crate) bindings: HashMap<&'static str, ShaderBinding>,
     pub(crate) inputs: HashMap<&'static str, u32>,
 }
@@ -61,29 +81,28 @@ pub struct Shader {
 impl Shader {
     pub fn new(
         renderer: &Renderer,
-        bytes: &[u8],
-        entry: &'static str,
+        source: &str,
+        vs_entry: &'static str,
+        fs_entry: &'static str,
         bindings: HashMap<&'static str, ShaderBinding>,
         inputs: HashMap<&'static str, u32>,
     ) -> Self {
-        let spv = (0..bytes.len() / 4)
-            .map(|x| u32::from_le_bytes([bytes[x * 4], bytes[x * 4 + 1], bytes[x * 4 + 2], bytes[x * 4 + 3]]))
-            .collect::<Vec<_>>();
         let module = renderer.device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: None,
-            source: wgpu::ShaderSource::SpirV(spv.into()),
+            source: wgpu::ShaderSource::Wgsl(source.into()),
             flags: wgpu::ShaderFlags::default(),
         });
 
         Self {
             module,
-            entry,
+            vs_entry,
+            fs_entry,
             bindings,
             inputs,
         }
     }
 
-    pub fn wgpu_bindings(&self, stage: wgpu::ShaderStage) -> Vec<wgpu::BindGroupLayoutEntry> {
-        self.bindings.iter().map(|(_, x)| x.wgpu_entry(stage)).collect::<Vec<_>>()
+    pub fn wgpu_bindings(&self) -> Vec<wgpu::BindGroupLayoutEntry> {
+        self.bindings.iter().map(|(_, x)| x.wgpu_entry()).collect::<Vec<_>>()
     }
 }

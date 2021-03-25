@@ -13,8 +13,8 @@ use winit::{
 use zerocopy::AsBytes;
 
 use renderer::{
-    Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, Texture, TextureFormat, VertexFormat, VertexFormatItem,
-    VertexItemType, WindowRenderTarget,
+    Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, Texture, TextureFormat, VertexFormat,
+    VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
 
 // Copied from https://github.com/bluss/maplit/blob/master/src/lib.rs#L46
@@ -51,8 +51,8 @@ fn main() {
 
         let (vertex_data, index_data) = create_vertices();
         let vertex_format = VertexFormat::new(vec![
-            VertexFormatItem::new("Position", VertexItemType::Float4, 0),
-            VertexFormatItem::new("TexCoord", VertexItemType::Float2, 16),
+            VertexFormatItem::new("position", VertexItemType::Float4, 0),
+            VertexFormatItem::new("tex_coord", VertexItemType::Float2, 16),
         ]);
         let vertex_data = [vertex_data.as_bytes()];
         let mesh = Mesh::new(&renderer, &vertex_data, &[24], index_data.as_bytes(), vec![vertex_format]);
@@ -60,34 +60,23 @@ fn main() {
         let texture_data = create_texels(512, 512);
         let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let vs = Shader::new(
+        let shader = Shader::new(
             &renderer,
-            include_bytes!("vertex.vert.spv"),
-            "main",
-            hashmap! {"Mvp" => ShaderBinding::new(0, ShaderBindingType::UniformBuffer)},
+            include_str!("shader.wgsl"),
+            "vs_main",
+            "fs_main",
             hashmap! {
-                    "Position" => 0,
-                    "TexCoord" => 1,
+                "mvp" => ShaderBinding::new(ShaderStage::Vertex, 0, ShaderBindingType::UniformBuffer),
+                "texture" => ShaderBinding::new(ShaderStage::Fragment, 1, ShaderBindingType::Texture2D),
+                "sampler" => ShaderBinding::new(ShaderStage::Fragment, 2, ShaderBindingType::Sampler),
             },
-        );
-        let fs = Shader::new(
-            &renderer,
-            include_bytes!("fragment.frag.spv"),
-            "main",
             hashmap! {
-                "Texture" => ShaderBinding::new(1, ShaderBindingType::Texture2D),
-                "Sampler" => ShaderBinding::new(2, ShaderBindingType::Sampler),
+                    "position" => 0,
+                    "tex_coord" => 1,
             },
-            HashMap::new(),
         );
 
-        let material = Material::new(
-            &renderer,
-            hashmap! {"Texture" => Arc::new(texture)},
-            HashMap::new(),
-            Arc::new(vs),
-            Arc::new(fs),
-        );
+        let material = Material::new(&renderer, hashmap! {"texture" => Arc::new(texture)}, HashMap::new(), Arc::new(shader));
         let model = Model::new(&renderer, mesh, material, vec![0..index_data.len() as u32]);
 
         let camera = Camera::new(Point3::new(5.0, 5.0, 5.0), Point3::new(0.0, 0.0, 0.0));
