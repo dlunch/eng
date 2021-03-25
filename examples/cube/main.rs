@@ -36,16 +36,19 @@ macro_rules! hashmap {
 }
 
 fn main() {
+    pretty_env_logger::init();
     let event_loop = EventLoop::new();
 
     let mut builder = winit::window::WindowBuilder::new();
     builder = builder.with_title("test").with_inner_size(LogicalSize::new(1920, 1080));
-    let window = builder.build(&event_loop).unwrap();
+    let window = Arc::new(builder.build(&event_loop).unwrap());
     let size = window.inner_size();
-    let mut renderer = task::block_on(async { Renderer::new().await });
-    let mut render_target = WindowRenderTarget::new(&renderer, &window, size.width, size.height);
 
+    let window1 = window.clone();
     task::spawn(async move {
+        let mut renderer = Renderer::new().await;
+        let mut render_target = WindowRenderTarget::new(&renderer, &*window1, size.width, size.height);
+
         let (vertex_data, index_data) = create_vertices();
         let vertex_format = VertexFormat::new(vec![
             VertexFormatItem::new("Position", VertexItemType::Float4, 0),
