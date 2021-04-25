@@ -25,7 +25,7 @@ pub struct WindowRenderTarget {
 impl WindowRenderTarget {
     pub fn new<W: HasRawWindowHandle>(renderer: &Renderer, window: &W, width: u32, height: u32) -> Self {
         let surface = unsafe { renderer.instance.create_surface(window) };
-        let format = renderer.adapter.get_swap_chain_preferred_format(&surface);
+        let format = renderer.adapter.get_swap_chain_preferred_format(&surface).unwrap();
 
         let swap_chain = renderer.device.create_swap_chain(
             &surface,

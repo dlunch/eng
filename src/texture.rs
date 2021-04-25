@@ -51,7 +51,11 @@ pub struct Texture {
 
 impl Texture {
     pub fn new(renderer: &Renderer, width: u32, height: u32, format: TextureFormat) -> Self {
-        let extent = wgpu::Extent3d { width, height, depth: 1 };
+        let extent = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
         let texture = renderer.device.create_texture(&wgpu::TextureDescriptor {
             size: extent,
             mip_level_count: 1,
@@ -68,7 +72,11 @@ impl Texture {
     }
 
     pub fn with_texels(renderer: &Renderer, width: u32, height: u32, texels: &[u8], format: TextureFormat) -> Self {
-        let extent = wgpu::Extent3d { width, height, depth: 1 };
+        let extent = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
         let texture = renderer.device.create_texture(&wgpu::TextureDescriptor {
             size: extent,
             mip_level_count: 1,
@@ -81,16 +89,16 @@ impl Texture {
 
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         renderer.queue.write_texture(
-            wgpu::TextureCopyView {
+            wgpu::ImageCopyTexture {
                 texture: &texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
             },
             &texels,
-            wgpu::TextureDataLayout {
+            wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: format.bytes_per_row() as u32 * extent.width as u32,
-                rows_per_image: 0,
+                bytes_per_row: core::num::NonZeroU32::new(format.bytes_per_row() as u32 * extent.width as u32),
+                rows_per_image: None,
             },
             extent,
         );

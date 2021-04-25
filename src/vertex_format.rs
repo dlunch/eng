@@ -14,12 +14,12 @@ pub enum VertexItemType {
 impl VertexItemType {
     pub(crate) fn wgpu_type(&self) -> wgpu::VertexFormat {
         match self {
-            VertexItemType::UByte4 => wgpu::VertexFormat::Uchar4,
-            VertexItemType::Float2 => wgpu::VertexFormat::Float2,
-            VertexItemType::Float3 => wgpu::VertexFormat::Float3,
-            VertexItemType::Float4 => wgpu::VertexFormat::Float4,
-            VertexItemType::Half2 => wgpu::VertexFormat::Half2,
-            VertexItemType::Half4 => wgpu::VertexFormat::Half4,
+            VertexItemType::UByte4 => wgpu::VertexFormat::Uint8x4,
+            VertexItemType::Float2 => wgpu::VertexFormat::Float32x2,
+            VertexItemType::Float3 => wgpu::VertexFormat::Float32x3,
+            VertexItemType::Float4 => wgpu::VertexFormat::Float32x4,
+            VertexItemType::Half2 => wgpu::VertexFormat::Float16x2,
+            VertexItemType::Half4 => wgpu::VertexFormat::Float16x4,
         }
     }
 }
