@@ -59,19 +59,19 @@ impl Model {
                 entry_point: material.fragment_shader.entry,
                 targets: &[wgpu::ColorTargetState {
                     format: surface_format,
-                    color_blend: wgpu::BlendState {
-                        operation: wgpu::BlendOperation::Add,
-                        src_factor: wgpu::BlendFactor::SrcAlpha,
-                        dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                    },
-                    alpha_blend: wgpu::BlendState::REPLACE,
+                    blend: Some(wgpu::BlendState {
+                        color: wgpu::BlendComponent {
+                            operation: wgpu::BlendOperation::Add,
+                            src_factor: wgpu::BlendFactor::SrcAlpha,
+                            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                        },
+                        alpha: wgpu::BlendComponent::REPLACE,
+                    }),
                     write_mask: wgpu::ColorWrite::ALL,
                 }],
             }),
             primitive: wgpu::PrimitiveState {
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: wgpu::CullMode::Back,
-                polygon_mode: wgpu::PolygonMode::Fill,
+                cull_mode: Some(wgpu::Face::Back),
                 ..Default::default()
             },
             depth_stencil: depth_format.map(|x| wgpu::DepthStencilState {
@@ -80,7 +80,6 @@ impl Model {
                 depth_compare: wgpu::CompareFunction::LessEqual,
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
-                clamp_depth: false,
             }),
             label: None,
             multisample: wgpu::MultisampleState::default(),

@@ -175,16 +175,16 @@ impl Renderer {
 
     fn render_scene(command_encoder: &mut wgpu::CommandEncoder, scene: &Scene<'_>, target: &OffscreenRenderTarget, viewport_size: (u32, u32)) {
         let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                attachment: target.color_attachment(),
+            color_attachments: &[wgpu::RenderPassColorAttachment {
+                view: target.color_attachment(),
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color { r: 1., g: 1., b: 1., a: 1. }),
                     store: true,
                 },
             }],
-            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
-                attachment: &target.depth_attachment.texture_view,
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                view: &target.depth_attachment.texture_view,
                 depth_ops: Some(wgpu::Operations {
                     load: wgpu::LoadOp::Clear(1.0),
                     store: true,
@@ -203,8 +203,8 @@ impl Renderer {
 
     fn present(&self, command_encoder: &mut wgpu::CommandEncoder, target: &dyn RenderTarget) {
         let render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                attachment: target.color_attachment(),
+            color_attachments: &[wgpu::RenderPassColorAttachment {
+                view: target.color_attachment(),
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color { r: 1., g: 1., b: 1., a: 1. }),
