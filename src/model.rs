@@ -88,8 +88,8 @@ impl Model {
         Self {
             mesh,
             material,
-            pipeline,
             mesh_parts,
+            pipeline,
         }
     }
 }
