@@ -94,7 +94,7 @@ impl BufferPool {
         let mut items = self.items.lock();
 
         for item in &*items {
-            let result = self.try_alloc(&item, size);
+            let result = self.try_alloc(item, size);
             if let Some(x) = result {
                 return x;
             }

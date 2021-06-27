@@ -156,7 +156,7 @@ impl Renderer {
         );
 
         let material = Material::new(
-            &self,
+            self,
             hashmap! {"Texture" => self.offscreen_target.as_ref().unwrap().color_attachment.clone()},
             HashMap::new(),
             Arc::new(vs),
