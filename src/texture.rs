@@ -94,7 +94,7 @@ impl Texture {
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
             },
-            &texels,
+            texels,
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: core::num::NonZeroU32::new(format.bytes_per_row() as u32 * extent.width as u32),

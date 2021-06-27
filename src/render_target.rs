@@ -81,7 +81,7 @@ pub struct OffscreenRenderTarget {
 impl OffscreenRenderTarget {
     pub fn new(renderer: &Renderer, width: u32, height: u32) -> Self {
         let color_attachment = Arc::new(Texture::new(renderer, width, height, INTERNAL_COLOR_ATTACHMENT_FORMAT));
-        let depth_attachment = Arc::new(Texture::new(&renderer, width, height, INTERNAL_DEPTH_ATTACHMENT_FORMAT));
+        let depth_attachment = Arc::new(Texture::new(renderer, width, height, INTERNAL_DEPTH_ATTACHMENT_FORMAT));
 
         Self {
             width,
