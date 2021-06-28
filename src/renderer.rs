@@ -6,7 +6,7 @@ use zerocopy::AsBytes;
 
 use crate::{
     buffer::Buffer, buffer_pool::BufferPool, render_target::OffscreenRenderTarget, Camera, Material, Mesh, Model, RenderContext, RenderTarget,
-    Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, VertexFormat, VertexFormatItem, VertexItemType,
+    Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat, VertexFormatItem, VertexItemType,
 };
 
 // Copied from https://github.com/bluss/maplit/blob/master/src/lib.rs#L46
@@ -133,34 +133,26 @@ impl Renderer {
             ])],
         );
 
-        let vs = Shader::new(
+        let shader = Shader::new(
             self,
-            include_bytes!("../shaders/vertex.vert.spv"),
-            "main",
-            HashMap::new(),
+            include_str!("../shaders/shader.wgsl"),
+            "vs_main",
+            "fs_main",
+            hashmap! {
+                "Texture" => ShaderBinding::new(ShaderStage::Fragment, 1, ShaderBindingType::Texture2D),
+                "Sampler" => ShaderBinding::new(ShaderStage::Fragment, 2, ShaderBindingType::Sampler),
+            },
             hashmap! {
                     "Position" => 0,
                     "TexCoord" => 1,
             },
         );
 
-        let fs = Shader::new(
-            self,
-            include_bytes!("../shaders/fragment.frag.spv"),
-            "main",
-            hashmap! {
-                "Texture" => ShaderBinding::new(1, ShaderBindingType::Texture2D),
-                "Sampler" => ShaderBinding::new(2, ShaderBindingType::Sampler),
-            },
-            HashMap::new(),
-        );
-
         let material = Material::new(
             self,
             hashmap! {"Texture" => self.offscreen_target.as_ref().unwrap().color_attachment.clone()},
             HashMap::new(),
-            Arc::new(vs),
-            Arc::new(fs),
+            Arc::new(shader),
         );
 
         self.offscreen_model = Some(Model::with_surface_and_depth_format(

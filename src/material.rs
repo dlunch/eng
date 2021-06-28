@@ -5,8 +5,7 @@ use hashbrown::HashMap;
 use crate::{buffer::Buffer, Renderer, Shader, ShaderBindingType, Texture};
 
 pub struct Material {
-    pub(crate) vertex_shader: Arc<Shader>,
-    pub(crate) fragment_shader: Arc<Shader>,
+    pub(crate) shader: Arc<Shader>,
     pub(crate) pipeline_layout: wgpu::PipelineLayout,
     pub(crate) bind_group: wgpu::BindGroup,
 
@@ -19,15 +18,13 @@ impl Material {
         renderer: &Renderer,
         textures: HashMap<&'static str, Arc<Texture>>,
         uniforms: HashMap<&'static str, Arc<Buffer>>,
-        vertex_shader: Arc<Shader>,
-        fragment_shader: Arc<Shader>,
+        shader: Arc<Shader>,
     ) -> Self {
-        let vs_bindings = vertex_shader.wgpu_bindings(wgpu::ShaderStage::VERTEX);
-        let fs_bindings = fragment_shader.wgpu_bindings(wgpu::ShaderStage::FRAGMENT);
+        let bindings = shader.wgpu_bindings().collect::<Vec<_>>();
 
         // TODO split bind groups by stage..
         let bind_group_layout = renderer.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &vs_bindings.into_iter().chain(fs_bindings.into_iter()).collect::<Vec<_>>(),
+            entries: &bindings,
             label: None,
         });
         let pipeline_layout = renderer.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -52,10 +49,9 @@ impl Material {
             border_color: None,
         });
 
-        let entries = vertex_shader
+        let entries = shader
             .bindings
             .iter()
-            .chain(fragment_shader.bindings.iter())
             .map(|(binding_name, binding)| {
                 let resource = match binding.binding_type {
                     ShaderBindingType::UniformBuffer => {
@@ -93,8 +89,7 @@ impl Material {
         });
 
         Self {
-            vertex_shader,
-            fragment_shader,
+            shader,
             pipeline_layout,
             bind_group,
             _textures: textures,

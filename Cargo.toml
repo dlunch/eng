@@ -22,11 +22,3 @@ spinning_top = { version = "^0.2", default-features = false }
 async-std = { version = "^1.6", features = ["default"], default-features = false }
 winit = { version = "^0.25", features = ["x11", "wayland"], default-features = false }
 pretty_env_logger = { version = "^0.4", default-features = false }
-
-[build-dependencies]
-shader_builder = { version = "^0.1", path = "./shader_builder" }
-
-[workspace]
-members = [
-    "shader_builder",
-]
