@@ -13,8 +13,8 @@ use winit::{
 use zerocopy::AsBytes;
 
 use renderer::{
-    Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, Texture, TextureFormat, VertexFormat, VertexFormatItem,
-    VertexItemType, WindowRenderTarget,
+    Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, Texture, TextureFormat, VertexFormat,
+    VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
 
 // Copied from https://github.com/bluss/maplit/blob/master/src/lib.rs#L46
@@ -60,34 +60,23 @@ fn main() {
         let texture_data = create_texels(512, 512);
         let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let vs = Shader::new(
+        let shader = Shader::new(
             &renderer,
-            include_bytes!("vertex.vert.spv"),
-            "main",
-            hashmap! {"Mvp" => ShaderBinding::new(0, ShaderBindingType::UniformBuffer)},
+            include_str!("shader.wgsl"),
+            "vs_main",
+            "fs_main",
             hashmap! {
-                    "Position" => 0,
-                    "TexCoord" => 1,
+                "Mvp" => ShaderBinding::new(ShaderStage::Vertex, 0, ShaderBindingType::UniformBuffer),
+                "Texture" => ShaderBinding::new(ShaderStage::Fragment, 1, ShaderBindingType::Texture2D),
+                "Sampler" => ShaderBinding::new(ShaderStage::Fragment, 2, ShaderBindingType::Sampler),
             },
-        );
-        let fs = Shader::new(
-            &renderer,
-            include_bytes!("fragment.frag.spv"),
-            "main",
             hashmap! {
-                "Texture" => ShaderBinding::new(1, ShaderBindingType::Texture2D),
-                "Sampler" => ShaderBinding::new(2, ShaderBindingType::Sampler),
+                "Position" => 0,
+                "TexCoord" => 1,
             },
-            HashMap::new(),
         );
 
-        let material = Material::new(
-            &renderer,
-            hashmap! {"Texture" => Arc::new(texture)},
-            HashMap::new(),
-            Arc::new(vs),
-            Arc::new(fs),
-        );
+        let material = Material::new(&renderer, hashmap! {"Texture" => Arc::new(texture)}, HashMap::new(), Arc::new(shader));
         let model = Model::new(&renderer, mesh, material, vec![0..index_data.len() as u32]);
 
         let camera = Camera::new(Point3::new(5.0, 5.0, 5.0), Point3::new(0.0, 0.0, 0.0));
