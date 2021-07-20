@@ -84,7 +84,7 @@ impl Renderer {
         }
     }
 
-    pub fn render(&mut self, scene: &Scene<'_>, target: &mut dyn RenderTarget) {
+    pub fn render(&mut self, scene: &Scene, target: &mut dyn RenderTarget) {
         let size = target.size();
 
         if self.offscreen_target.is_none() || self.offscreen_size.unwrap() != target.size() {
@@ -165,7 +165,7 @@ impl Renderer {
         ));
     }
 
-    fn render_scene(command_encoder: &mut wgpu::CommandEncoder, scene: &Scene<'_>, target: &OffscreenRenderTarget, viewport_size: (u32, u32)) {
+    fn render_scene(command_encoder: &mut wgpu::CommandEncoder, scene: &Scene, target: &OffscreenRenderTarget, viewport_size: (u32, u32)) {
         let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             color_attachments: &[wgpu::RenderPassColorAttachment {
                 view: target.color_attachment(),
