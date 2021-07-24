@@ -1,7 +1,5 @@
 use alloc::sync::Arc;
 
-use raw_window_handle::HasRawWindowHandle;
-
 use crate::{
     constants::{INTERNAL_COLOR_ATTACHMENT_FORMAT, INTERNAL_DEPTH_ATTACHMENT_FORMAT},
     Renderer, Texture,
@@ -23,11 +21,10 @@ pub struct WindowRenderTarget {
 }
 
 impl WindowRenderTarget {
-    pub fn new<W: HasRawWindowHandle>(renderer: &Renderer, window: &W, width: u32, height: u32) -> Self {
-        let surface = unsafe { renderer.instance.create_surface(window) };
-        let format = renderer.adapter.get_swap_chain_preferred_format(&surface).unwrap();
+    pub(crate) fn new(surface: &wgpu::Surface, adapter: &wgpu::Adapter, device: &wgpu::Device, width: u32, height: u32) -> Self {
+        let format = adapter.get_swap_chain_preferred_format(&surface).unwrap();
 
-        let swap_chain = renderer.device.create_swap_chain(
+        let swap_chain = device.create_swap_chain(
             &surface,
             &wgpu::SwapChainDescriptor {
                 usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
