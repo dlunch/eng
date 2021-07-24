@@ -14,7 +14,7 @@ use zerocopy::AsBytes;
 
 use renderer::{
     Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, Texture, TextureFormat, VertexFormat,
-    VertexFormatItem, VertexItemType, WindowRenderTarget,
+    VertexFormatItem, VertexItemType,
 };
 
 // Copied from https://github.com/bluss/maplit/blob/master/src/lib.rs#L46
@@ -46,8 +46,7 @@ fn main() {
 
     let window1 = window.clone();
     task::spawn(async move {
-        let mut renderer = Renderer::new().await;
-        let mut render_target = WindowRenderTarget::new(&renderer, &*window1, size.width, size.height);
+        let mut renderer = Renderer::new(&*window1, size.width, size.height).await;
 
         let (vertex_data, index_data) = create_vertices();
         let vertex_format = VertexFormat::new(vec![
@@ -84,7 +83,7 @@ fn main() {
         scene.add(model);
 
         loop {
-            renderer.render(&scene, &mut render_target);
+            renderer.render(&scene);
             task::sleep(Duration::from_millis(16)).await;
         }
     });

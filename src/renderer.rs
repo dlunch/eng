@@ -1,12 +1,13 @@
-use alloc::{sync::Arc, vec};
+use alloc::{boxed::Box, sync::Arc, vec};
 
 use hashbrown::HashMap;
 use nalgebra::Matrix4;
+use raw_window_handle::HasRawWindowHandle;
 use zerocopy::AsBytes;
 
 use crate::{
     buffer::Buffer, buffer_pool::BufferPool, render_target::OffscreenRenderTarget, Camera, Material, Mesh, Model, RenderContext, RenderTarget,
-    Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat, VertexFormatItem, VertexItemType,
+    Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
 
 // Copied from https://github.com/bluss/maplit/blob/master/src/lib.rs#L46
@@ -28,13 +29,13 @@ macro_rules! hashmap {
 }
 
 pub struct Renderer {
-    pub(crate) instance: wgpu::Instance,
-    pub(crate) adapter: wgpu::Adapter,
     pub(crate) device: Arc<wgpu::Device>,
     pub(crate) mvp_buf: Buffer,
     pub buffer_pool: BufferPool,
 
     pub(crate) queue: Arc<wgpu::Queue>,
+
+    render_target: Box<dyn RenderTarget>,
 
     offscreen_target: Option<OffscreenRenderTarget>,
     offscreen_model: Option<Model>,
@@ -42,8 +43,9 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub async fn new() -> Self {
+    pub async fn new<W: HasRawWindowHandle>(window: &W, width: u32, height: u32) -> Self {
         let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
+        let surface = unsafe { instance.create_surface(window) };
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -65,6 +67,8 @@ impl Renderer {
             .await
             .unwrap();
 
+        let render_target = Box::new(WindowRenderTarget::new(&surface, &adapter, &device, width, height));
+
         let device = Arc::new(device);
         let queue = Arc::new(queue);
 
@@ -72,34 +76,38 @@ impl Renderer {
         let mvp_buf = buffer_pool.alloc(64);
 
         Self {
-            instance,
-            adapter,
             device,
             queue,
             buffer_pool,
             mvp_buf,
+            render_target,
             offscreen_target: None,
             offscreen_model: None,
             offscreen_size: None,
         }
     }
 
-    pub fn render(&mut self, scene: &Scene, target: &mut dyn RenderTarget) {
-        let size = target.size();
+    pub fn render(&mut self, scene: &Scene) {
+        let size = self.render_target.size();
 
-        if self.offscreen_target.is_none() || self.offscreen_size.unwrap() != target.size() {
-            self.reset_offscreen_pipeline(size, target.output_format());
+        if self.offscreen_target.is_none() || self.offscreen_size.unwrap() != self.render_target.size() {
+            self.reset_offscreen_pipeline(size, self.render_target.output_format());
         }
 
         let mvp = Self::get_mvp(&scene.camera, size.0 as f32 / size.1 as f32);
         self.mvp_buf.write(mvp.as_slice().as_bytes());
 
         let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-        Self::render_scene(&mut command_encoder, scene, self.offscreen_target.as_ref().unwrap(), target.size());
-        self.present(&mut command_encoder, target);
+        Self::render_scene(
+            &mut command_encoder,
+            scene,
+            self.offscreen_target.as_ref().unwrap(),
+            self.render_target.size(),
+        );
+        self.present(&mut command_encoder, &*self.render_target);
 
         self.queue.submit(Some(command_encoder.finish()));
-        target.submit();
+        self.render_target.submit();
     }
 
     fn reset_offscreen_pipeline(&mut self, new_size: (u32, u32), surface_format: wgpu::TextureFormat) {
