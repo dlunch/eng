@@ -85,7 +85,18 @@ impl Shader {
         bindings: HashMap<&'static str, ShaderBinding>,
         inputs: HashMap<&'static str, u32>,
     ) -> Self {
-        let module = renderer.device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+        Self::with_device(&*renderer.device, source, vs_entry, fs_entry, bindings, inputs)
+    }
+
+    pub(crate) fn with_device(
+        device: &wgpu::Device,
+        source: &str,
+        vs_entry: &'static str,
+        fs_entry: &'static str,
+        bindings: HashMap<&'static str, ShaderBinding>,
+        inputs: HashMap<&'static str, u32>,
+    ) -> Self {
+        let module = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(source.into()),
             flags: wgpu::ShaderFlags::default(),
@@ -100,7 +111,7 @@ impl Shader {
         }
     }
 
-    pub fn wgpu_bindings(&self) -> impl Iterator<Item = wgpu::BindGroupLayoutEntry> + '_ {
+    pub(crate) fn wgpu_bindings(&self) -> impl Iterator<Item = wgpu::BindGroupLayoutEntry> + '_ {
         self.bindings.iter().map(|(_, x)| x.wgpu_entry())
     }
 }
