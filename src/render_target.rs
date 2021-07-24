@@ -22,10 +22,10 @@ pub struct WindowRenderTarget {
 
 impl WindowRenderTarget {
     pub(crate) fn new(surface: &wgpu::Surface, adapter: &wgpu::Adapter, device: &wgpu::Device, width: u32, height: u32) -> Self {
-        let format = adapter.get_swap_chain_preferred_format(&surface).unwrap();
+        let format = adapter.get_swap_chain_preferred_format(surface).unwrap();
 
         let swap_chain = device.create_swap_chain(
-            &surface,
+            surface,
             &wgpu::SwapChainDescriptor {
                 usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
                 format,
