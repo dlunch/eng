@@ -20,21 +20,31 @@ impl Material {
         uniforms: HashMap<&'static str, Arc<Buffer>>,
         shader: Arc<Shader>,
     ) -> Self {
+        Self::with_device(&*renderer.device, Some(&renderer.mvp_buf), textures, uniforms, shader)
+    }
+
+    pub fn with_device(
+        device: &wgpu::Device,
+        mvp_buf: Option<&Buffer>,
+        textures: HashMap<&'static str, Arc<Texture>>,
+        uniforms: HashMap<&'static str, Arc<Buffer>>,
+        shader: Arc<Shader>,
+    ) -> Self {
         let bindings = shader.wgpu_bindings().collect::<Vec<_>>();
 
         // TODO split bind groups by stage..
-        let bind_group_layout = renderer.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &bindings,
             label: None,
         });
-        let pipeline_layout = renderer.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             push_constant_ranges: &[],
             bind_group_layouts: &[&bind_group_layout],
         });
 
         // TODO wip
-        let sampler = renderer.device.create_sampler(&wgpu::SamplerDescriptor {
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::Repeat,
             address_mode_v: wgpu::AddressMode::Repeat,
             address_mode_w: wgpu::AddressMode::Repeat,
@@ -56,7 +66,7 @@ impl Material {
                 let resource = match binding.binding_type {
                     ShaderBindingType::UniformBuffer => {
                         if *binding_name == "Mvp" {
-                            renderer.mvp_buf.binding_resource()
+                            mvp_buf.unwrap().binding_resource()
                         } else {
                             let buffer = uniforms.get(binding_name);
                             match buffer {
@@ -82,7 +92,7 @@ impl Material {
             })
             .collect::<Vec<_>>();
 
-        let bind_group = renderer.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &bind_group_layout,
             entries: &entries,
             label: None,

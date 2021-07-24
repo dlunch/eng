@@ -2,7 +2,7 @@ use alloc::sync::Arc;
 
 use crate::{
     constants::{INTERNAL_COLOR_ATTACHMENT_FORMAT, INTERNAL_DEPTH_ATTACHMENT_FORMAT},
-    Renderer, Texture,
+    Texture,
 };
 
 pub trait RenderTarget: Sync + Send {
@@ -76,9 +76,9 @@ pub struct OffscreenRenderTarget {
 }
 
 impl OffscreenRenderTarget {
-    pub fn new(renderer: &Renderer, width: u32, height: u32) -> Self {
-        let color_attachment = Arc::new(Texture::new(renderer, width, height, INTERNAL_COLOR_ATTACHMENT_FORMAT));
-        let depth_attachment = Arc::new(Texture::new(renderer, width, height, INTERNAL_DEPTH_ATTACHMENT_FORMAT));
+    pub(crate) fn with_device(device: &wgpu::Device, width: u32, height: u32) -> Self {
+        let color_attachment = Arc::new(Texture::with_device(device, width, height, INTERNAL_COLOR_ATTACHMENT_FORMAT));
+        let depth_attachment = Arc::new(Texture::with_device(device, width, height, INTERNAL_DEPTH_ATTACHMENT_FORMAT));
 
         Self {
             width,

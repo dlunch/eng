@@ -14,7 +14,7 @@ pub struct Model {
 impl Model {
     pub fn new(renderer: &Renderer, mesh: Mesh, material: Material, mesh_parts: Vec<Range<u32>>) -> Self {
         Self::with_surface_and_depth_format(
-            renderer,
+            &*renderer.device,
             mesh,
             material,
             mesh_parts,
@@ -24,7 +24,7 @@ impl Model {
     }
 
     pub(crate) fn with_surface_and_depth_format(
-        renderer: &Renderer,
+        device: &wgpu::Device,
         mesh: Mesh,
         material: Material,
         mesh_parts: Vec<Range<u32>>,
@@ -47,7 +47,7 @@ impl Model {
             })
             .collect::<Vec<_>>();
 
-        let pipeline = renderer.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             layout: Some(&material.pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &material.shader.module,

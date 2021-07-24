@@ -51,12 +51,16 @@ pub struct Texture {
 
 impl Texture {
     pub fn new(renderer: &Renderer, width: u32, height: u32, format: TextureFormat) -> Self {
+        Self::with_device(&*renderer.device, width, height, format)
+    }
+
+    pub(crate) fn with_device(device: &wgpu::Device, width: u32, height: u32, format: TextureFormat) -> Self {
         let extent = wgpu::Extent3d {
             width,
             height,
             depth_or_array_layers: 1,
         };
-        let texture = renderer.device.create_texture(&wgpu::TextureDescriptor {
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
             size: extent,
             mip_level_count: 1,
             sample_count: 1,
