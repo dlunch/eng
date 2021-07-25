@@ -6,9 +6,8 @@ use raw_window_handle::HasRawWindowHandle;
 use zerocopy::AsBytes;
 
 use crate::{
-    buffer::Buffer, buffer_pool::BufferPool, render_target::OffscreenRenderTarget, texture::Texture, Camera, Material, Mesh, Model, RenderContext,
-    RenderTarget, Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat, VertexFormatItem, VertexItemType,
-    WindowRenderTarget,
+    buffer::Buffer, buffer_pool::BufferPool, render_target::OffscreenRenderTarget, Camera, Material, Mesh, Model, RenderContext, RenderTarget,
+    Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
 
 // Copied from https://github.com/bluss/maplit/blob/master/src/lib.rs#L46
@@ -73,15 +72,9 @@ impl Renderer {
         let buffer_pool = BufferPool::new(device.clone(), queue.clone());
 
         let render_target = Box::new(WindowRenderTarget::new(&surface, &adapter, &device, width, height));
-        let offscreen_target = OffscreenRenderTarget::with_device(&device, width, height);
-        let offscreen_to_render_target_model = Self::create_offscreen_to_render_target_model(
-            &device,
-            &buffer_pool,
-            offscreen_target.color_attachment.clone(),
-            width,
-            height,
-            render_target.output_format(),
-        );
+
+        let (offscreen_target, offscreen_to_render_target_model) =
+            Self::create_offscreen_target(&device, &buffer_pool, width, height, render_target.output_format());
 
         let mvp_buf = buffer_pool.alloc(64);
 
@@ -110,16 +103,16 @@ impl Renderer {
         self.render_target.submit();
     }
 
-    fn create_offscreen_to_render_target_model(
+    fn create_offscreen_target(
         device: &wgpu::Device,
         buffer_pool: &BufferPool,
-        source_texture: Arc<Texture>,
         width: u32,
         height: u32,
         surface_format: wgpu::TextureFormat,
-    ) -> Model {
+    ) -> (OffscreenRenderTarget, Model) {
         let texture_width = Self::round_up_power_of_two(width);
         let texture_height = Self::round_up_power_of_two(height);
+        let offscreen_target = OffscreenRenderTarget::with_device(&device, texture_width, texture_height);
 
         let right = width as f32 / texture_width as f32;
         let bottom = height as f32 / texture_height as f32;
@@ -160,9 +153,18 @@ impl Renderer {
             },
         );
 
-        let material = Material::with_device(device, None, hashmap! {"Texture" => source_texture}, HashMap::new(), Arc::new(shader));
+        let material = Material::with_device(
+            device,
+            None,
+            hashmap! {"Texture" => offscreen_target.color_attachment.clone()},
+            HashMap::new(),
+            Arc::new(shader),
+        );
 
-        Model::with_surface_and_depth_format(device, mesh, material, vec![0..6], surface_format, None)
+        (
+            offscreen_target,
+            Model::with_surface_and_depth_format(device, mesh, material, vec![0..6], surface_format, None),
+        )
     }
 
     fn render_scene(&self, command_encoder: &mut wgpu::CommandEncoder, scene: &Scene, viewport_size: (u32, u32)) {
