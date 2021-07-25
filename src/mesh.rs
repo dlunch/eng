@@ -28,7 +28,7 @@ impl Mesh {
 
             vertex_buffers.push(buffer);
         }
-        let index_buffer = buffer_pool.alloc(index_data.len());
+        let index_buffer = buffer_pool.alloc_index(index_data.len());
         index_buffer.write(index_data);
 
         Self {

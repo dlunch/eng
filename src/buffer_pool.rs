@@ -13,10 +13,10 @@ struct BufferPoolItem {
 }
 
 impl BufferPoolItem {
-    pub fn new(device: &wgpu::Device) -> Self {
+    pub fn new(device: &wgpu::Device, usage: wgpu::BufferUsage) -> Self {
         let buffer = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
             size: BUFFER_SIZE as u64,
-            usage: wgpu::BufferUsage::INDEX | wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            usage,
             label: None,
             mapped_at_creation: false,
         }));
@@ -78,7 +78,10 @@ impl BufferPoolItem {
 pub struct BufferPool {
     device: Arc<wgpu::Device>,
     queue: Arc<wgpu::Queue>,
-    items: Spinlock<Vec<Arc<Spinlock<BufferPoolItem>>>>,
+
+    // WebGL requires separate index buffer (https://www.khronos.org/registry/webgl/specs/latest/2.0/#5.1)
+    buffers: Spinlock<Vec<Arc<Spinlock<BufferPoolItem>>>>,
+    index_buffers: Spinlock<Vec<Arc<Spinlock<BufferPoolItem>>>>,
 }
 
 impl BufferPool {
@@ -86,29 +89,47 @@ impl BufferPool {
         Self {
             device,
             queue,
-            items: Spinlock::new(Vec::new()),
+            index_buffers: Spinlock::new(Vec::new()),
+            buffers: Spinlock::new(Vec::new()),
         }
     }
 
-    pub fn alloc(&self, size: usize) -> Buffer {
-        let mut items = self.items.lock();
+    pub fn alloc_index(&self, size: usize) -> Buffer {
+        self.do_alloc(size, true)
+    }
 
-        for item in &*items {
+    pub fn alloc(&self, size: usize) -> Buffer {
+        self.do_alloc(size, false)
+    }
+
+    fn do_alloc(&self, size: usize, is_index: bool) -> Buffer {
+        let buffers = if is_index { &self.index_buffers } else { &self.buffers };
+        let mut buffers = buffers.lock();
+
+        for item in &*buffers {
             let result = self.try_alloc(item, size);
             if let Some(x) = result {
                 return x;
             }
         }
-        items.push(Arc::new(Spinlock::new(BufferPoolItem::new(&self.device))));
-        self.try_alloc(items.last().unwrap(), size).unwrap()
+        buffers.push(Arc::new(Spinlock::new(BufferPoolItem::new(&self.device, Self::convert_usage(is_index)))));
+        self.try_alloc(buffers.last().unwrap(), size).unwrap()
     }
 
-    fn try_alloc(&self, buffer_item: &Arc<Spinlock<BufferPoolItem>>, size: usize) -> Option<Buffer> {
-        let (buffer, offset) = buffer_item.lock().alloc(size)?;
+    fn try_alloc(&self, buffers: &Arc<Spinlock<BufferPoolItem>>, size: usize) -> Option<Buffer> {
+        let (buffer, offset) = buffers.lock().alloc(size)?;
 
-        let buffer_item = buffer_item.clone();
+        let buffer_item = buffers.clone();
         Some(Buffer::new(self.queue.clone(), buffer, offset, size, move || {
             buffer_item.lock().free(offset, size)
         }))
+    }
+
+    fn convert_usage(is_index: bool) -> wgpu::BufferUsage {
+        if is_index {
+            wgpu::BufferUsage::INDEX | wgpu::BufferUsage::COPY_DST
+        } else {
+            wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST
+        }
     }
 }
