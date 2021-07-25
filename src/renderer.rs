@@ -112,7 +112,7 @@ impl Renderer {
     ) -> (OffscreenRenderTarget, Model) {
         let texture_width = Self::round_up_power_of_two(width);
         let texture_height = Self::round_up_power_of_two(height);
-        let offscreen_target = OffscreenRenderTarget::with_device(&device, texture_width, texture_height);
+        let offscreen_target = OffscreenRenderTarget::with_device(device, texture_width, texture_height);
 
         let right = width as f32 / texture_width as f32;
         let bottom = height as f32 / texture_height as f32;
