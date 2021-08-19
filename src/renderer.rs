@@ -43,7 +43,7 @@ pub struct Renderer {
 
 impl Renderer {
     pub async fn new<W: HasRawWindowHandle>(window: &W, width: u32, height: u32) -> Self {
-        let instance = wgpu::Instance::new(wgpu::BackendBit::all());
+        let instance = wgpu::Instance::new(wgpu::Backends::all());
         let surface = unsafe { instance.create_surface(window) };
 
         let adapter = instance
@@ -71,7 +71,7 @@ impl Renderer {
 
         let buffer_pool = BufferPool::new(device.clone(), queue.clone());
 
-        let render_target = Box::new(WindowRenderTarget::new(&surface, &adapter, &device, width, height));
+        let render_target = Box::new(WindowRenderTarget::new(surface, &adapter, &device, width, height));
 
         let (offscreen_target, offscreen_to_render_target_model) =
             Self::create_offscreen_target(&device, &buffer_pool, width, height, render_target.output_format());

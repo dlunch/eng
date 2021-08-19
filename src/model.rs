@@ -42,7 +42,7 @@ impl Model {
             .zip(mesh.strides.iter())
             .map(|(attributes, stride)| wgpu::VertexBufferLayout {
                 array_stride: *stride as wgpu::BufferAddress,
-                step_mode: wgpu::InputStepMode::Vertex,
+                step_mode: wgpu::VertexStepMode::Vertex,
                 attributes,
             })
             .collect::<Vec<_>>();
@@ -67,7 +67,7 @@ impl Model {
                         },
                         alpha: wgpu::BlendComponent::REPLACE,
                     }),
-                    write_mask: wgpu::ColorWrite::ALL,
+                    write_mask: wgpu::ColorWrites::ALL,
                 }],
             }),
             primitive: wgpu::PrimitiveState {

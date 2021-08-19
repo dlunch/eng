@@ -13,32 +13,35 @@ pub trait RenderTarget: Sync + Send {
 }
 
 pub struct WindowRenderTarget {
-    swap_chain: wgpu::SwapChain,
-    frame: Option<wgpu::SwapChainFrame>,
+    surface: wgpu::Surface,
+    frame: Option<wgpu::SurfaceFrame>,
+    texture_view: Option<wgpu::TextureView>,
     width: u32,
     height: u32,
     format: wgpu::TextureFormat,
 }
 
 impl WindowRenderTarget {
-    pub(crate) fn new(surface: &wgpu::Surface, adapter: &wgpu::Adapter, device: &wgpu::Device, width: u32, height: u32) -> Self {
-        let format = adapter.get_swap_chain_preferred_format(surface).unwrap();
+    pub(crate) fn new(surface: wgpu::Surface, adapter: &wgpu::Adapter, device: &wgpu::Device, width: u32, height: u32) -> Self {
+        let format = surface.get_preferred_format(adapter).unwrap();
 
-        let swap_chain = device.create_swap_chain(
-            surface,
-            &wgpu::SwapChainDescriptor {
-                usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
-                format,
-                width,
-                height,
-                present_mode: wgpu::PresentMode::Mailbox,
-            },
-        );
-        let frame = swap_chain.get_current_frame().unwrap();
+        let config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format,
+            width,
+            height,
+            present_mode: wgpu::PresentMode::Mailbox,
+        };
+
+        surface.configure(device, &config);
+
+        let frame = surface.get_current_frame().unwrap();
+        let texture_view = frame.output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         Self {
-            swap_chain,
+            surface,
             frame: Some(frame),
+            texture_view: Some(texture_view),
             format,
             width,
             height,
@@ -52,14 +55,22 @@ impl RenderTarget for WindowRenderTarget {
     }
 
     fn submit(&mut self) {
-        // we must drop swapchainoutput first
+        // we must drop frame first to render
         self.frame = None;
 
-        self.frame = Some(self.swap_chain.get_current_frame().unwrap())
+        self.frame = Some(self.surface.get_current_frame().unwrap());
+        self.texture_view = Some(
+            self.frame
+                .as_ref()
+                .unwrap()
+                .output
+                .texture
+                .create_view(&wgpu::TextureViewDescriptor::default()),
+        );
     }
 
     fn color_attachment(&self) -> &wgpu::TextureView {
-        &self.frame.as_ref().unwrap().output.view
+        self.texture_view.as_ref().unwrap()
     }
 
     fn output_format(&self) -> wgpu::TextureFormat {

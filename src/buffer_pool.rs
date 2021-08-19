@@ -13,7 +13,7 @@ struct BufferPoolItem {
 }
 
 impl BufferPoolItem {
-    pub fn new(device: &wgpu::Device, usage: wgpu::BufferUsage) -> Self {
+    pub fn new(device: &wgpu::Device, usage: wgpu::BufferUsages) -> Self {
         let buffer = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
             size: BUFFER_SIZE as u64,
             usage,
@@ -125,11 +125,11 @@ impl BufferPool {
         }))
     }
 
-    fn convert_usage(is_index: bool) -> wgpu::BufferUsage {
+    fn convert_usage(is_index: bool) -> wgpu::BufferUsages {
         if is_index {
-            wgpu::BufferUsage::INDEX | wgpu::BufferUsage::COPY_DST
+            wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST
         } else {
-            wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST
+            wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST
         }
     }
 }

@@ -35,10 +35,10 @@ pub enum ShaderStage {
 }
 
 impl ShaderStage {
-    pub fn wgpu_type(&self) -> wgpu::ShaderStage {
+    pub fn wgpu_type(&self) -> wgpu::ShaderStages {
         match self {
-            ShaderStage::Vertex => wgpu::ShaderStage::VERTEX,
-            ShaderStage::Fragment => wgpu::ShaderStage::FRAGMENT,
+            ShaderStage::Vertex => wgpu::ShaderStages::VERTEX,
+            ShaderStage::Fragment => wgpu::ShaderStages::FRAGMENT,
         }
     }
 }
@@ -99,7 +99,6 @@ impl Shader {
         let module = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(source.into()),
-            flags: wgpu::ShaderFlags::default(),
         });
 
         Self {
