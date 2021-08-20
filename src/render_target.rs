@@ -56,6 +56,7 @@ impl RenderTarget for WindowRenderTarget {
 
     fn submit(&mut self) {
         // we must drop frame first to render
+        self.texture_view = None;
         self.frame = None;
 
         self.frame = Some(self.surface.get_current_frame().unwrap());
