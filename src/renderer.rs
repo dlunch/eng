@@ -43,7 +43,7 @@ pub struct Renderer {
 
 impl Renderer {
     pub async fn new<W: HasRawWindowHandle>(window: &W, width: u32, height: u32) -> Self {
-        let instance = wgpu::Instance::new(wgpu::Backends::all());
+        let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
         let surface = unsafe { instance.create_surface(window) };
 
         let adapter = instance
