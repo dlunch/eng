@@ -10,11 +10,9 @@ use winit::{
     event::WindowEvent,
     event_loop::{ControlFlow, EventLoop},
 };
-use zerocopy::AsBytes;
 
 use renderer::{
-    Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, Texture, TextureFormat, VertexFormat,
-    VertexFormatItem, VertexItemType,
+    Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, SimpleVertex, Texture, TextureFormat,
 };
 
 // Copied from https://github.com/bluss/maplit/blob/master/src/lib.rs#L46
@@ -48,13 +46,8 @@ fn main() {
     task::spawn(async move {
         let mut renderer = Renderer::new(&*window1, size.width, size.height).await;
 
-        let (vertex_data, index_data) = create_vertices();
-        let vertex_format = VertexFormat::new(vec![
-            VertexFormatItem::new("Position", VertexItemType::Float4, 0),
-            VertexFormatItem::new("TexCoord", VertexItemType::Float2, 16),
-        ]);
-        let vertex_data = [vertex_data.as_bytes()];
-        let mesh = Mesh::new(&renderer, &vertex_data, &[24], index_data.as_bytes(), vec![vertex_format]);
+        let (vertices, indices) = create_vertices();
+        let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
 
         let texture_data = create_texels(512, 512);
         let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
@@ -76,7 +69,7 @@ fn main() {
         );
 
         let material = Material::new(&renderer, hashmap! {"Texture" => Arc::new(texture)}, HashMap::new(), Arc::new(shader));
-        let model = Model::new(&renderer, mesh, material, vec![0..index_data.len() as u32]);
+        let model = Model::new(&renderer, mesh, material, vec![0..indices.len() as u32]);
 
         let camera = Camera::new(Point3::new(5.0, 5.0, 5.0), Point3::new(0.0, 0.0, 0.0));
         let mut scene = Scene::new(camera);
@@ -113,58 +106,42 @@ fn main() {
     });
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, AsBytes)]
-struct Vertex {
-    pos: [f32; 4],
-    tex_coord: [f32; 2],
-}
-
-impl Vertex {
-    pub fn new(pos: [i8; 3], tex_coord: [i8; 2]) -> Self {
-        Self {
-            pos: [pos[0] as f32, pos[1] as f32, pos[2] as f32, 1.0],
-            tex_coord: [tex_coord[0] as f32, tex_coord[1] as f32],
-        }
-    }
-}
-
 // Copied from https://github.com/gfx-rs/wgpu-rs/blob/master/examples/cube/main.rs#L23
-fn create_vertices() -> (Vec<Vertex>, Vec<u16>) {
-    let vertex_data = [
+fn create_vertices() -> (Vec<SimpleVertex>, Vec<u16>) {
+    let vertices = vec![
         // top (0, 0, 1)
-        Vertex::new([-1, -1, 1], [0, 0]),
-        Vertex::new([1, -1, 1], [1, 0]),
-        Vertex::new([1, 1, 1], [1, 1]),
-        Vertex::new([-1, 1, 1], [0, 1]),
+        SimpleVertex::new([-1.0, -1.0, 1.0, 1.0], [0.0, 0.0]),
+        SimpleVertex::new([1.0, -1.0, 1.0, 1.0], [1.0, 0.0]),
+        SimpleVertex::new([1.0, 1.0, 1.0, 1.0], [1.0, 1.0]),
+        SimpleVertex::new([-1.0, 1.0, 1.0, 1.0], [0.0, 1.0]),
         // bottom (0, 0, -1)
-        Vertex::new([-1, 1, -1], [1, 0]),
-        Vertex::new([1, 1, -1], [0, 0]),
-        Vertex::new([1, -1, -1], [0, 1]),
-        Vertex::new([-1, -1, -1], [1, 1]),
+        SimpleVertex::new([-1.0, 1.0, -1.0, 1.0], [1.0, 0.0]),
+        SimpleVertex::new([1.0, 1.0, -1.0, 1.0], [0.0, 0.0]),
+        SimpleVertex::new([1.0, -1.0, -1.0, 1.0], [0.0, 1.0]),
+        SimpleVertex::new([-1.0, -1.0, -1.0, 1.0], [1.0, 1.0]),
         // right (1, 0, 0)
-        Vertex::new([1, -1, -1], [0, 0]),
-        Vertex::new([1, 1, -1], [1, 0]),
-        Vertex::new([1, 1, 1], [1, 1]),
-        Vertex::new([1, -1, 1], [0, 1]),
+        SimpleVertex::new([1.0, -1.0, -1.0, 1.0], [0.0, 0.0]),
+        SimpleVertex::new([1.0, 1.0, -1.0, 1.0], [1.0, 0.0]),
+        SimpleVertex::new([1.0, 1.0, 1.0, 1.0], [1.0, 1.0]),
+        SimpleVertex::new([1.0, -1.0, 1.0, 1.0], [0.0, 1.0]),
         // left (-1, 0, 0)
-        Vertex::new([-1, -1, 1], [1, 0]),
-        Vertex::new([-1, 1, 1], [0, 0]),
-        Vertex::new([-1, 1, -1], [0, 1]),
-        Vertex::new([-1, -1, -1], [1, 1]),
+        SimpleVertex::new([-1.0, -1.0, 1.0, 1.0], [1.0, 0.0]),
+        SimpleVertex::new([-1.0, 1.0, 1.0, 1.0], [0.0, 0.0]),
+        SimpleVertex::new([-1.0, 1.0, -1.0, 1.0], [0.0, 1.0]),
+        SimpleVertex::new([-1.0, -1.0, -1.0, 1.0], [1.0, 1.0]),
         // front (0, 1, 0)
-        Vertex::new([1, 1, -1], [1, 0]),
-        Vertex::new([-1, 1, -1], [0, 0]),
-        Vertex::new([-1, 1, 1], [0, 1]),
-        Vertex::new([1, 1, 1], [1, 1]),
+        SimpleVertex::new([1.0, 1.0, -1.0, 1.0], [1.0, 0.0]),
+        SimpleVertex::new([-1.0, 1.0, -1.0, 1.0], [0.0, 0.0]),
+        SimpleVertex::new([-1.0, 1.0, 1.0, 1.0], [0.0, 1.0]),
+        SimpleVertex::new([1.0, 1.0, 1.0, 1.0], [1.0, 1.0]),
         // back (0, -1, 0)
-        Vertex::new([1, -1, 1], [0, 0]),
-        Vertex::new([-1, -1, 1], [1, 0]),
-        Vertex::new([-1, -1, -1], [1, 1]),
-        Vertex::new([1, -1, -1], [0, 1]),
+        SimpleVertex::new([1.0, -1.0, 1.0, 1.0], [0.0, 0.0]),
+        SimpleVertex::new([-1.0, -1.0, 1.0, 1.0], [1.0, 0.0]),
+        SimpleVertex::new([-1.0, -1.0, -1.0, 1.0], [1.0, 1.0]),
+        SimpleVertex::new([1.0, -1.0, -1.0, 1.0], [0.0, 1.0]),
     ];
 
-    let index_data: &[u16] = &[
+    let indices = vec![
         0, 1, 2, 2, 3, 0, // top
         4, 5, 6, 6, 7, 4, // bottom
         8, 9, 10, 10, 11, 8, // right
@@ -173,7 +150,7 @@ fn create_vertices() -> (Vec<Vertex>, Vec<u16>) {
         20, 21, 22, 22, 23, 20, // back
     ];
 
-    (vertex_data.to_vec(), index_data.to_vec())
+    (vertices, indices)
 }
 
 fn create_texels(width: usize, height: usize) -> Vec<u8> {

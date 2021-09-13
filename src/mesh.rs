@@ -1,6 +1,22 @@
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
+use core::mem::size_of;
 
-use crate::{buffer::Buffer, buffer_pool::BufferPool, Renderer, VertexFormat};
+use zerocopy::AsBytes;
+
+use crate::{buffer::Buffer, buffer_pool::BufferPool, Renderer, VertexFormat, VertexFormatItem, VertexItemType};
+
+#[repr(C)]
+#[derive(AsBytes)]
+pub struct SimpleVertex {
+    pub pos: [f32; 4],
+    pub tex_coord: [f32; 2],
+}
+
+impl SimpleVertex {
+    pub fn new(pos: [f32; 4], tex_coord: [f32; 2]) -> Self {
+        Self { pos, tex_coord }
+    }
+}
 
 pub struct Mesh {
     pub(crate) vertex_buffers: Vec<Buffer>,
@@ -12,6 +28,23 @@ pub struct Mesh {
 impl Mesh {
     pub fn new(renderer: &Renderer, vertex_data: &[&[u8]], strides: &[usize], index_data: &[u8], vertex_formats: Vec<VertexFormat>) -> Self {
         Self::with_buffer_pool(&renderer.buffer_pool, vertex_data, strides, index_data, vertex_formats)
+    }
+
+    pub fn with_simple_vertex(renderer: &Renderer, vertices: &[SimpleVertex], indices: &[u16]) -> Self {
+        let vertex_data = vertices.as_bytes();
+        let strides = vec![size_of::<SimpleVertex>()];
+        let index_data = indices.as_bytes();
+
+        Self::with_buffer_pool(
+            &renderer.buffer_pool,
+            &[vertex_data],
+            &strides,
+            index_data,
+            vec![VertexFormat::new(vec![
+                VertexFormatItem::new("Position", VertexItemType::Float4, 0),
+                VertexFormatItem::new("TexCoord", VertexItemType::Float2, size_of::<f32>() * 4),
+            ])],
+        )
     }
 
     pub(crate) fn with_buffer_pool(
