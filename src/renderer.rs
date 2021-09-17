@@ -1,6 +1,5 @@
 use alloc::{boxed::Box, sync::Arc, vec};
 
-use hashbrown::HashMap;
 use nalgebra::Matrix4;
 use raw_window_handle::HasRawWindowHandle;
 use zerocopy::AsBytes;
@@ -9,24 +8,6 @@ use crate::{
     buffer::Buffer, buffer_pool::BufferPool, render_target::OffscreenRenderTarget, Camera, Material, Mesh, Model, RenderContext, RenderTarget,
     Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
-
-// Copied from https://github.com/bluss/maplit/blob/master/src/lib.rs#L46
-macro_rules! hashmap {
-    (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(hashmap!(@single $rest)),*]));
-
-    ($($key:expr => $value:expr,)+) => { hashmap!($($key => $value),+) };
-    ($($key:expr => $value:expr),*) => {
-        {
-            let _cap = hashmap!(@count $($key),*);
-            let mut _map = HashMap::with_capacity(_cap);
-            $(
-                let _ = _map.insert($key, $value);
-            )*
-            _map
-        }
-    };
-}
 
 pub struct Renderer {
     pub(crate) device: Arc<wgpu::Device>,
@@ -143,21 +124,18 @@ impl Renderer {
             include_str!("../shaders/shader.wgsl"),
             "vs_main",
             "fs_main",
-            hashmap! {
-                "Texture" => ShaderBinding::new(ShaderStage::Fragment, 1, ShaderBindingType::Texture2D),
-                "Sampler" => ShaderBinding::new(ShaderStage::Fragment, 2, ShaderBindingType::Sampler),
-            },
-            hashmap! {
-                    "Position" => 0,
-                    "TexCoord" => 1,
-            },
+            &[
+                ("Texture", ShaderBinding::new(ShaderStage::Fragment, 1, ShaderBindingType::Texture2D)),
+                ("Sampler", ShaderBinding::new(ShaderStage::Fragment, 2, ShaderBindingType::Sampler)),
+            ],
+            &[("Position", 0), ("TexCoord", 1)],
         );
 
         let material = Material::with_device(
             device,
             None,
-            hashmap! {"Texture" => offscreen_target.color_attachment.clone()},
-            HashMap::new(),
+            &[("Texture", offscreen_target.color_attachment.clone())],
+            &[],
             Arc::new(shader),
         );
 

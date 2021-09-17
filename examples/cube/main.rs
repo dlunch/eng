@@ -2,7 +2,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_std::task;
-use hashbrown::HashMap;
 use nalgebra::Point3;
 use winit::{
     dpi::LogicalSize,
@@ -14,24 +13,6 @@ use winit::{
 use renderer::{
     Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, SimpleVertex, Texture, TextureFormat,
 };
-
-// Copied from https://github.com/bluss/maplit/blob/master/src/lib.rs#L46
-macro_rules! hashmap {
-    (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(hashmap!(@single $rest)),*]));
-
-    ($($key:expr => $value:expr,)+) => { hashmap!($($key => $value),+) };
-    ($($key:expr => $value:expr),*) => {
-        {
-            let _cap = hashmap!(@count $($key),*);
-            let mut _map = HashMap::with_capacity(_cap);
-            $(
-                let _ = _map.insert($key, $value);
-            )*
-            _map
-        }
-    };
-}
 
 fn main() {
     pretty_env_logger::init();
@@ -57,18 +38,15 @@ fn main() {
             include_str!("shader.wgsl"),
             "vs_main",
             "fs_main",
-            hashmap! {
-                "Mvp" => ShaderBinding::new(ShaderStage::Vertex, 0, ShaderBindingType::UniformBuffer),
-                "Texture" => ShaderBinding::new(ShaderStage::Fragment, 1, ShaderBindingType::Texture2D),
-                "Sampler" => ShaderBinding::new(ShaderStage::Fragment, 2, ShaderBindingType::Sampler),
-            },
-            hashmap! {
-                "Position" => 0,
-                "TexCoord" => 1,
-            },
+            &[
+                ("Mvp", ShaderBinding::new(ShaderStage::Vertex, 0, ShaderBindingType::UniformBuffer)),
+                ("Texture", ShaderBinding::new(ShaderStage::Fragment, 1, ShaderBindingType::Texture2D)),
+                ("Sampler", ShaderBinding::new(ShaderStage::Fragment, 2, ShaderBindingType::Sampler)),
+            ],
+            &[("Position", 0), ("TexCoord", 1)],
         );
 
-        let material = Material::new(&renderer, hashmap! {"Texture" => Arc::new(texture)}, HashMap::new(), Arc::new(shader));
+        let material = Material::new(&renderer, &[("Texture", Arc::new(texture))], &[], Arc::new(shader));
         let model = Model::new(&renderer, mesh, material, vec![0..indices.len() as u32]);
 
         let camera = Camera::new(Point3::new(5.0, 5.0, 5.0), Point3::new(0.0, 0.0, 0.0));

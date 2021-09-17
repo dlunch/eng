@@ -2,6 +2,7 @@ use hashbrown::HashMap;
 
 use crate::Renderer;
 
+#[derive(Clone)]
 pub enum ShaderBindingType {
     UniformBuffer,
     Texture2D,
@@ -29,6 +30,7 @@ impl ShaderBindingType {
     }
 }
 
+#[derive(Clone)]
 pub enum ShaderStage {
     Vertex,
     Fragment,
@@ -43,6 +45,7 @@ impl ShaderStage {
     }
 }
 
+#[derive(Clone)]
 pub struct ShaderBinding {
     pub(crate) stage: ShaderStage,
     pub(crate) binding: u32,
@@ -82,8 +85,8 @@ impl Shader {
         source: &str,
         vs_entry: &'static str,
         fs_entry: &'static str,
-        bindings: HashMap<&'static str, ShaderBinding>,
-        inputs: HashMap<&'static str, u32>,
+        bindings: &[(&'static str, ShaderBinding)],
+        inputs: &[(&'static str, u32)],
     ) -> Self {
         Self::with_device(&*renderer.device, source, vs_entry, fs_entry, bindings, inputs)
     }
@@ -93,8 +96,8 @@ impl Shader {
         source: &str,
         vs_entry: &'static str,
         fs_entry: &'static str,
-        bindings: HashMap<&'static str, ShaderBinding>,
-        inputs: HashMap<&'static str, u32>,
+        bindings: &[(&'static str, ShaderBinding)],
+        inputs: &[(&'static str, u32)],
     ) -> Self {
         let module = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: None,
@@ -105,8 +108,8 @@ impl Shader {
             module,
             vs_entry,
             fs_entry,
-            bindings,
-            inputs,
+            bindings: bindings.iter().cloned().collect(),
+            inputs: inputs.iter().cloned().collect(),
         }
     }
 

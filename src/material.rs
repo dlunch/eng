@@ -16,8 +16,8 @@ pub struct Material {
 impl Material {
     pub fn new(
         renderer: &Renderer,
-        textures: HashMap<&'static str, Arc<Texture>>,
-        uniforms: HashMap<&'static str, Arc<Buffer>>,
+        textures: &[(&'static str, Arc<Texture>)],
+        uniforms: &[(&'static str, Arc<Buffer>)],
         shader: Arc<Shader>,
     ) -> Self {
         Self::with_device(&*renderer.device, Some(&renderer.mvp_buf), textures, uniforms, shader)
@@ -26,11 +26,13 @@ impl Material {
     pub fn with_device(
         device: &wgpu::Device,
         mvp_buf: Option<&Buffer>,
-        textures: HashMap<&'static str, Arc<Texture>>,
-        uniforms: HashMap<&'static str, Arc<Buffer>>,
+        textures: &[(&'static str, Arc<Texture>)],
+        uniforms: &[(&'static str, Arc<Buffer>)],
         shader: Arc<Shader>,
     ) -> Self {
         let bindings = shader.wgpu_bindings().collect::<Vec<_>>();
+        let textures = textures.iter().cloned().collect::<HashMap<_, _>>();
+        let uniforms = uniforms.iter().cloned().collect::<HashMap<_, _>>();
 
         // TODO split bind groups by stage..
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
