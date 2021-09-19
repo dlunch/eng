@@ -47,7 +47,7 @@ fn main() {
         );
 
         let material = Material::new(&renderer, &[("Texture", Arc::new(texture))], &[], Arc::new(shader));
-        let model = Model::new(&renderer, mesh, material, vec![0..indices.len() as u32]);
+        let model = Model::new(&renderer, mesh, material);
 
         let camera = Camera::new(Point3::new(5.0, 5.0, 5.0), Point3::new(0.0, 0.0, 0.0));
         let mut scene = Scene::new(camera);

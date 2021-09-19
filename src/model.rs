@@ -6,18 +6,15 @@ use crate::{constants::INTERNAL_COLOR_ATTACHMENT_FORMAT, Material, Mesh, RenderC
 pub struct Model {
     mesh: Mesh,
     material: Material,
-    mesh_parts: Vec<Range<u32>>,
-
     pipeline: wgpu::RenderPipeline,
 }
 
 impl Model {
-    pub fn new(renderer: &Renderer, mesh: Mesh, material: Material, mesh_parts: Vec<Range<u32>>) -> Self {
+    pub fn new(renderer: &Renderer, mesh: Mesh, material: Material) -> Self {
         Self::with_surface_and_depth_format(
             &*renderer.device,
             mesh,
             material,
-            mesh_parts,
             INTERNAL_COLOR_ATTACHMENT_FORMAT.wgpu_type(),
             Some(wgpu::TextureFormat::Depth32Float),
         )
@@ -27,7 +24,6 @@ impl Model {
         device: &wgpu::Device,
         mesh: Mesh,
         material: Material,
-        mesh_parts: Vec<Range<u32>>,
         surface_format: wgpu::TextureFormat,
         depth_format: Option<wgpu::TextureFormat>,
     ) -> Self {
@@ -85,17 +81,10 @@ impl Model {
             multisample: wgpu::MultisampleState::default(),
         });
 
-        Self {
-            mesh,
-            material,
-            mesh_parts,
-            pipeline,
-        }
+        Self { mesh, material, pipeline }
     }
-}
 
-impl Renderable for Model {
-    fn render<'a>(&'a self, render_context: &mut RenderContext<'a>) {
+    pub fn render_ranges<'a>(&'a self, render_context: &mut RenderContext<'a>, ranges: &[Range<u32>]) {
         render_context.render_pass.set_pipeline(&self.pipeline);
         render_context.render_pass.set_bind_group(0, &self.material.bind_group, &[]);
         render_context
@@ -105,15 +94,21 @@ impl Renderable for Model {
             render_context.render_pass.set_vertex_buffer(i as u32, vertex_buffer.as_slice());
         }
 
-        let mut last_start = self.mesh_parts[0].start;
-        let mut last_end = self.mesh_parts[0].start;
-        for mesh_part in &self.mesh_parts {
-            if last_end != mesh_part.start {
+        let mut last_start = ranges[0].start;
+        let mut last_end = ranges[0].start;
+        for range in ranges {
+            if last_end != range.start {
                 render_context.render_pass.draw_indexed(last_start..last_end, 0, 0..1);
-                last_start = mesh_part.start;
+                last_start = range.start;
             }
-            last_end = mesh_part.end;
+            last_end = range.end;
         }
         render_context.render_pass.draw_indexed(last_start..last_end, 0, 0..1);
+    }
+}
+
+impl Renderable for Model {
+    fn render<'a>(&'a self, render_context: &mut RenderContext<'a>) {
+        self.render_ranges(render_context, &[0..self.mesh.index_count as u32]);
     }
 }
