@@ -22,24 +22,24 @@ pub struct Mesh {
     pub(crate) vertex_buffers: Vec<Buffer>,
     pub(crate) strides: Vec<usize>,
     pub(crate) index_buffer: Buffer,
+    pub(crate) index_count: usize,
     pub(crate) vertex_formats: Vec<VertexFormat>,
 }
 
 impl Mesh {
-    pub fn new(renderer: &Renderer, vertex_data: &[&[u8]], strides: &[usize], index_data: &[u8], vertex_formats: Vec<VertexFormat>) -> Self {
-        Self::with_buffer_pool(&renderer.buffer_pool, vertex_data, strides, index_data, vertex_formats)
+    pub fn new(renderer: &Renderer, vertex_data: &[&[u8]], strides: &[usize], indices: &[u16], vertex_formats: Vec<VertexFormat>) -> Self {
+        Self::with_buffer_pool(&renderer.buffer_pool, vertex_data, strides, indices, vertex_formats)
     }
 
     pub fn with_simple_vertex(renderer: &Renderer, vertices: &[SimpleVertex], indices: &[u16]) -> Self {
         let vertex_data = vertices.as_bytes();
         let strides = vec![size_of::<SimpleVertex>()];
-        let index_data = indices.as_bytes();
 
         Self::with_buffer_pool(
             &renderer.buffer_pool,
             &[vertex_data],
             &strides,
-            index_data,
+            indices,
             vec![VertexFormat::new(vec![
                 VertexFormatItem::new("Position", VertexItemType::Float4, 0),
                 VertexFormatItem::new("TexCoord", VertexItemType::Float2, size_of::<f32>() * 4),
@@ -51,7 +51,7 @@ impl Mesh {
         buffer_pool: &BufferPool,
         vertex_data: &[&[u8]],
         strides: &[usize],
-        index_data: &[u8],
+        indices: &[u16],
         vertex_formats: Vec<VertexFormat>,
     ) -> Self {
         let mut vertex_buffers = Vec::with_capacity(vertex_data.len());
@@ -61,6 +61,8 @@ impl Mesh {
 
             vertex_buffers.push(buffer);
         }
+
+        let index_data = indices.as_bytes();
         let index_buffer = buffer_pool.alloc_index(index_data.len());
         index_buffer.write(index_data);
 
@@ -68,6 +70,7 @@ impl Mesh {
             vertex_buffers,
             strides: Vec::from(strides),
             index_buffer,
+            index_count: indices.len(),
             vertex_formats,
         }
     }

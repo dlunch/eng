@@ -112,7 +112,7 @@ impl Renderer {
             buffer_pool,
             &[quad.as_bytes()],
             &[core::mem::size_of::<f32>() * 4],
-            [0u16, 1, 2, 3, 4, 5].as_bytes(),
+            &[0u16, 1, 2, 3, 4, 5],
             vec![VertexFormat::new(vec![
                 VertexFormatItem::new("Position", VertexItemType::Float2, 0),
                 VertexFormatItem::new("TexCoord", VertexItemType::Float2, core::mem::size_of::<f32>() * 2),
@@ -141,7 +141,7 @@ impl Renderer {
 
         (
             offscreen_target,
-            Model::with_surface_and_depth_format(device, mesh, material, vec![0..6], surface_format, None),
+            Model::with_surface_and_depth_format(device, mesh, material, surface_format, None),
         )
     }
 
