@@ -13,9 +13,9 @@ pub trait RenderTarget: Sync + Send {
 }
 
 pub struct WindowRenderTarget {
-    surface: wgpu::Surface,
     texture_view: Option<wgpu::TextureView>,
     frame: Option<wgpu::SurfaceFrame>,
+    surface: wgpu::Surface,
     width: u32,
     height: u32,
     format: wgpu::TextureFormat,
