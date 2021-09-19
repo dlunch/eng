@@ -14,8 +14,8 @@ pub trait RenderTarget: Sync + Send {
 
 pub struct WindowRenderTarget {
     surface: wgpu::Surface,
-    frame: Option<wgpu::SurfaceFrame>,
     texture_view: Option<wgpu::TextureView>,
+    frame: Option<wgpu::SurfaceFrame>,
     width: u32,
     height: u32,
     format: wgpu::TextureFormat,
@@ -55,7 +55,7 @@ impl RenderTarget for WindowRenderTarget {
     }
 
     fn submit(&mut self) {
-        // we must drop frame first to render
+        // dropping frame makes it render
         self.texture_view = None;
         self.frame = None;
 
