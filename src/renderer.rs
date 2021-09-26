@@ -5,8 +5,9 @@ use raw_window_handle::HasRawWindowHandle;
 use zerocopy::AsBytes;
 
 use crate::{
-    buffer::Buffer, buffer_pool::BufferPool, render_target::OffscreenRenderTarget, Camera, Material, Mesh, Model, RenderContext, RenderTarget,
-    Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
+    buffer::Buffer, buffer_pool::BufferPool, camera::Camera, render_target::OffscreenRenderTarget, Material, Mesh, Model, RenderContext,
+    RenderTarget, Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat, VertexFormatItem, VertexItemType,
+    WindowRenderTarget,
 };
 
 pub struct Renderer {
@@ -73,7 +74,7 @@ impl Renderer {
     pub fn render(&mut self, scene: &Scene) {
         let size = self.render_target.size();
 
-        let mvp = Self::get_mvp(&scene.camera, size.0 as f32 / size.1 as f32);
+        let mvp = Self::get_mvp(&*scene.camera, size.0 as f32 / size.1 as f32);
         self.mvp_buf.write(mvp.as_slice().as_bytes());
 
         let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
@@ -192,7 +193,7 @@ impl Renderer {
         self.offscreen_to_render_target_model.render(&mut render_context);
     }
 
-    fn get_mvp(camera: &Camera, aspect_ratio: f32) -> Matrix4<f32> {
+    fn get_mvp(camera: &dyn Camera, aspect_ratio: f32) -> Matrix4<f32> {
         use core::f32::consts::PI;
 
         // nalgebra's perspective uses [-1, 1] NDC z range, so convert it to [0, 1].
