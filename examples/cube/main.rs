@@ -11,7 +11,8 @@ use winit::{
 };
 
 use renderer::{
-    Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, SimpleVertex, Texture, TextureFormat,
+    ArcballCamera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, SimpleVertex, Texture,
+    TextureFormat,
 };
 
 fn main() {
@@ -49,7 +50,7 @@ fn main() {
         let material = Material::new(&renderer, &[("Texture", Arc::new(texture))], &[], Arc::new(shader));
         let model = Model::new(&renderer, mesh, material);
 
-        let camera = Camera::new(Point3::new(5.0, 5.0, 5.0), Point3::new(0.0, 0.0, 0.0));
+        let camera = ArcballCamera::new(Point3::new(0.0, 0.0, 0.0), 5.0);
         let mut scene = Scene::new(camera);
         scene.add(model);
 

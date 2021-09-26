@@ -1,15 +1,18 @@
 use alloc::{boxed::Box, vec::Vec};
 
-use crate::{Camera, Renderable};
+use crate::{camera::Camera, Renderable};
 
 pub struct Scene {
-    pub camera: Camera,
+    pub camera: Box<dyn Camera>,
     pub models: Vec<Box<dyn Renderable>>,
 }
 
 impl Scene {
-    pub fn new(camera: Camera) -> Self {
-        Self { camera, models: Vec::new() }
+    pub fn new<T: 'static + Camera>(camera: T) -> Self {
+        Self {
+            camera: Box::new(camera),
+            models: Vec::new(),
+        }
     }
 
     pub fn add<F: Renderable + 'static>(&mut self, model: F) {
