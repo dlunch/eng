@@ -18,4 +18,8 @@ impl Scene {
     pub fn add<F: Renderable + 'static>(&mut self, model: F) {
         self.models.push(Box::new(model));
     }
+
+    pub fn camera<T: 'static>(&mut self) -> Option<&mut T> {
+        self.camera.as_mut_any().downcast_mut()
+    }
 }
