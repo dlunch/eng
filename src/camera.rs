@@ -2,7 +2,9 @@ use core::f32;
 
 use nalgebra::{Matrix4, Point3, Vector3};
 
-pub trait Camera: Sync + Send {
+use crate::as_any::AsAny;
+
+pub trait Camera: Sync + Send + AsAny {
     fn view(&self) -> Matrix4<f32>;
 }
 
