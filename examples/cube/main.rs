@@ -1,13 +1,12 @@
 use std::sync::Arc;
-use std::time::Duration;
 
-use async_std::task;
 use nalgebra::Point3;
 use winit::{
     dpi::LogicalSize,
     event,
-    event::WindowEvent,
+    event::{ElementState, MouseButton, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
+    window::Window,
 };
 
 use renderer::{
@@ -15,18 +14,18 @@ use renderer::{
     TextureFormat,
 };
 
-fn main() {
-    pretty_env_logger::init();
-    let event_loop = EventLoop::new();
+struct App {
+    renderer: Renderer,
+    scene: Scene,
+    size: (u32, u32),
+    mouse_down: bool,
+    mouse_down_pos: Option<(f32, f32)>,
+}
 
-    let mut builder = winit::window::WindowBuilder::new();
-    builder = builder.with_title("test").with_inner_size(LogicalSize::new(1920, 1080));
-    let window = Arc::new(builder.build(&event_loop).unwrap());
-    let size = window.inner_size();
-
-    let window1 = window.clone();
-    task::spawn(async move {
-        let mut renderer = Renderer::new(&*window1, size.width, size.height).await;
+impl App {
+    pub async fn new(window: &Window) -> Self {
+        let size = window.inner_size();
+        let renderer = Renderer::new(window, size.width, size.height).await;
 
         let (vertices, indices) = create_vertices();
         let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
@@ -54,17 +53,63 @@ fn main() {
         let mut scene = Scene::new(camera);
         scene.add(model);
 
-        loop {
-            renderer.render(&scene);
-            task::sleep(Duration::from_millis(16)).await;
+        Self {
+            renderer,
+            scene,
+            size: (size.width, size.height),
+            mouse_down: false,
+            mouse_down_pos: None,
         }
-    });
+    }
+
+    pub fn render(&mut self) {
+        self.renderer.render(&self.scene);
+    }
+
+    pub fn mouse_down(&mut self) {
+        self.mouse_down = true;
+    }
+
+    pub fn mouse_move(&mut self, x: f64, y: f64) {
+        let last_pos = self.mouse_down_pos;
+        self.mouse_down_pos = Some((x as f32, y as f32));
+
+        if let Some(pos) = last_pos {
+            if self.mouse_down {
+                let (x0, y0) = pos;
+                let (x1, y1) = (x as f32, y as f32);
+
+                let camera = self.scene.camera::<ArcballCamera>().unwrap();
+                camera.update((x1 - x0) / self.size.0 as f32, (y1 - y0) / self.size.1 as f32);
+            }
+        }
+    }
+
+    pub fn mouse_up(&mut self) {
+        self.mouse_down = false;
+        self.mouse_down_pos = None;
+    }
+}
+
+#[async_std::main]
+async fn main() {
+    pretty_env_logger::init();
+    let event_loop = EventLoop::new();
+
+    let mut builder = winit::window::WindowBuilder::new();
+    builder = builder.with_title("test").with_inner_size(LogicalSize::new(1920, 1080));
+    let window = Arc::new(builder.build(&event_loop).unwrap());
+
+    let mut app = App::new(&window).await;
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
 
         match event {
             event::Event::MainEventsCleared => window.request_redraw(),
+            event::Event::RedrawRequested(_) => {
+                app.render();
+            }
             event::Event::WindowEvent { event, .. } => match event {
                 WindowEvent::KeyboardInput {
                     input:
@@ -77,6 +122,23 @@ fn main() {
                 }
                 | WindowEvent::CloseRequested => {
                     *control_flow = ControlFlow::Exit;
+                }
+                WindowEvent::MouseInput {
+                    state: ElementState::Pressed,
+                    button: MouseButton::Left,
+                    ..
+                } => {
+                    app.mouse_down();
+                }
+                WindowEvent::MouseInput {
+                    state: ElementState::Released,
+                    button: MouseButton::Left,
+                    ..
+                } => {
+                    app.mouse_up();
+                }
+                WindowEvent::CursorMoved { position, .. } => {
+                    app.mouse_move(position.x, position.y);
                 }
                 _ => {}
             },

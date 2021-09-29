@@ -43,13 +43,13 @@ impl ArcballCamera {
     }
 
     pub fn update(&mut self, x: f32, y: f32) {
-        self.theta += x;
-        self.phi += y;
+        self.phi += x;
+        self.theta += y;
 
-        if self.phi > f32::consts::PI / 2.0 {
-            self.phi = f32::consts::PI / 2.0;
-        } else if self.phi < -f32::consts::PI / 2.0 {
-            self.phi = -f32::consts::PI / 2.0;
+        if self.theta > f32::consts::PI / 2.0 {
+            self.theta = f32::consts::PI / 2.0;
+        } else if self.theta < -f32::consts::PI / 2.0 {
+            self.theta = -f32::consts::PI / 2.0;
         }
     }
 }
