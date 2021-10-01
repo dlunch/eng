@@ -17,6 +17,11 @@ impl StaticCamera {
     pub fn new(eye: Point3<f32>, target: Point3<f32>) -> Self {
         StaticCamera { eye, target }
     }
+
+    pub fn r#move(&mut self, x: f32, y: f32, z: f32) {
+        self.eye += Vector3::new(x, y, z);
+        self.target += Vector3::new(x, y, z);
+    }
 }
 
 impl Camera for StaticCamera {
@@ -52,12 +57,20 @@ impl ArcballCamera {
             self.theta = -f32::consts::PI / 2.0;
         }
     }
+
+    pub fn r#move(&mut self, forward: f32, right: f32) {
+        let forward_dir = Vector3::new(-self.phi.sin() * self.theta.cos(), -self.theta.sin(), -self.phi.cos() * self.theta.cos()).normalize();
+        let right_dir = Vector3::new(-self.phi.cos(), 0.0, self.phi.sin()).normalize();
+
+        self.target += forward_dir * forward;
+        self.target += right_dir * right;
+    }
 }
 
 impl Camera for ArcballCamera {
     fn view(&self) -> Matrix4<f32> {
-        let forward = Vector3::new(-self.phi.sin() * self.theta.cos(), -self.theta.sin(), -self.phi.cos() * self.theta.cos());
-        let right = Vector3::new(-self.phi.cos(), 0.0, self.phi.sin());
+        let forward = Vector3::new(-self.phi.sin() * self.theta.cos(), -self.theta.sin(), -self.phi.cos() * self.theta.cos()).normalize();
+        let right = Vector3::new(-self.phi.cos(), 0.0, self.phi.sin()).normalize();
         let up = forward.cross(&right).normalize();
 
         let eye = self.target - forward * self.radius;
