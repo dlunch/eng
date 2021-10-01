@@ -3,8 +3,7 @@ use std::sync::Arc;
 use nalgebra::Point3;
 use winit::{
     dpi::LogicalSize,
-    event,
-    event::{ElementState, MouseButton, WindowEvent},
+    event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
@@ -89,6 +88,10 @@ impl App {
         self.mouse_down = false;
         self.mouse_down_pos = None;
     }
+
+    pub fn r#move(&mut self, forward: f32, right: f32) {
+        self.scene.camera_mut::<ArcballCamera>().unwrap().r#move(forward, right);
+    }
 }
 
 #[async_std::main]
@@ -106,16 +109,16 @@ async fn main() {
         *control_flow = ControlFlow::Poll;
 
         match event {
-            event::Event::MainEventsCleared => window.request_redraw(),
-            event::Event::RedrawRequested(_) => {
+            Event::MainEventsCleared => window.request_redraw(),
+            Event::RedrawRequested(_) => {
                 app.render();
             }
-            event::Event::WindowEvent { event, .. } => match event {
+            Event::WindowEvent { event, .. } => match event {
                 WindowEvent::KeyboardInput {
                     input:
-                        event::KeyboardInput {
-                            virtual_keycode: Some(event::VirtualKeyCode::Escape),
-                            state: event::ElementState::Pressed,
+                        KeyboardInput {
+                            virtual_keycode: Some(VirtualKeyCode::Escape),
+                            state: ElementState::Pressed,
                             ..
                         },
                     ..
@@ -139,6 +142,17 @@ async fn main() {
                 }
                 WindowEvent::CursorMoved { position, .. } => {
                     app.mouse_move(position.x, position.y);
+                }
+                WindowEvent::KeyboardInput {
+                    input:
+                        KeyboardInput {
+                            virtual_keycode: Some(VirtualKeyCode::W),
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    app.r#move(0.1, 0.0);
                 }
                 _ => {}
             },
