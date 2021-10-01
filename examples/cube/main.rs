@@ -79,7 +79,7 @@ impl App {
                 let (x0, y0) = pos;
                 let (x1, y1) = (x as f32, y as f32);
 
-                let camera = self.scene.camera::<ArcballCamera>().unwrap();
+                let camera = self.scene.camera_mut::<ArcballCamera>().unwrap();
                 camera.update((x1 - x0) / self.size.0 as f32, (y1 - y0) / self.size.1 as f32);
             }
         }

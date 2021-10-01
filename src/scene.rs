@@ -19,7 +19,7 @@ impl Scene {
         self.models.push(Box::new(model));
     }
 
-    pub fn camera<T: 'static>(&mut self) -> Option<&mut T> {
+    pub fn camera_mut<T: 'static>(&mut self) -> Option<&mut T> {
         self.camera.as_mut_any().downcast_mut()
     }
 }
