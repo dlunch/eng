@@ -72,9 +72,7 @@ impl Renderer {
     }
 
     pub fn render(&mut self, scene: &Scene) {
-        let size = self.render_target.size();
-
-        let mvp = Self::get_mvp(&scene.camera, size.0 as f32 / size.1 as f32);
+        let mvp = Self::calculate_mvp(&scene.camera);
         self.mvp_buf.write(mvp.as_slice().as_bytes());
 
         let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
@@ -193,9 +191,7 @@ impl Renderer {
         self.offscreen_to_render_target_model.render(&mut render_context);
     }
 
-    fn get_mvp(camera: &Camera, aspect_ratio: f32) -> Matrix4<f32> {
-        use core::f32::consts::PI;
-
+    fn calculate_mvp(camera: &Camera) -> Matrix4<f32> {
         // nalgebra's perspective uses [-1, 1] NDC z range, so convert it to [0, 1].
         #[rustfmt::skip]
         let correction = nalgebra::Matrix4::<f32>::new(
@@ -205,8 +201,7 @@ impl Renderer {
             0.0, 0.0, 0.0, 1.0,
         );
 
-        let projection = nalgebra::Matrix4::new_perspective(aspect_ratio, 45.0 * PI / 180.0, 1.0, 10.0);
-        correction * projection * camera.view()
+        correction * camera.projection() * camera.view()
     }
 
     //returns zero if v is zero.
