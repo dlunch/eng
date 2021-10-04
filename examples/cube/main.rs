@@ -1,3 +1,4 @@
+use std::f32::consts::PI;
 use std::sync::Arc;
 
 use nalgebra::Point3;
@@ -9,8 +10,8 @@ use winit::{
 };
 
 use renderer::{
-    ArcballCamera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, SimpleVertex, Texture,
-    TextureFormat,
+    ArcballCameraController, Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, SimpleVertex,
+    Texture, TextureFormat,
 };
 
 struct App {
@@ -48,7 +49,8 @@ impl App {
         let material = Material::new(&renderer, &[("Texture", Arc::new(texture))], &[], Arc::new(shader));
         let model = Model::new(&renderer, mesh, material);
 
-        let camera = ArcballCamera::new(Point3::new(0.0, 0.0, 0.0), 5.0);
+        let controller = ArcballCameraController::new(Point3::new(0.0, 0.0, 0.0), 5.0);
+        let camera = Camera::new(45.0 * PI / 180.0, 1.0, 0.1, 100.0, controller);
         let mut scene = Scene::new(camera);
         scene.add(model);
 
@@ -78,8 +80,8 @@ impl App {
                 let (x0, y0) = pos;
                 let (x1, y1) = (x as f32, y as f32);
 
-                let camera = self.scene.camera_mut::<ArcballCamera>().unwrap();
-                camera.update((x1 - x0) / self.size.0 as f32, (y1 - y0) / self.size.1 as f32);
+                let controller = self.scene.camera.controller_mut::<ArcballCameraController>().unwrap();
+                controller.update((x1 - x0) / self.size.0 as f32, (y1 - y0) / self.size.1 as f32);
             }
         }
     }
@@ -90,7 +92,8 @@ impl App {
     }
 
     pub fn r#move(&mut self, forward: f32, right: f32) {
-        self.scene.camera_mut::<ArcballCamera>().unwrap().r#move(forward, right);
+        let controller = self.scene.camera.controller_mut::<ArcballCameraController>().unwrap();
+        controller.r#move(forward, right);
     }
 }
 
