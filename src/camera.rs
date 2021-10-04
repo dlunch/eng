@@ -53,6 +53,12 @@ pub struct StaticCameraController {
     target: Point3<f32>,
 }
 
+impl StaticCameraController {
+    pub fn new(position: Point3<f32>, target: Point3<f32>) -> Self {
+        Self { position, target }
+    }
+}
+
 impl CameraController for StaticCameraController {
     fn position(&self) -> Point3<f32> {
         self.position
