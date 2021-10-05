@@ -39,7 +39,16 @@ impl Camera {
     }
 
     pub fn projection(&self) -> Matrix4<f32> {
-        Matrix4::new_perspective(self.fov, self.aspect, self.near, self.far)
+        // nalgebra's perspective uses [-1, 1] NDC z range, so convert it to [0, 1].
+        #[rustfmt::skip]
+        let correction = nalgebra::Matrix4::<f32>::new(
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 0.5, 0.5,
+            0.0, 0.0, 0.0, 1.0,
+        );
+
+        correction * Matrix4::new_perspective(self.fov, self.aspect, self.near, self.far)
     }
 
     pub fn controller_mut<T: CameraController + 'static>(&mut self) -> Option<&mut T> {

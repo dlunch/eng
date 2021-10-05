@@ -1,13 +1,11 @@
 use alloc::{boxed::Box, sync::Arc, vec};
 
-use nalgebra::Matrix4;
 use raw_window_handle::HasRawWindowHandle;
 use zerocopy::AsBytes;
 
 use crate::{
-    buffer::Buffer, buffer_pool::BufferPool, camera::Camera, render_target::OffscreenRenderTarget, Material, Mesh, Model, RenderContext,
-    RenderTarget, Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat, VertexFormatItem, VertexItemType,
-    WindowRenderTarget,
+    buffer::Buffer, buffer_pool::BufferPool, render_target::OffscreenRenderTarget, Material, Mesh, Model, RenderContext, RenderTarget, Renderable,
+    Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
 
 pub struct Renderer {
@@ -72,7 +70,7 @@ impl Renderer {
     }
 
     pub fn render(&mut self, scene: &Scene) {
-        let mvp = Self::calculate_mvp(&scene.camera);
+        let mvp = scene.camera.projection() * scene.camera.view();
         self.mvp_buf.write(mvp.as_slice().as_bytes());
 
         let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
@@ -189,19 +187,6 @@ impl Renderer {
         let mut render_context = RenderContext::new(render_pass);
 
         self.offscreen_to_render_target_model.render(&mut render_context);
-    }
-
-    fn calculate_mvp(camera: &Camera) -> Matrix4<f32> {
-        // nalgebra's perspective uses [-1, 1] NDC z range, so convert it to [0, 1].
-        #[rustfmt::skip]
-        let correction = nalgebra::Matrix4::<f32>::new(
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 0.5, 0.5,
-            0.0, 0.0, 0.0, 1.0,
-        );
-
-        correction * camera.projection() * camera.view()
     }
 
     //returns zero if v is zero.
