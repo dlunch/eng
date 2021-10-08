@@ -1,32 +1,29 @@
-use alloc::boxed::Box;
-use core::{f32, ops::DerefMut};
+use core::f32;
 
 use nalgebra::{Matrix4, Point3, Vector3};
 
-use crate::as_any::AsAny;
-
-pub trait CameraController: Sync + Send + AsAny {
+pub trait CameraController: Sync + Send {
     fn position(&self) -> Point3<f32>;
     fn target(&self) -> Point3<f32>;
     fn up(&self) -> Vector3<f32>;
 }
 
-pub struct Camera {
+pub struct Camera<T: CameraController> {
     pub fov: f32,
     pub aspect: f32,
     pub near: f32,
     pub far: f32,
-    controller: Box<dyn CameraController>,
+    controller: T,
 }
 
-impl Camera {
-    pub fn new<T: CameraController + 'static>(fov: f32, aspect: f32, near: f32, far: f32, controller: T) -> Self {
+impl<T: CameraController> Camera<T> {
+    pub fn new(fov: f32, aspect: f32, near: f32, far: f32, controller: T) -> Self {
         Self {
             fov,
             aspect,
             near,
             far,
-            controller: Box::new(controller),
+            controller,
         }
     }
 
@@ -51,9 +48,8 @@ impl Camera {
         correction * Matrix4::new_perspective(self.fov, self.aspect, self.near, self.far)
     }
 
-    pub fn controller_mut<T: CameraController + 'static>(&mut self) -> Option<&mut T> {
-        // why do we need deref_mut here??
-        self.controller.deref_mut().as_any_mut().downcast_mut::<T>()
+    pub fn controller_mut(&mut self) -> &mut T {
+        &mut self.controller
     }
 }
 

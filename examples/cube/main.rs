@@ -17,6 +17,7 @@ use renderer::{
 struct App {
     renderer: Renderer,
     scene: Scene,
+    camera: Camera<ArcballCameraController>,
     size: (u32, u32),
     mouse_down: bool,
     mouse_down_pos: Option<(f32, f32)>,
@@ -51,12 +52,13 @@ impl App {
 
         let controller = ArcballCameraController::new(Point3::new(0.0, 0.0, 0.0), 5.0);
         let camera = Camera::new(45.0 * PI / 180.0, 1.0, 0.1, 100.0, controller);
-        let mut scene = Scene::new(camera);
+        let mut scene = Scene::new();
         scene.add(model);
 
         Self {
             renderer,
             scene,
+            camera,
             size: (size.width, size.height),
             mouse_down: false,
             mouse_down_pos: None,
@@ -64,7 +66,7 @@ impl App {
     }
 
     pub fn render(&mut self) {
-        self.renderer.render(&self.scene);
+        self.renderer.render(&self.camera, &self.scene);
     }
 
     pub fn mouse_down(&mut self) {
@@ -80,7 +82,7 @@ impl App {
                 let (x0, y0) = pos;
                 let (x1, y1) = (x as f32, y as f32);
 
-                let controller = self.scene.camera.controller_mut::<ArcballCameraController>().unwrap();
+                let controller = self.camera.controller_mut();
                 controller.update((x1 - x0) / self.size.0 as f32, (y1 - y0) / self.size.1 as f32);
             }
         }
@@ -92,7 +94,7 @@ impl App {
     }
 
     pub fn r#move(&mut self, forward: f32, right: f32) {
-        let controller = self.scene.camera.controller_mut::<ArcballCameraController>().unwrap();
+        let controller = self.camera.controller_mut();
         controller.r#move(forward, right);
     }
 }
