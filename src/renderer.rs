@@ -4,8 +4,12 @@ use raw_window_handle::HasRawWindowHandle;
 use zerocopy::AsBytes;
 
 use crate::{
-    buffer::Buffer, buffer_pool::BufferPool, render_target::OffscreenRenderTarget, Material, Mesh, Model, RenderContext, RenderTarget, Renderable,
-    Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
+    buffer::Buffer,
+    buffer_pool::BufferPool,
+    camera::{Camera, CameraController},
+    render_target::OffscreenRenderTarget,
+    Material, Mesh, Model, RenderContext, RenderTarget, Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat,
+    VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
 
 pub struct Renderer {
@@ -69,8 +73,8 @@ impl Renderer {
         }
     }
 
-    pub fn render(&mut self, scene: &Scene) {
-        let mvp = scene.camera.projection() * scene.camera.view();
+    pub fn render<T: CameraController>(&mut self, camera: &Camera<T>, scene: &Scene) {
+        let mvp = camera.projection() * camera.view();
         self.mvp_buf.write(mvp.as_slice().as_bytes());
 
         let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
