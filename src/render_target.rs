@@ -14,7 +14,7 @@ pub trait RenderTarget: Sync + Send {
 
 pub struct WindowRenderTarget {
     texture_view: Option<wgpu::TextureView>,
-    frame: Option<wgpu::SurfaceFrame>,
+    frame: Option<wgpu::SurfaceTexture>,
     surface: wgpu::Surface,
     width: u32,
     height: u32,
@@ -35,8 +35,8 @@ impl WindowRenderTarget {
 
         surface.configure(device, &config);
 
-        let frame = surface.get_current_frame().unwrap();
-        let texture_view = frame.output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let frame = surface.get_current_texture().unwrap();
+        let texture_view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         Self {
             surface,
@@ -55,19 +55,11 @@ impl RenderTarget for WindowRenderTarget {
     }
 
     fn submit(&mut self) {
-        // dropping frame makes it render
         self.texture_view = None;
-        self.frame = None;
+        self.frame.take().unwrap().present();
 
-        self.frame = Some(self.surface.get_current_frame().unwrap());
-        self.texture_view = Some(
-            self.frame
-                .as_ref()
-                .unwrap()
-                .output
-                .texture
-                .create_view(&wgpu::TextureViewDescriptor::default()),
-        );
+        self.frame = Some(self.surface.get_current_texture().unwrap());
+        self.texture_view = Some(self.frame.as_ref().unwrap().texture.create_view(&wgpu::TextureViewDescriptor::default()));
     }
 
     fn color_attachment(&self) -> &wgpu::TextureView {

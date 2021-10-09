@@ -32,7 +32,7 @@ impl BufferPoolItem {
     }
 
     pub fn alloc(&mut self, size: usize) -> Option<(Arc<wgpu::Buffer>, usize)> {
-        let alignment = wgpu::BIND_BUFFER_ALIGNMENT as usize;
+        let alignment = 4096; // TODO limits
         let rounded_size = Self::round_up(size, alignment);
 
         let offset = self.find_offset(rounded_size)?;
