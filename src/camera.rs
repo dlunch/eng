@@ -45,7 +45,7 @@ impl<T: CameraController> Camera<T> {
             0.0, 0.0, 0.0, 1.0,
         );
 
-        correction * Matrix4::new_perspective(self.fov, self.aspect, self.near, self.far)
+        correction * Matrix4::new_perspective(self.aspect, self.fov, self.near, self.far)
     }
 
     pub fn controller_mut(&mut self) -> &mut T {

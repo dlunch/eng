@@ -51,7 +51,7 @@ impl App {
         let model = Model::new(&renderer, mesh, material);
 
         let controller = ArcballCameraController::new(Point3::new(0.0, 0.0, 0.0), 5.0);
-        let camera = Camera::new(45.0 * PI / 180.0, 1.0, 0.1, 100.0, controller);
+        let camera = Camera::new(45.0 * PI / 180.0, size.width as f32 / size.height as f32, 0.1, 100.0, controller);
         let mut scene = Scene::new();
         scene.add(model);
 
