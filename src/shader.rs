@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use hashbrown::HashMap;
 
 use crate::Renderer;
@@ -77,6 +79,8 @@ pub struct Shader {
     pub(crate) fs_entry: &'static str,
     pub(crate) bindings: HashMap<&'static str, ShaderBinding>,
     pub(crate) inputs: HashMap<&'static str, u32>,
+    pub(crate) bind_group_layout: wgpu::BindGroupLayout,
+    pub(crate) pipeline_layout: wgpu::PipelineLayout,
 }
 
 impl Shader {
@@ -104,16 +108,27 @@ impl Shader {
             source: wgpu::ShaderSource::Wgsl(source.into()),
         });
 
+        let bind_group_entries = bindings.iter().map(|(_, x)| x.wgpu_entry()).collect::<Vec<_>>();
+
+        // TODO split bind groups by stage..
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &bind_group_entries,
+            label: None,
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            push_constant_ranges: &[],
+            bind_group_layouts: &[&bind_group_layout],
+        });
+
         Self {
             module,
             vs_entry,
             fs_entry,
             bindings: bindings.iter().cloned().collect(),
             inputs: inputs.iter().cloned().collect(),
+            bind_group_layout,
+            pipeline_layout,
         }
-    }
-
-    pub(crate) fn wgpu_bindings(&self) -> impl Iterator<Item = wgpu::BindGroupLayoutEntry> + '_ {
-        self.bindings.iter().map(|(_, x)| x.wgpu_entry())
     }
 }

@@ -20,40 +20,34 @@ impl SimpleVertex {
 
 pub struct Mesh {
     pub(crate) vertex_buffers: Vec<Buffer>,
-    pub(crate) strides: Vec<usize>,
     pub(crate) index_buffer: Buffer,
     pub(crate) index_count: usize,
     pub(crate) vertex_formats: Vec<VertexFormat>,
 }
 
 impl Mesh {
-    pub fn new(renderer: &Renderer, vertex_data: &[&[u8]], strides: &[usize], indices: &[u16], vertex_formats: Vec<VertexFormat>) -> Self {
-        Self::with_buffer_pool(&renderer.buffer_pool, vertex_data, strides, indices, vertex_formats)
+    pub fn new(renderer: &Renderer, vertex_data: &[&[u8]], indices: &[u16], vertex_formats: Vec<VertexFormat>) -> Self {
+        Self::with_buffer_pool(&renderer.buffer_pool, vertex_data, indices, vertex_formats)
     }
 
     pub fn with_simple_vertex(renderer: &Renderer, vertices: &[SimpleVertex], indices: &[u16]) -> Self {
         let vertex_data = vertices.as_bytes();
-        let strides = vec![size_of::<SimpleVertex>()];
 
         Self::with_buffer_pool(
             &renderer.buffer_pool,
             &[vertex_data],
-            &strides,
             indices,
-            vec![VertexFormat::new(vec![
-                VertexFormatItem::new("Position", VertexItemType::Float4, 0),
-                VertexFormatItem::new("TexCoord", VertexItemType::Float2, size_of::<f32>() * 4),
-            ])],
+            vec![VertexFormat::new(
+                vec![
+                    VertexFormatItem::new("Position", VertexItemType::Float4, 0),
+                    VertexFormatItem::new("TexCoord", VertexItemType::Float2, size_of::<f32>() * 4),
+                ],
+                size_of::<SimpleVertex>(),
+            )],
         )
     }
 
-    pub(crate) fn with_buffer_pool(
-        buffer_pool: &BufferPool,
-        vertex_data: &[&[u8]],
-        strides: &[usize],
-        indices: &[u16],
-        vertex_formats: Vec<VertexFormat>,
-    ) -> Self {
+    pub(crate) fn with_buffer_pool(buffer_pool: &BufferPool, vertex_data: &[&[u8]], indices: &[u16], vertex_formats: Vec<VertexFormat>) -> Self {
         let mut vertex_buffers = Vec::with_capacity(vertex_data.len());
         for vertex_datum in vertex_data {
             let buffer = buffer_pool.alloc(vertex_datum.len());
@@ -68,7 +62,6 @@ impl Mesh {
 
         Self {
             vertex_buffers,
-            strides: Vec::from(strides),
             index_buffer,
             index_count: indices.len(),
             vertex_formats,

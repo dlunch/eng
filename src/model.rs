@@ -1,18 +1,19 @@
-use alloc::vec::Vec;
+use alloc::sync::Arc;
 use core::ops::Range;
 
-use crate::{constants::INTERNAL_COLOR_ATTACHMENT_FORMAT, Material, Mesh, RenderContext, Renderable, Renderer};
+use crate::{constants::INTERNAL_COLOR_ATTACHMENT_FORMAT, pipeline_cache::PipelineCache, Material, Mesh, RenderContext, Renderable, Renderer};
 
 pub struct Model {
     mesh: Mesh,
     material: Material,
-    pipeline: wgpu::RenderPipeline,
+    pipeline: Arc<wgpu::RenderPipeline>,
 }
 
 impl Model {
     pub fn new(renderer: &Renderer, mesh: Mesh, material: Material) -> Self {
         Self::with_surface_and_depth_format(
             &*renderer.device,
+            &renderer.pipeline_cache,
             mesh,
             material,
             INTERNAL_COLOR_ATTACHMENT_FORMAT.wgpu_type(),
@@ -22,64 +23,13 @@ impl Model {
 
     pub(crate) fn with_surface_and_depth_format(
         device: &wgpu::Device,
+        pipeline_cache: &PipelineCache,
         mesh: Mesh,
         material: Material,
         surface_format: wgpu::TextureFormat,
         depth_format: Option<wgpu::TextureFormat>,
     ) -> Self {
-        let attributes = mesh
-            .vertex_formats
-            .iter()
-            .map(|x| x.wgpu_attributes(&material.shader.inputs))
-            .collect::<Vec<_>>();
-
-        let vertex_buffers = attributes
-            .iter()
-            .zip(mesh.strides.iter())
-            .map(|(attributes, stride)| wgpu::VertexBufferLayout {
-                array_stride: *stride as wgpu::BufferAddress,
-                step_mode: wgpu::VertexStepMode::Vertex,
-                attributes,
-            })
-            .collect::<Vec<_>>();
-
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            layout: Some(&material.pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &material.shader.module,
-                entry_point: material.shader.vs_entry,
-                buffers: &vertex_buffers,
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &material.shader.module,
-                entry_point: material.shader.fs_entry,
-                targets: &[wgpu::ColorTargetState {
-                    format: surface_format,
-                    blend: Some(wgpu::BlendState {
-                        color: wgpu::BlendComponent {
-                            operation: wgpu::BlendOperation::Add,
-                            src_factor: wgpu::BlendFactor::SrcAlpha,
-                            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                        },
-                        alpha: wgpu::BlendComponent::REPLACE,
-                    }),
-                    write_mask: wgpu::ColorWrites::ALL,
-                }],
-            }),
-            primitive: wgpu::PrimitiveState {
-                cull_mode: Some(wgpu::Face::Back),
-                ..Default::default()
-            },
-            depth_stencil: depth_format.map(|x| wgpu::DepthStencilState {
-                format: x,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::LessEqual,
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
-            label: None,
-            multisample: wgpu::MultisampleState::default(),
-        });
+        let pipeline = pipeline_cache.get(device, &material.shader, &mesh.vertex_formats, surface_format, depth_format);
 
         Self { mesh, material, pipeline }
     }
