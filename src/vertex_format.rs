@@ -2,6 +2,7 @@ use alloc::vec::Vec;
 
 use hashbrown::HashMap;
 
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub enum VertexItemType {
     UByte4,
     Float2,
@@ -24,6 +25,7 @@ impl VertexItemType {
     }
 }
 
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct VertexFormatItem {
     shader_name: &'static str,
     item_type: VertexItemType,
@@ -40,6 +42,7 @@ impl VertexFormatItem {
     }
 }
 
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct VertexFormat {
     pub items: Vec<VertexFormatItem>,
     pub stride: usize,

@@ -1,26 +1,45 @@
-use alloc::{sync::Arc, vec::Vec};
+use alloc::{
+    sync::{Arc, Weak},
+    vec::Vec,
+};
+use core::{
+    cmp::{Eq, PartialEq},
+    hash::{Hash, Hasher},
+    ptr,
+};
 
 use hashbrown::HashMap;
+use log::trace;
 use spinning_top::Spinlock;
 
 use crate::{Shader, VertexFormat};
 
-static mut PIPELINE_CACHE_LAST: usize = 1;
-
-#[derive(PartialEq, Eq, Hash)]
 struct PipelineCacheKey {
-    id: usize,
+    shader: Weak<Shader>,
+    vertex_formats: Vec<VertexFormat>,
 }
 
 impl PipelineCacheKey {
-    // TODO temporary code
-    pub fn new(_: &Arc<Shader>, _: &[VertexFormat]) -> Self {
-        let id = unsafe {
-            let last = PIPELINE_CACHE_LAST;
-            PIPELINE_CACHE_LAST += 1;
-            last
-        };
-        Self { id }
+    pub fn new(shader: &Arc<Shader>, vertex_formats: &[VertexFormat]) -> Self {
+        Self {
+            shader: Arc::downgrade(shader),
+            vertex_formats: vertex_formats.to_vec(),
+        }
+    }
+}
+
+impl PartialEq for PipelineCacheKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.shader.ptr_eq(&other.shader) && self.vertex_formats == other.vertex_formats
+    }
+}
+
+impl Eq for PipelineCacheKey {}
+
+impl Hash for PipelineCacheKey {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        ptr::hash(&self.shader, state);
+        self.vertex_formats.hash(state);
     }
 }
 
@@ -48,8 +67,12 @@ impl PipelineCache {
         let mut caches = self.caches.lock();
 
         if let Some(x) = caches.get(&key) {
+            trace!("Pipeline Cache Hit");
+
             x.clone()
         } else {
+            trace!("Pipeline Cache Miss");
+
             let pipeline = Self::create(device, shader, vertex_formats, surface_format, depth_format);
             caches.insert(key, pipeline.clone());
 
