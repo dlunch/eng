@@ -41,12 +41,13 @@ impl VertexFormatItem {
 }
 
 pub struct VertexFormat {
-    items: Vec<VertexFormatItem>,
+    pub items: Vec<VertexFormatItem>,
+    pub stride: usize,
 }
 
 impl VertexFormat {
-    pub fn new(items: Vec<VertexFormatItem>) -> Self {
-        Self { items }
+    pub fn new(items: Vec<VertexFormatItem>, stride: usize) -> Self {
+        Self { items, stride }
     }
 
     pub(crate) fn wgpu_attributes(&self, shader_inputs: &HashMap<&'static str, u32>) -> Vec<wgpu::VertexAttribute> {

@@ -16,6 +16,7 @@ mod scene;
 mod shader;
 mod texture;
 mod vertex_format;
+mod pipeline_cache;
 
 pub use buffer::Buffer;
 pub use camera::{ArcballCameraController, Camera, StaticCameraController};

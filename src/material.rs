@@ -6,7 +6,6 @@ use crate::{buffer::Buffer, Renderer, Shader, ShaderBindingType, Texture};
 
 pub struct Material {
     pub(crate) shader: Arc<Shader>,
-    pub(crate) pipeline_layout: wgpu::PipelineLayout,
     pub(crate) bind_group: wgpu::BindGroup,
 
     _textures: HashMap<&'static str, Arc<Texture>>,
@@ -30,20 +29,8 @@ impl Material {
         uniforms: &[(&'static str, Arc<Buffer>)],
         shader: Arc<Shader>,
     ) -> Self {
-        let bindings = shader.wgpu_bindings().collect::<Vec<_>>();
         let textures = textures.iter().cloned().collect::<HashMap<_, _>>();
         let uniforms = uniforms.iter().cloned().collect::<HashMap<_, _>>();
-
-        // TODO split bind groups by stage..
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &bindings,
-            label: None,
-        });
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: None,
-            push_constant_ranges: &[],
-            bind_group_layouts: &[&bind_group_layout],
-        });
 
         // TODO wip
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -95,14 +82,13 @@ impl Material {
             .collect::<Vec<_>>();
 
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &bind_group_layout,
+            layout: &shader.bind_group_layout,
             entries: &entries,
             label: None,
         });
 
         Self {
             shader,
-            pipeline_layout,
             bind_group,
             _textures: textures,
             _uniforms: uniforms,

@@ -7,6 +7,7 @@ use crate::{
     buffer::Buffer,
     buffer_pool::BufferPool,
     camera::{Camera, CameraController},
+    pipeline_cache::PipelineCache,
     render_target::OffscreenRenderTarget,
     Material, Mesh, Model, RenderContext, RenderTarget, Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat,
     VertexFormatItem, VertexItemType, WindowRenderTarget,
@@ -23,6 +24,7 @@ pub struct Renderer {
 
     offscreen_target: OffscreenRenderTarget,
     offscreen_to_render_target_model: Model,
+    pub(crate) pipeline_cache: PipelineCache,
 }
 
 impl Renderer {
@@ -55,11 +57,12 @@ impl Renderer {
         let queue = Arc::new(queue);
 
         let buffer_pool = BufferPool::new(device.clone(), queue.clone());
+        let pipeline_cache = PipelineCache::new();
 
         let render_target = Box::new(WindowRenderTarget::new(surface, &adapter, &device, width, height));
 
         let (offscreen_target, offscreen_to_render_target_model) =
-            Self::create_offscreen_target(&device, &buffer_pool, width, height, render_target.output_format());
+            Self::create_offscreen_target(&device, &pipeline_cache, &buffer_pool, width, height, render_target.output_format());
 
         let mvp_buf = buffer_pool.alloc(64);
 
@@ -71,6 +74,7 @@ impl Renderer {
             render_target,
             offscreen_target,
             offscreen_to_render_target_model,
+            pipeline_cache,
         }
     }
 
@@ -88,6 +92,7 @@ impl Renderer {
 
     fn create_offscreen_target(
         device: &wgpu::Device,
+        pipeline_cache: &PipelineCache,
         buffer_pool: &BufferPool,
         width: u32,
         height: u32,
@@ -113,12 +118,14 @@ impl Renderer {
         let mesh = Mesh::with_buffer_pool(
             buffer_pool,
             &[quad.as_bytes()],
-            &[core::mem::size_of::<f32>() * 4],
             &[0u16, 1, 2, 3, 4, 5],
-            vec![VertexFormat::new(vec![
-                VertexFormatItem::new("Position", VertexItemType::Float2, 0),
-                VertexFormatItem::new("TexCoord", VertexItemType::Float2, core::mem::size_of::<f32>() * 2),
-            ])],
+            vec![VertexFormat::new(
+                vec![
+                    VertexFormatItem::new("Position", VertexItemType::Float2, 0),
+                    VertexFormatItem::new("TexCoord", VertexItemType::Float2, core::mem::size_of::<f32>() * 2),
+                ],
+                core::mem::size_of::<f32>() * 4,
+            )],
         );
 
         let shader = Shader::with_device(
@@ -143,7 +150,7 @@ impl Renderer {
 
         (
             offscreen_target,
-            Model::with_surface_and_depth_format(device, mesh, material, surface_format, None),
+            Model::with_surface_and_depth_format(device, pipeline_cache, mesh, material, surface_format, None),
         )
     }
 
