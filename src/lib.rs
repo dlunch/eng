@@ -8,6 +8,7 @@ mod constants;
 mod material;
 mod mesh;
 mod model;
+mod pipeline_cache;
 mod render_context;
 mod render_target;
 mod renderable;
@@ -16,7 +17,6 @@ mod scene;
 mod shader;
 mod texture;
 mod vertex_format;
-mod pipeline_cache;
 
 pub use buffer::Buffer;
 pub use camera::{ArcballCameraController, Camera, StaticCameraController};
