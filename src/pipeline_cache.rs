@@ -5,7 +5,6 @@ use alloc::{
 use core::{
     cmp::{Eq, PartialEq},
     hash::{Hash, Hasher},
-    ptr,
 };
 
 use hashbrown::HashMap;
@@ -38,7 +37,10 @@ impl Eq for PipelineCacheKey {}
 
 impl Hash for PipelineCacheKey {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        ptr::hash(&self.shader, state);
+        let ptr = self.shader.as_ptr();
+        let ptr_num = ptr as usize; // workaround for https://github.com/rust-lang/rust/issues/85447
+        ptr_num.hash(state);
+
         self.vertex_formats.hash(state);
     }
 }
