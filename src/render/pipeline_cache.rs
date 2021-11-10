@@ -11,7 +11,7 @@ use hashbrown::HashMap;
 use log::trace;
 use spinning_top::Spinlock;
 
-use crate::{Shader, VertexFormat};
+use super::{Shader, VertexFormat};
 
 struct PipelineCacheKey {
     shader: Weak<Shader>,

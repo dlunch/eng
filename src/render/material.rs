@@ -2,7 +2,7 @@ use alloc::{sync::Arc, vec::Vec};
 
 use hashbrown::HashMap;
 
-use crate::{buffer::Buffer, Renderer, Shader, ShaderBindingType, Texture};
+use super::{buffer::Buffer, Renderer, Shader, ShaderBindingType, Texture};
 
 pub struct Material {
     pub(crate) shader: Arc<Shader>,

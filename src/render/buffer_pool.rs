@@ -2,7 +2,7 @@ use alloc::{collections::BTreeMap, sync::Arc, vec::Vec};
 
 use spinning_top::Spinlock;
 
-use crate::buffer::Buffer;
+use super::buffer::Buffer;
 
 const BUFFER_SIZE: usize = 10485760;
 

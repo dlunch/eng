@@ -1,6 +1,6 @@
 use alloc::sync::Arc;
 
-use crate::{
+use super::{
     constants::{INTERNAL_COLOR_ATTACHMENT_FORMAT, INTERNAL_DEPTH_ATTACHMENT_FORMAT},
     Texture,
 };

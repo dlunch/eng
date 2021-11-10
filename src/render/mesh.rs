@@ -3,7 +3,7 @@ use core::mem::size_of;
 
 use zerocopy::AsBytes;
 
-use crate::{buffer::Buffer, buffer_pool::BufferPool, Renderer, VertexFormat, VertexFormatItem, VertexItemType};
+use super::{buffer::Buffer, buffer_pool::BufferPool, Renderer, VertexFormat, VertexFormatItem, VertexItemType};
 
 #[repr(C)]
 #[derive(AsBytes)]
