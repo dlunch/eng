@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 
 use hashbrown::HashMap;
 
-use crate::Renderer;
+use super::Renderer;
 
 #[derive(Clone)]
 pub enum ShaderBindingType {

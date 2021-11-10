@@ -1,6 +1,6 @@
 use alloc::{boxed::Box, vec::Vec};
 
-use crate::Renderable;
+use super::Renderable;
 
 pub struct Scene {
     pub models: Vec<Box<dyn Renderable>>,

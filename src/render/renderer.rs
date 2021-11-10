@@ -3,7 +3,7 @@ use alloc::{boxed::Box, sync::Arc, vec};
 use raw_window_handle::HasRawWindowHandle;
 use zerocopy::AsBytes;
 
-use crate::{
+use super::{
     buffer::Buffer,
     buffer_pool::BufferPool,
     camera::{Camera, CameraController},
@@ -130,7 +130,7 @@ impl Renderer {
 
         let shader = Shader::with_device(
             device,
-            include_str!("../shaders/shader.wgsl"),
+            include_str!("./shaders/shader.wgsl"),
             "vs_main",
             "fs_main",
             &[

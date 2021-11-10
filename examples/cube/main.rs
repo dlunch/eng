@@ -9,7 +9,7 @@ use winit::{
     window::Window,
 };
 
-use eng::{
+use eng::render::{
     ArcballCameraController, Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, SimpleVertex,
     Texture, TextureFormat,
 };

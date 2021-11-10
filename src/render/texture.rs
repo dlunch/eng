@@ -1,6 +1,6 @@
 use alloc::{vec, vec::Vec};
 
-use crate::Renderer;
+use super::Renderer;
 
 pub enum TextureFormat {
     Rgba8Unorm,

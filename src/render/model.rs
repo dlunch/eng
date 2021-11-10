@@ -1,7 +1,7 @@
 use alloc::sync::Arc;
 use core::ops::Range;
 
-use crate::{constants::INTERNAL_COLOR_ATTACHMENT_FORMAT, pipeline_cache::PipelineCache, Material, Mesh, RenderContext, Renderable, Renderer};
+use super::{constants::INTERNAL_COLOR_ATTACHMENT_FORMAT, pipeline_cache::PipelineCache, Material, Mesh, RenderContext, Renderable, Renderer};
 
 pub struct Model {
     mesh: Mesh,
