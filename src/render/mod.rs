@@ -25,6 +25,6 @@ pub use render_target::{RenderTarget, WindowRenderTarget};
 pub use renderable::Renderable;
 pub use renderer::Renderer;
 pub use scene::Scene;
-pub use shader::{Shader, ShaderBinding, ShaderBindingType, ShaderStage};
+pub use shader::{Shader, ShaderBinding, ShaderBindingType};
 pub use texture::{CompressedTextureFormat, Texture, TextureFormat};
 pub use vertex_format::{VertexFormat, VertexFormatItem, VertexItemType};

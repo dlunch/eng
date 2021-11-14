@@ -1,4 +1,4 @@
-use alloc::{sync::Arc, vec::Vec};
+use alloc::{string::String, sync::Arc, vec::Vec};
 
 use hashbrown::HashMap;
 
@@ -8,25 +8,20 @@ pub struct Material {
     pub(crate) shader: Arc<Shader>,
     pub(crate) bind_group: wgpu::BindGroup,
 
-    _textures: HashMap<&'static str, Arc<Texture>>,
-    _uniforms: HashMap<&'static str, Arc<Buffer>>,
+    _textures: HashMap<String, Arc<Texture>>,
+    _uniforms: HashMap<String, Arc<Buffer>>,
 }
 
 impl Material {
-    pub fn new(
-        renderer: &Renderer,
-        textures: &[(&'static str, Arc<Texture>)],
-        uniforms: &[(&'static str, Arc<Buffer>)],
-        shader: Arc<Shader>,
-    ) -> Self {
+    pub fn new(renderer: &Renderer, textures: &[(String, Arc<Texture>)], uniforms: &[(String, Arc<Buffer>)], shader: Arc<Shader>) -> Self {
         Self::with_device(&*renderer.device, Some(&renderer.mvp_buf), textures, uniforms, shader)
     }
 
     pub fn with_device(
         device: &wgpu::Device,
         mvp_buf: Option<&Buffer>,
-        textures: &[(&'static str, Arc<Texture>)],
-        uniforms: &[(&'static str, Arc<Buffer>)],
+        textures: &[(String, Arc<Texture>)],
+        uniforms: &[(String, Arc<Buffer>)],
         shader: Arc<Shader>,
     ) -> Self {
         let textures = textures.iter().cloned().collect::<HashMap<_, _>>();
@@ -54,7 +49,8 @@ impl Material {
             .map(|(binding_name, binding)| {
                 let resource = match binding.binding_type {
                     ShaderBindingType::UniformBuffer => {
-                        if *binding_name == "Mvp" {
+                        if *binding_name == "mvp" {
+                            // TODO temp hardcode
                             mvp_buf.unwrap().binding_resource()
                         } else {
                             let buffer = uniforms.get(binding_name);

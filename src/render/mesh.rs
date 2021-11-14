@@ -39,8 +39,8 @@ impl Mesh {
             indices,
             vec![VertexFormat::new(
                 vec![
-                    VertexFormatItem::new("Position", VertexItemType::Float4, 0),
-                    VertexFormatItem::new("TexCoord", VertexItemType::Float2, size_of::<f32>() * 4),
+                    VertexFormatItem::new("position", VertexItemType::Float4, 0),
+                    VertexFormatItem::new("tex_coord", VertexItemType::Float2, size_of::<f32>() * 4),
                 ],
                 size_of::<SimpleVertex>(),
             )],

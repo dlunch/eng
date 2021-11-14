@@ -9,10 +9,7 @@ use winit::{
     window::Window,
 };
 
-use eng::render::{
-    ArcballCameraController, Camera, Material, Mesh, Model, Renderer, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, SimpleVertex,
-    Texture, TextureFormat,
-};
+use eng::render::{ArcballCameraController, Camera, Material, Mesh, Model, Renderer, Scene, Shader, SimpleVertex, Texture, TextureFormat};
 
 struct App {
     renderer: Renderer,
@@ -34,20 +31,9 @@ impl App {
         let texture_data = create_texels(512, 512);
         let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let shader = Shader::new(
-            &renderer,
-            include_str!("shader.wgsl"),
-            "vs_main",
-            "fs_main",
-            &[
-                ("Mvp", ShaderBinding::new(ShaderStage::Vertex, 0, ShaderBindingType::UniformBuffer)),
-                ("Texture", ShaderBinding::new(ShaderStage::Fragment, 1, ShaderBindingType::Texture2D)),
-                ("Sampler", ShaderBinding::new(ShaderStage::Fragment, 2, ShaderBindingType::Sampler)),
-            ],
-            &[("Position", 0), ("TexCoord", 1)],
-        );
+        let shader = Shader::new(&renderer, include_str!("shader.wgsl"));
 
-        let material = Material::new(&renderer, &[("Texture", Arc::new(texture))], &[], Arc::new(shader));
+        let material = Material::new(&renderer, &[("texture".into(), Arc::new(texture))], &[], Arc::new(shader));
         let model = Model::new(&renderer, mesh, material);
 
         let controller = ArcballCameraController::new(Point3::new(0.0, 0.0, 0.0), 5.0);

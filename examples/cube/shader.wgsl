@@ -8,7 +8,7 @@ struct transform {
     mvp: mat4x4<f32>;
 };
 [[group(0), binding(0)]]
-var<uniform> transform: transform;
+var<uniform> mvp: transform;
 
 [[stage(vertex)]]
 fn vs_main(
@@ -17,7 +17,7 @@ fn vs_main(
 ) -> VertexOutput {
     var out: VertexOutput;
 
-    out.position = transform.mvp * position;
+    out.position = mvp.mvp * position;
     out.tex_coord = tex_coord;
 
     return out;
