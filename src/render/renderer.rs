@@ -9,8 +9,8 @@ use super::{
     camera::{Camera, CameraController},
     pipeline_cache::PipelineCache,
     render_target::OffscreenRenderTarget,
-    Material, Mesh, Model, RenderContext, RenderTarget, Renderable, Scene, Shader, ShaderBinding, ShaderBindingType, ShaderStage, VertexFormat,
-    VertexFormatItem, VertexItemType, WindowRenderTarget,
+    Material, Mesh, Model, RenderContext, RenderTarget, Renderable, Scene, Shader, VertexFormat, VertexFormatItem, VertexItemType,
+    WindowRenderTarget,
 };
 
 pub struct Renderer {
@@ -121,29 +121,19 @@ impl Renderer {
             &[0u16, 1, 2, 3, 4, 5],
             vec![VertexFormat::new(
                 vec![
-                    VertexFormatItem::new("Position", VertexItemType::Float2, 0),
-                    VertexFormatItem::new("TexCoord", VertexItemType::Float2, core::mem::size_of::<f32>() * 2),
+                    VertexFormatItem::new("position", VertexItemType::Float2, 0),
+                    VertexFormatItem::new("tex_coord", VertexItemType::Float2, core::mem::size_of::<f32>() * 2),
                 ],
                 core::mem::size_of::<f32>() * 4,
             )],
         );
 
-        let shader = Shader::with_device(
-            device,
-            include_str!("./shaders/shader.wgsl"),
-            "vs_main",
-            "fs_main",
-            &[
-                ("Texture", ShaderBinding::new(ShaderStage::Fragment, 1, ShaderBindingType::Texture2D)),
-                ("Sampler", ShaderBinding::new(ShaderStage::Fragment, 2, ShaderBindingType::Sampler)),
-            ],
-            &[("Position", 0), ("TexCoord", 1)],
-        );
+        let shader = Shader::with_device(device, include_str!("./shaders/shader.wgsl"));
 
         let material = Material::with_device(
             device,
             None,
-            &[("Texture", offscreen_target.color_attachment.clone())],
+            &[("texture".into(), offscreen_target.color_attachment.clone())],
             &[],
             Arc::new(shader),
         );

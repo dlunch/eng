@@ -1,4 +1,4 @@
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 
 use hashbrown::HashMap;
 
@@ -53,7 +53,7 @@ impl VertexFormat {
         Self { items, stride }
     }
 
-    pub(crate) fn wgpu_attributes(&self, shader_inputs: &HashMap<&'static str, u32>) -> Vec<wgpu::VertexAttribute> {
+    pub(crate) fn wgpu_attributes(&self, shader_inputs: &HashMap<String, u32>) -> Vec<wgpu::VertexAttribute> {
         self.items
             .iter()
             .map(|x| wgpu::VertexAttribute {

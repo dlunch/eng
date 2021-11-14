@@ -105,12 +105,12 @@ impl PipelineCache {
             layout: Some(&shader.pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader.module,
-                entry_point: shader.vs_entry,
+                entry_point: &shader.vs_entry,
                 buffers: &vertex_buffers,
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader.module,
-                entry_point: shader.fs_entry,
+                entry_point: &shader.fs_entry,
                 targets: &[wgpu::ColorTargetState {
                     format: surface_format,
                     blend: Some(wgpu::BlendState {
