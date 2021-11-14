@@ -33,7 +33,7 @@ impl App {
 
         let shader = Shader::new(&renderer, include_str!("shader.wgsl"));
 
-        let material = Material::new(&renderer, &[("texture".into(), Arc::new(texture))], &[], Arc::new(shader));
+        let material = Material::new(&renderer, &[("texture", Arc::new(texture))], &[], Arc::new(shader));
         let model = Model::new(&renderer, mesh, material);
 
         let controller = ArcballCameraController::new(Point3::new(0.0, 0.0, 0.0), 5.0);

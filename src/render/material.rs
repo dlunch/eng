@@ -13,19 +13,24 @@ pub struct Material {
 }
 
 impl Material {
-    pub fn new(renderer: &Renderer, textures: &[(String, Arc<Texture>)], uniforms: &[(String, Arc<Buffer>)], shader: Arc<Shader>) -> Self {
+    pub fn new(
+        renderer: &Renderer,
+        textures: &[(&'static str, Arc<Texture>)],
+        uniforms: &[(&'static str, Arc<Buffer>)],
+        shader: Arc<Shader>,
+    ) -> Self {
         Self::with_device(&*renderer.device, Some(&renderer.mvp_buf), textures, uniforms, shader)
     }
 
     pub fn with_device(
         device: &wgpu::Device,
         mvp_buf: Option<&Buffer>,
-        textures: &[(String, Arc<Texture>)],
-        uniforms: &[(String, Arc<Buffer>)],
+        textures: &[(&'static str, Arc<Texture>)],
+        uniforms: &[(&'static str, Arc<Buffer>)],
         shader: Arc<Shader>,
     ) -> Self {
-        let textures = textures.iter().cloned().collect::<HashMap<_, _>>();
-        let uniforms = uniforms.iter().cloned().collect::<HashMap<_, _>>();
+        let textures = textures.iter().map(|x| (x.0.into(), x.1.clone())).collect::<HashMap<_, _>>();
+        let uniforms = uniforms.iter().map(|x| (x.0.into(), x.1.clone())).collect::<HashMap<_, _>>();
 
         // TODO wip
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {

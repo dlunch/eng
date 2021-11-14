@@ -133,7 +133,7 @@ impl Renderer {
         let material = Material::with_device(
             device,
             None,
-            &[("texture".into(), offscreen_target.color_attachment.clone())],
+            &[("texture", offscreen_target.color_attachment.clone())],
             &[],
             Arc::new(shader),
         );
