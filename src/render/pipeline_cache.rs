@@ -89,6 +89,12 @@ impl PipelineCache {
         surface_format: wgpu::TextureFormat,
         depth_format: Option<wgpu::TextureFormat>,
     ) -> Arc<wgpu::RenderPipeline> {
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            push_constant_ranges: &[],
+            bind_group_layouts: &[&shader.bind_group_layout],
+        });
+
         let attributes = vertex_formats.iter().map(|x| x.wgpu_attributes(&shader.inputs)).collect::<Vec<_>>();
 
         let vertex_buffers = attributes
@@ -102,7 +108,7 @@ impl PipelineCache {
             .collect::<Vec<_>>();
 
         Arc::new(device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            layout: Some(&shader.pipeline_layout),
+            layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader.module,
                 entry_point: &shader.vs_entry,
