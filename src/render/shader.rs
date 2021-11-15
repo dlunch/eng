@@ -1,5 +1,3 @@
-use core::panic;
-
 use alloc::{string::String, vec::Vec};
 
 use hashbrown::HashMap;
