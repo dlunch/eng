@@ -60,7 +60,6 @@ pub struct Shader {
     pub(crate) bindings: HashMap<String, ShaderBinding>,
     pub(crate) inputs: HashMap<String, u32>,
     pub(crate) bind_group_layout: wgpu::BindGroupLayout,
-    pub(crate) pipeline_layout: wgpu::PipelineLayout,
 }
 
 impl Shader {
@@ -120,15 +119,9 @@ impl Shader {
 
         let bind_group_entries = bindings.iter().map(|(_, x)| x.wgpu_entry()).collect::<Vec<_>>();
 
-        // TODO split bind groups by stage..
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &bind_group_entries,
             label: None,
-        });
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: None,
-            push_constant_ranges: &[],
-            bind_group_layouts: &[&bind_group_layout],
         });
 
         Self {
@@ -138,7 +131,6 @@ impl Shader {
             bindings,
             inputs,
             bind_group_layout,
-            pipeline_layout,
         }
     }
 }
