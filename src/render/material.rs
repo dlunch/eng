@@ -13,20 +13,15 @@ pub struct Material {
 }
 
 impl Material {
-    pub fn new(
-        renderer: &Renderer,
-        textures: &[(&'static str, Arc<Texture>)],
-        uniforms: &[(&'static str, Arc<Buffer>)],
-        shader: Arc<Shader>,
-    ) -> Self {
+    pub fn new(renderer: &Renderer, textures: &[(&str, Arc<Texture>)], uniforms: &[(&str, Arc<Buffer>)], shader: Arc<Shader>) -> Self {
         Self::with_device(&*renderer.device, Some(&renderer.mvp_buf), textures, uniforms, shader)
     }
 
     pub fn with_device(
         device: &wgpu::Device,
         mvp_buf: Option<&Buffer>,
-        textures: &[(&'static str, Arc<Texture>)],
-        uniforms: &[(&'static str, Arc<Buffer>)],
+        textures: &[(&str, Arc<Texture>)],
+        uniforms: &[(&str, Arc<Buffer>)],
         shader: Arc<Shader>,
     ) -> Self {
         let textures = textures.iter().map(|x| (x.0.into(), x.1.clone())).collect::<HashMap<_, _>>();
