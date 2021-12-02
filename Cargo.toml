@@ -22,5 +22,5 @@ naga = { version = "^0.7", features = ["wgsl-in" ]}
 
 [dev-dependencies]
 async-std = { version = "^1.6", features = ["attributes"] }
-winit = { version = "^0.25", features = ["x11", "wayland"] }
+winit = { version = "^0.26", features = ["x11", "wayland"] }
 pretty_env_logger = { version = "^0.4" }
