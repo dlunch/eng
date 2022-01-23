@@ -143,6 +143,7 @@ impl PipelineCache {
             }),
             label: None,
             multisample: wgpu::MultisampleState::default(),
+            multiview: None,
         }))
     }
 }

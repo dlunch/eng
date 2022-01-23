@@ -20,9 +20,9 @@ fn vs_main(
 [[group(0), binding(1)]]
 var texture: texture_2d<f32>;
 [[group(0), binding(2)]]
-var sampler: sampler;
+var textureSampler: sampler;
 
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
-    return textureSample(texture, sampler, in.tex_coord);
+    return textureSample(texture, textureSampler, in.tex_coord);
 }

@@ -24,10 +24,7 @@ impl ShaderBindingType {
                 multisampled: false,
                 view_dimension: wgpu::TextureViewDimension::D2,
             },
-            ShaderBindingType::Sampler => wgpu::BindingType::Sampler {
-                comparison: false,
-                filtering: true,
-            },
+            ShaderBindingType::Sampler => wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
         }
     }
 }
