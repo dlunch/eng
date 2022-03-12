@@ -2,8 +2,7 @@
 name = "eng"
 version = "0.1.0"
 authors = ["Inseok Lee <dlunch@gmail.com>"]
-edition = "2018"
-resolver = "2"
+edition = "2021"
 
 [lib]
 doctest = false
@@ -18,7 +17,7 @@ squish = { version = "^1", default-features = false }
 raw-window-handle = { version = "^0.4", default-features = false }
 hashbrown = { version = "^0.12", features = ["ahash", "inline-more"], default-features = false }
 spinning_top = { version = "^0.2", default-features = false }
-naga = { version = "^0.8", features = ["wgsl-in" ]}
+naga = { version = "^0.8", features = ["wgsl-in" ] }
 
 [dev-dependencies]
 async-std = { version = "^1.6", features = ["attributes"] }
