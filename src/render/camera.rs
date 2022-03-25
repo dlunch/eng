@@ -2,13 +2,39 @@ use core::f32;
 
 use nalgebra::{Matrix4, Point3, Vector3};
 
-pub trait CameraController: Sync + Send {
+pub trait Camera: Sync + Send {
+    fn view(&self) -> Matrix4<f32>;
+    fn projection(&self) -> Matrix4<f32>;
+}
+
+pub struct OrthographicCamera {
+    width: u32,
+    height: u32,
+}
+
+impl OrthographicCamera {
+    pub fn new(width: u32, height: u32) -> Self {
+        Self { width, height }
+    }
+}
+
+impl Camera for OrthographicCamera {
+    fn view(&self) -> Matrix4<f32> {
+        Matrix4::identity()
+    }
+
+    fn projection(&self) -> Matrix4<f32> {
+        Matrix4::new_orthographic(0., self.width as f32, self.height as f32, 0., -1., 1.)
+    }
+}
+
+pub trait PerspectiveCameraController: Sync + Send {
     fn position(&self) -> Point3<f32>;
     fn target(&self) -> Point3<f32>;
     fn up(&self) -> Vector3<f32>;
 }
 
-pub struct Camera<T: CameraController> {
+pub struct PerspectiveCamera<T: PerspectiveCameraController> {
     pub fov: f32,
     pub aspect: f32,
     pub near: f32,
@@ -16,7 +42,7 @@ pub struct Camera<T: CameraController> {
     controller: T,
 }
 
-impl<T: CameraController> Camera<T> {
+impl<T: PerspectiveCameraController> PerspectiveCamera<T> {
     pub fn new(fov: f32, aspect: f32, near: f32, far: f32, controller: T) -> Self {
         Self {
             fov,
@@ -27,7 +53,13 @@ impl<T: CameraController> Camera<T> {
         }
     }
 
-    pub fn view(&self) -> Matrix4<f32> {
+    pub fn controller_mut(&mut self) -> &mut T {
+        &mut self.controller
+    }
+}
+
+impl<T: PerspectiveCameraController> Camera for PerspectiveCamera<T> {
+    fn view(&self) -> Matrix4<f32> {
         let position = self.controller.position();
         let target = self.controller.target();
         let up = self.controller.up();
@@ -35,10 +67,10 @@ impl<T: CameraController> Camera<T> {
         Matrix4::look_at_rh(&position, &target, &up)
     }
 
-    pub fn projection(&self) -> Matrix4<f32> {
+    fn projection(&self) -> Matrix4<f32> {
         // nalgebra's perspective uses [-1, 1] NDC z range, so convert it to [0, 1].
         #[rustfmt::skip]
-        let correction = nalgebra::Matrix4::<f32>::new(
+        let correction = Matrix4::<f32>::new(
             1.0, 0.0, 0.0, 0.0,
             0.0, 1.0, 0.0, 0.0,
             0.0, 0.0, 0.5, 0.5,
@@ -46,10 +78,6 @@ impl<T: CameraController> Camera<T> {
         );
 
         correction * Matrix4::new_perspective(self.aspect, self.fov, self.near, self.far)
-    }
-
-    pub fn controller_mut(&mut self) -> &mut T {
-        &mut self.controller
     }
 }
 
@@ -64,7 +92,7 @@ impl StaticCameraController {
     }
 }
 
-impl CameraController for StaticCameraController {
+impl PerspectiveCameraController for StaticCameraController {
     fn position(&self) -> Point3<f32> {
         self.position
     }
@@ -115,7 +143,7 @@ impl ArcballCameraController {
     }
 }
 
-impl CameraController for ArcballCameraController {
+impl PerspectiveCameraController for ArcballCameraController {
     fn position(&self) -> Point3<f32> {
         let forward = Vector3::new(-self.phi.sin() * self.theta.cos(), -self.theta.sin(), -self.phi.cos() * self.theta.cos()).normalize();
 

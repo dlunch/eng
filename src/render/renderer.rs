@@ -4,13 +4,8 @@ use raw_window_handle::HasRawWindowHandle;
 use zerocopy::AsBytes;
 
 use super::{
-    buffer::Buffer,
-    buffer_pool::BufferPool,
-    camera::{Camera, CameraController},
-    pipeline_cache::PipelineCache,
-    render_target::OffscreenRenderTarget,
-    Material, Mesh, Model, RenderContext, RenderTarget, Renderable, Scene, Shader, VertexFormat, VertexFormatItem, VertexItemType,
-    WindowRenderTarget,
+    buffer::Buffer, buffer_pool::BufferPool, camera::Camera, pipeline_cache::PipelineCache, render_target::OffscreenRenderTarget, Material, Mesh,
+    Model, RenderContext, RenderTarget, Renderable, Scene, Shader, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
 
 pub struct Renderer {
@@ -78,7 +73,7 @@ impl Renderer {
         }
     }
 
-    pub fn render<T: CameraController>(&mut self, camera: &Camera<T>, scene: &Scene) {
+    pub fn render(&mut self, camera: &dyn Camera, scene: &Scene) {
         let mvp = camera.projection() * camera.view();
         self.mvp_buf.write(mvp.as_slice().as_bytes());
 
