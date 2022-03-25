@@ -16,7 +16,7 @@ mod texture;
 mod vertex_format;
 
 pub use buffer::Buffer;
-pub use camera::{ArcballCameraController, Camera, StaticCameraController};
+pub use camera::{ArcballCameraController, Camera, OrthographicCamera, PerspectiveCamera, StaticCameraController};
 pub use material::Material;
 pub use mesh::{Mesh, SimpleVertex};
 pub use model::Model;

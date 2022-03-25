@@ -9,12 +9,12 @@ use winit::{
     window::Window,
 };
 
-use eng::render::{ArcballCameraController, Camera, Material, Mesh, Model, Renderer, Scene, Shader, SimpleVertex, Texture, TextureFormat};
+use eng::render::{ArcballCameraController, Material, Mesh, Model, PerspectiveCamera, Renderer, Scene, Shader, SimpleVertex, Texture, TextureFormat};
 
 struct App {
     renderer: Renderer,
     scene: Scene,
-    camera: Camera<ArcballCameraController>,
+    camera: PerspectiveCamera<ArcballCameraController>,
     size: (u32, u32),
     mouse_down: bool,
     mouse_down_pos: Option<(f32, f32)>,
@@ -37,7 +37,7 @@ impl App {
         let model = Model::new(&renderer, mesh, material);
 
         let controller = ArcballCameraController::new(Point3::new(0.0, 0.0, 0.0), 5.0);
-        let camera = Camera::new(45.0 * PI / 180.0, size.width as f32 / size.height as f32, 0.1, 100.0, controller);
+        let camera = PerspectiveCamera::new(45.0 * PI / 180.0, size.width as f32 / size.height as f32, 0.1, 100.0, controller);
         let mut scene = Scene::new();
         scene.add(model);
 
