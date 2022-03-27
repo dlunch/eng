@@ -36,11 +36,18 @@ impl Renderer {
             .await
             .unwrap();
 
+        let limits = adapter.limits();
+
+        log::info!("{:?}", adapter.get_info());
+        log::info!("{:?}", adapter.features());
+        log::info!("{:?}", limits);
+        log::info!("{:?}", adapter.get_downlevel_properties());
+
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
                     features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::downlevel_webgl2_defaults(),
+                    limits,
                     label: None,
                 },
                 None,
