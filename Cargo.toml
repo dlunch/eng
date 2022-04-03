@@ -20,6 +20,6 @@ spinning_top = { version = "^0.2", default-features = false }
 naga = { version = "^0.8", features = ["wgsl-in" ] }
 
 [dev-dependencies]
-async-std = { version = "^1.6", features = ["attributes"] }
+tokio = { version = "^1.12", features = ["full"] }
 winit = { version = "^0.26", features = ["x11", "wayland"] }
 pretty_env_logger = { version = "^0.4" }
