@@ -40,7 +40,7 @@ impl App {
     }
 }
 
-#[async_std::main]
+#[tokio::main]
 async fn main() {
     pretty_env_logger::init();
     let event_loop = EventLoop::new();
