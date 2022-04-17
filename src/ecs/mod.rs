@@ -4,6 +4,8 @@ use core::{
     ops::{Deref, DerefMut},
 };
 
+mod hierarchy;
+
 type ComponentType = TypeId;
 
 #[derive(Default)]
