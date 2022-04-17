@@ -1,7 +1,7 @@
 use alloc::{boxed::Box, collections::BTreeMap};
 use core::{
     any::{Any, TypeId},
-    ops::Deref,
+    ops::{Deref, DerefMut},
 };
 
 type ComponentType = TypeId;
@@ -40,6 +40,13 @@ impl World {
 
         let item = self.components.get(&component_type)?.get(&entity)?;
         Some(item.deref().as_any().downcast_ref::<T>().unwrap())
+    }
+
+    pub fn component_mut<T: 'static + Component>(&mut self, entity: Entity) -> Option<&mut T> {
+        let component_type = TypeId::of::<T>();
+
+        let item = self.components.get_mut(&component_type)?.get_mut(&entity)?;
+        Some(item.deref_mut().as_any_mut().downcast_mut::<T>().unwrap())
     }
 
     pub fn components<T: 'static + Component>(&self) -> impl Iterator<Item = (Entity, &T)> {
