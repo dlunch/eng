@@ -4,9 +4,11 @@ use raw_window_handle::HasRawWindowHandle;
 use zerocopy::AsBytes;
 
 use super::{
-    buffer::Buffer, buffer_pool::BufferPool, camera::Camera, pipeline_cache::PipelineCache, render_target::OffscreenRenderTarget, Material, Mesh,
-    Model, RenderContext, RenderTarget, Renderable, Scene, Shader, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
+    buffer::Buffer, buffer_pool::BufferPool, camera::Camera, components::RenderComponent, pipeline_cache::PipelineCache,
+    render_target::OffscreenRenderTarget, Material, Mesh, Model, RenderTarget, Shader, VertexFormat, VertexFormatItem, VertexItemType,
+    WindowRenderTarget,
 };
+use crate::ecs::World;
 
 pub struct Renderer {
     pub(crate) device: Arc<wgpu::Device>,
@@ -80,12 +82,21 @@ impl Renderer {
         }
     }
 
-    pub fn render(&mut self, camera: &dyn Camera, scene: &Scene) {
+    pub fn render_world(&mut self, camera: &dyn Camera, world: &World) {
+        let render_components = world.components::<RenderComponent>().map(|x| x.1);
+
+        self.render(camera, render_components);
+    }
+
+    fn render<'a, T>(&mut self, camera: &dyn Camera, components: T)
+    where
+        T: Iterator<Item = &'a RenderComponent>,
+    {
         let mvp = camera.projection() * camera.view();
         self.mvp_buf.write(mvp.as_slice().as_bytes());
 
         let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-        self.render_scene(&mut command_encoder, scene, self.render_target.size());
+        self.render_scene(&mut command_encoder, components, self.render_target.size());
         self.present(&mut command_encoder, &*self.render_target);
 
         self.queue.submit(Some(command_encoder.finish()));
@@ -146,7 +157,10 @@ impl Renderer {
         )
     }
 
-    fn render_scene(&self, command_encoder: &mut wgpu::CommandEncoder, scene: &Scene, viewport_size: (u32, u32)) {
+    fn render_scene<'a, T>(&self, command_encoder: &mut wgpu::CommandEncoder, components: T, viewport_size: (u32, u32))
+    where
+        T: Iterator<Item = &'a RenderComponent>,
+    {
         let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             color_attachments: &[wgpu::RenderPassColorAttachment {
                 view: self.offscreen_target.color_attachment(),
@@ -167,15 +181,14 @@ impl Renderer {
             label: None,
         });
         render_pass.set_viewport(0.0, 0.0, viewport_size.0 as f32, viewport_size.1 as f32, 0.0, 1.0);
-        let mut render_context = RenderContext::new(render_pass);
 
-        for model in &scene.models {
-            model.render(&mut render_context);
+        for component in components {
+            component.model.render(&mut render_pass);
         }
     }
 
     fn present(&self, command_encoder: &mut wgpu::CommandEncoder, target: &dyn RenderTarget) {
-        let render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+        let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             color_attachments: &[wgpu::RenderPassColorAttachment {
                 view: target.color_attachment(),
                 resolve_target: None,
@@ -188,9 +201,7 @@ impl Renderer {
             label: None,
         });
 
-        let mut render_context = RenderContext::new(render_pass);
-
-        self.offscreen_to_render_target_model.render(&mut render_context);
+        self.offscreen_to_render_target_model.render(&mut render_pass);
     }
 
     //returns zero if v is zero.
