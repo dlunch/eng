@@ -7,11 +7,12 @@ use winit::{
     window::Window,
 };
 
-use eng::render::{Material, Mesh, Model, OrthographicCamera, Renderer, Scene, Shader, SimpleVertex};
+use eng::ecs::World;
+use eng::render::{Material, Mesh, Model, OrthographicCamera, RenderComponent, Renderer, Shader, SimpleVertex};
 
 struct App {
     renderer: Renderer,
-    scene: Scene,
+    world: World,
     camera: OrthographicCamera,
 }
 
@@ -29,14 +30,17 @@ impl App {
         let model = Model::new(&renderer, mesh, material);
 
         let camera = OrthographicCamera::new(size.width, size.height);
-        let mut scene = Scene::new();
-        scene.add(model);
 
-        Self { renderer, scene, camera }
+        let mut world = World::new();
+
+        let entity = world.spawn();
+        world.add_component(entity, RenderComponent { model });
+
+        Self { renderer, world, camera }
     }
 
     pub fn render(&mut self) {
-        self.renderer.render(&self.camera, &self.scene);
+        self.renderer.render_world(&self.camera, &self.world);
     }
 }
 
