@@ -1,23 +1,25 @@
-use alloc::{boxed::Box, collections::BTreeMap};
+use alloc::boxed::Box;
 use core::{
     any::{Any, TypeId},
     ops::{Deref, DerefMut},
 };
 
 mod hierarchy;
+mod sparse_vec;
+
+use sparse_vec::SparseVec;
 
 type ComponentType = TypeId;
 
-#[derive(Default)]
 pub struct World {
-    components: BTreeMap<ComponentType, BTreeMap<Entity, Box<dyn Component>>>, // TODO optimize later
+    components: SparseVec<SparseVec<Box<dyn Component>, Entity>, ComponentType>,
     entities: u32,
 }
 
 impl World {
     pub fn new() -> Self {
         Self {
-            components: BTreeMap::new(),
+            components: SparseVec::new(),
             entities: 0,
         }
     }
@@ -33,21 +35,29 @@ impl World {
     pub fn add_component<T: 'static + Component>(&mut self, entity: Entity, component: T) {
         let component_type = TypeId::of::<T>();
 
-        let entry = self.components.entry(component_type).or_insert_with(BTreeMap::new);
-        entry.insert(entity, Box::new(component));
+        let vec = if let Some(x) = self.components.get_mut(component_type) {
+            x
+        } else {
+            let vec = SparseVec::new();
+            self.components.insert(component_type, vec);
+
+            self.components.get_mut(component_type).unwrap()
+        };
+
+        vec.insert(entity, Box::new(component));
     }
 
     pub fn component<T: 'static + Component>(&self, entity: Entity) -> Option<&T> {
         let component_type = TypeId::of::<T>();
 
-        let item = self.components.get(&component_type)?.get(&entity)?;
+        let item = self.components.get(component_type)?.get(entity)?;
         Some(item.deref().as_any().downcast_ref::<T>().unwrap())
     }
 
     pub fn component_mut<T: 'static + Component>(&mut self, entity: Entity) -> Option<&mut T> {
         let component_type = TypeId::of::<T>();
 
-        let item = self.components.get_mut(&component_type)?.get_mut(&entity)?;
+        let item = self.components.get_mut(component_type)?.get_mut(entity)?;
         Some(item.deref_mut().as_any_mut().downcast_mut::<T>().unwrap())
     }
 
@@ -55,10 +65,16 @@ impl World {
         let component_type = TypeId::of::<T>();
 
         self.components
-            .get(&component_type)
+            .get(component_type)
             .unwrap()
             .iter()
             .map(|(entity, component)| (*entity, component.deref().as_any().downcast_ref::<T>().unwrap()))
+    }
+}
+
+impl Default for World {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
