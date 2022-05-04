@@ -1,12 +1,13 @@
-use alloc::{boxed::Box, sync::Arc, vec};
+use alloc::{boxed::Box, sync::Arc, vec, vec::Vec};
+use core::ops::Range;
 
 use raw_window_handle::HasRawWindowHandle;
 use zerocopy::AsBytes;
 
 use super::{
-    buffer::Buffer, buffer_pool::BufferPool, camera::Camera, components::RenderComponent, pipeline_cache::PipelineCache,
-    render_target::OffscreenRenderTarget, Material, Mesh, Model, RenderTarget, Shader, VertexFormat, VertexFormatItem, VertexItemType,
-    WindowRenderTarget,
+    buffer::Buffer, buffer_pool::BufferPool, camera::Camera, components::RenderComponent, constants::INTERNAL_COLOR_ATTACHMENT_FORMAT,
+    pipeline_cache::PipelineCache, render_target::OffscreenRenderTarget, Material, Mesh, RenderTarget, Shader, VertexFormat, VertexFormatItem,
+    VertexItemType, WindowRenderTarget,
 };
 use crate::ecs::World;
 
@@ -20,7 +21,7 @@ pub struct Renderer {
     render_target: Box<dyn RenderTarget>,
 
     offscreen_target: OffscreenRenderTarget,
-    offscreen_to_render_target_model: Model,
+    offscreen_to_render_target_component: RenderComponent,
     pub(crate) pipeline_cache: PipelineCache,
 }
 
@@ -65,8 +66,7 @@ impl Renderer {
 
         let render_target = Box::new(WindowRenderTarget::new(surface, &adapter, &device, width, height));
 
-        let (offscreen_target, offscreen_to_render_target_model) =
-            Self::create_offscreen_target(&device, &pipeline_cache, &buffer_pool, width, height, render_target.output_format());
+        let (offscreen_target, offscreen_to_render_target_component) = Self::create_offscreen_target(&device, &buffer_pool, width, height);
 
         let mvp_buf = buffer_pool.alloc(64);
 
@@ -77,7 +77,7 @@ impl Renderer {
             queue,
             render_target,
             offscreen_target,
-            offscreen_to_render_target_model,
+            offscreen_to_render_target_component,
             pipeline_cache,
         }
     }
@@ -85,10 +85,10 @@ impl Renderer {
     pub fn render_world(&mut self, camera: &dyn Camera, world: &World) {
         let render_components = world.components::<RenderComponent>().map(|x| x.1);
 
-        self.render(camera, render_components);
+        self.render_components(camera, render_components);
     }
 
-    fn render<'a, T>(&mut self, camera: &dyn Camera, components: T)
+    fn render_components<'a, T>(&mut self, camera: &dyn Camera, components: T)
     where
         T: Iterator<Item = &'a RenderComponent>,
     {
@@ -103,14 +103,7 @@ impl Renderer {
         self.render_target.submit();
     }
 
-    fn create_offscreen_target(
-        device: &wgpu::Device,
-        pipeline_cache: &PipelineCache,
-        buffer_pool: &BufferPool,
-        width: u32,
-        height: u32,
-        surface_format: wgpu::TextureFormat,
-    ) -> (OffscreenRenderTarget, Model) {
+    fn create_offscreen_target(device: &wgpu::Device, buffer_pool: &BufferPool, width: u32, height: u32) -> (OffscreenRenderTarget, RenderComponent) {
         let texture_width = Self::round_up_power_of_two(width);
         let texture_height = Self::round_up_power_of_two(height);
         let offscreen_target = OffscreenRenderTarget::with_device(device, texture_width, texture_height);
@@ -151,57 +144,118 @@ impl Renderer {
             Arc::new(shader),
         );
 
-        (
-            offscreen_target,
-            Model::with_surface_and_depth_format(device, pipeline_cache, mesh, material, surface_format, None),
-        )
+        (offscreen_target, RenderComponent { mesh, material })
     }
 
     fn render_scene<'a, T>(&self, command_encoder: &mut wgpu::CommandEncoder, components: T, viewport_size: (u32, u32))
     where
         T: Iterator<Item = &'a RenderComponent>,
     {
-        let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            color_attachments: &[wgpu::RenderPassColorAttachment {
-                view: self.offscreen_target.color_attachment(),
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color { r: 1., g: 1., b: 1., a: 1. }),
-                    store: true,
-                },
-            }],
-            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                view: &self.offscreen_target.depth_attachment.texture_view,
-                depth_ops: Some(wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(1.0),
-                    store: true,
-                }),
-                stencil_ops: None,
-            }),
-            label: None,
-        });
-        render_pass.set_viewport(0.0, 0.0, viewport_size.0 as f32, viewport_size.1 as f32, 0.0, 1.0);
+        let component_pipelines = components
+            .map(|x| {
+                (
+                    x,
+                    self.pipeline_cache.get(
+                        &self.device,
+                        &x.material.shader,
+                        &x.mesh.vertex_formats,
+                        INTERNAL_COLOR_ATTACHMENT_FORMAT.wgpu_type(),
+                        Some(wgpu::TextureFormat::Depth32Float),
+                    ),
+                )
+            })
+            .collect::<Vec<_>>();
 
-        for component in components {
-            component.model.render(&mut render_pass);
+        {
+            let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                color_attachments: &[wgpu::RenderPassColorAttachment {
+                    view: self.offscreen_target.color_attachment(),
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color { r: 1., g: 1., b: 1., a: 1. }),
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &self.offscreen_target.depth_attachment.texture_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: true,
+                    }),
+                    stencil_ops: None,
+                }),
+                label: None,
+            });
+            render_pass.set_viewport(0.0, 0.0, viewport_size.0 as f32, viewport_size.1 as f32, 0.0, 1.0);
+
+            for (component, pipeline) in &component_pipelines {
+                Self::render_ranges(
+                    &component.mesh,
+                    &component.material,
+                    pipeline,
+                    &mut render_pass,
+                    &[0..component.mesh.index_count as u32],
+                );
+            }
         }
     }
 
-    fn present(&self, command_encoder: &mut wgpu::CommandEncoder, target: &dyn RenderTarget) {
-        let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            color_attachments: &[wgpu::RenderPassColorAttachment {
-                view: target.color_attachment(),
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color { r: 1., g: 1., b: 1., a: 1. }),
-                    store: true,
-                },
-            }],
-            depth_stencil_attachment: None,
-            label: None,
-        });
+    fn render_ranges<'a>(
+        mesh: &'a Mesh,
+        material: &'a Material,
+        pipeline: &'a wgpu::RenderPipeline,
+        render_pass: &mut wgpu::RenderPass<'a>,
+        ranges: &[Range<u32>],
+    ) {
+        render_pass.set_pipeline(pipeline);
+        render_pass.set_bind_group(0, &material.bind_group, &[]);
+        render_pass.set_index_buffer(mesh.index_buffer.as_slice(), wgpu::IndexFormat::Uint16);
+        for (i, vertex_buffer) in mesh.vertex_buffers.iter().enumerate() {
+            render_pass.set_vertex_buffer(i as u32, vertex_buffer.as_slice());
+        }
 
-        self.offscreen_to_render_target_model.render(&mut render_pass);
+        let mut last_start = ranges[0].start;
+        let mut last_end = ranges[0].start;
+        for range in ranges {
+            if last_end != range.start {
+                render_pass.draw_indexed(last_start..last_end, 0, 0..1);
+                last_start = range.start;
+            }
+            last_end = range.end;
+        }
+        render_pass.draw_indexed(last_start..last_end, 0, 0..1);
+    }
+
+    fn present(&self, command_encoder: &mut wgpu::CommandEncoder, target: &dyn RenderTarget) {
+        let pipeline = self.pipeline_cache.get(
+            &self.device,
+            &self.offscreen_to_render_target_component.material.shader,
+            &self.offscreen_to_render_target_component.mesh.vertex_formats,
+            target.output_format(),
+            None,
+        );
+        {
+            let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                color_attachments: &[wgpu::RenderPassColorAttachment {
+                    view: target.color_attachment(),
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color { r: 1., g: 1., b: 1., a: 1. }),
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: None,
+                label: None,
+            });
+
+            Self::render_ranges(
+                &self.offscreen_to_render_target_component.mesh,
+                &self.offscreen_to_render_target_component.material,
+                &pipeline,
+                &mut render_pass,
+                &[0..self.offscreen_to_render_target_component.mesh.index_count as u32],
+            );
+        }
     }
 
     //returns zero if v is zero.

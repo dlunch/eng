@@ -8,7 +8,7 @@ use winit::{
 };
 
 use eng::ecs::World;
-use eng::render::{Material, Mesh, Model, OrthographicCamera, RenderComponent, Renderer, Shader, SimpleVertex};
+use eng::render::{Material, Mesh, OrthographicCamera, RenderComponent, Renderer, Shader, SimpleVertex};
 
 struct App {
     renderer: Renderer,
@@ -27,14 +27,13 @@ impl App {
         let shader = Shader::new(&renderer, include_str!("shader.wgsl"));
 
         let material = Material::new(&renderer, &[], &[], Arc::new(shader));
-        let model = Model::new(&renderer, mesh, material);
 
         let camera = OrthographicCamera::new(size.width, size.height);
 
         let mut world = World::new();
 
         let entity = world.spawn();
-        world.add_component(entity, RenderComponent { model });
+        world.add_component(entity, RenderComponent { mesh, material });
 
         Self { renderer, world, camera }
     }

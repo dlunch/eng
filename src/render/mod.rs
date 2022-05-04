@@ -5,7 +5,6 @@ mod components;
 mod constants;
 mod material;
 mod mesh;
-mod model;
 mod pipeline_cache;
 mod render_target;
 mod renderer;
@@ -18,7 +17,6 @@ pub use camera::{ArcballCameraController, Camera, OrthographicCamera, Perspectiv
 pub use components::RenderComponent;
 pub use material::Material;
 pub use mesh::{Mesh, SimpleVertex};
-pub use model::Model;
 pub use render_target::{RenderTarget, WindowRenderTarget};
 pub use renderer::Renderer;
 pub use shader::{Shader, ShaderBinding, ShaderBindingType};

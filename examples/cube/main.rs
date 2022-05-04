@@ -11,7 +11,7 @@ use winit::{
 
 use eng::ecs::World;
 use eng::render::{
-    ArcballCameraController, Material, Mesh, Model, PerspectiveCamera, RenderComponent, Renderer, Shader, SimpleVertex, Texture, TextureFormat,
+    ArcballCameraController, Material, Mesh, PerspectiveCamera, RenderComponent, Renderer, Shader, SimpleVertex, Texture, TextureFormat,
 };
 
 struct App {
@@ -37,14 +37,13 @@ impl App {
         let shader = Shader::new(&renderer, include_str!("shader.wgsl"));
 
         let material = Material::new(&renderer, &[("texture", Arc::new(texture))], &[], Arc::new(shader));
-        let model = Model::new(&renderer, mesh, material);
 
         let controller = ArcballCameraController::new(Point3::new(0.0, 0.0, 0.0), 5.0);
         let camera = PerspectiveCamera::new(45.0 * PI / 180.0, size.width as f32 / size.height as f32, 0.1, 100.0, controller);
         let mut world = World::new();
 
         let entity = world.spawn();
-        world.add_component(entity, RenderComponent { model });
+        world.add_component(entity, RenderComponent { mesh, material });
 
         Self {
             renderer,
