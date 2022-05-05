@@ -43,7 +43,7 @@ impl App {
         let mut world = World::new();
 
         let entity = world.spawn();
-        world.add_component(entity, RenderComponent { mesh, material });
+        world.add_component(entity, RenderComponent::new(&renderer, mesh, material));
 
         Self {
             renderer,
