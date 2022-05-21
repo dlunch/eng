@@ -66,7 +66,7 @@ impl Renderer {
         let render_target = Box::new(WindowRenderTarget::new(surface, &adapter, &device, width, height));
 
         let (offscreen_target, offscreen_to_render_target_component) =
-            Self::create_offscreen_target(&device, &pipeline_cache, &buffer_pool, width, height);
+            Self::create_offscreen_target(&device, &pipeline_cache, &buffer_pool, width, height, render_target.output_format());
 
         let mvp_buf = buffer_pool.alloc(64);
 
@@ -109,6 +109,7 @@ impl Renderer {
         buffer_pool: &BufferPool,
         width: u32,
         height: u32,
+        format: wgpu::TextureFormat,
     ) -> (OffscreenRenderTarget, RenderComponent) {
         let texture_width = Self::round_up_power_of_two(width);
         let texture_height = Self::round_up_power_of_two(height);
@@ -150,7 +151,10 @@ impl Renderer {
             Arc::new(shader),
         );
 
-        (offscreen_target, RenderComponent::with_device(device, pipeline_cache, mesh, material))
+        (
+            offscreen_target,
+            RenderComponent::with_device(device, pipeline_cache, mesh, material, format, None),
+        )
     }
 
     fn render_scene<'a, T>(&self, command_encoder: &mut wgpu::CommandEncoder, components: T, viewport_size: (u32, u32))
