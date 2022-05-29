@@ -8,6 +8,7 @@ use core::{
 // homogeneous vec
 pub struct RawVec {
     storage: Vec<u8>,
+    #[cfg(debug_assertions)]
     actual_type: TypeId,
 }
 
@@ -15,6 +16,7 @@ impl RawVec {
     pub fn new<T: 'static>() -> Self {
         Self {
             storage: Vec::new(),
+            #[cfg(debug_assertions)]
             actual_type: TypeId::of::<T>(),
         }
     }
@@ -27,6 +29,7 @@ impl RawVec {
     }
 
     pub fn get<T: 'static>(&self, index: usize) -> Option<&T> {
+        #[cfg(debug_assertions)]
         assert!(TypeId::of::<T>() == self.actual_type);
 
         let item_size = Self::round_up(size_of::<T>(), align_of::<T>());
@@ -41,6 +44,7 @@ impl RawVec {
     }
 
     pub fn get_mut<T: 'static>(&mut self, index: usize) -> Option<&mut T> {
+        #[cfg(debug_assertions)]
         assert!(TypeId::of::<T>() == self.actual_type);
 
         let item_size = Self::round_up(size_of::<T>(), align_of::<T>());
@@ -54,6 +58,7 @@ impl RawVec {
     }
 
     pub fn iter<T: 'static>(&self) -> impl Iterator<Item = &T> {
+        #[cfg(debug_assertions)]
         assert!(TypeId::of::<T>() == self.actual_type);
 
         let item_size = Self::round_up(size_of::<T>(), align_of::<T>());
@@ -61,6 +66,7 @@ impl RawVec {
     }
 
     fn insert_at<T: 'static>(&mut self, offset: usize, value: T) {
+        #[cfg(debug_assertions)]
         assert!(TypeId::of::<T>() == self.actual_type);
 
         let value_ptr = &value as *const T as *const u8;
