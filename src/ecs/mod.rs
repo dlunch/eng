@@ -117,6 +117,8 @@ pub trait Component: AsAny {}
 
 #[cfg(test)]
 mod test {
+    use alloc::{vec, vec::Vec};
+
     use super::{Component, World};
 
     #[test]
@@ -161,5 +163,36 @@ mod test {
         assert_eq!(it.next().unwrap().1.test, 1);
         assert_eq!(it.next().unwrap().1.test, 2);
         assert!(it.next().is_none());
+    }
+
+    #[test]
+    fn test_resource() {
+        struct TestResource1 {
+            a: u32,
+        }
+        struct TestResource2 {
+            b: Vec<u32>,
+        }
+        let mut world = World::new();
+
+        world.add_resource(TestResource1 { a: 123 });
+        world.add_resource(TestResource2 { b: vec![1234] });
+
+        assert_eq!(world.resource::<TestResource1>().unwrap().a, 123);
+        assert_eq!(world.resource::<TestResource2>().unwrap().b, [1234]);
+    }
+
+    #[test]
+    fn test_resource_overwrite() {
+        struct TestResource {
+            a: u32,
+        }
+        let mut world = World::new();
+
+        world.add_resource(TestResource { a: 123 });
+        assert_eq!(world.resource::<TestResource>().unwrap().a, 123);
+
+        world.add_resource(TestResource { a: 1234 });
+        assert_eq!(world.resource::<TestResource>().unwrap().a, 1234);
     }
 }
