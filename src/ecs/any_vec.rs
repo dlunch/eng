@@ -2,6 +2,7 @@ use alloc::vec::Vec;
 use core::{any::TypeId, mem::align_of, mem::size_of, slice};
 
 struct ItemInfo {
+    #[cfg(debug_assertions)]
     r#type: TypeId,
     item_size: usize,
 }
@@ -27,6 +28,7 @@ impl AnyVec {
         self.types.insert(
             index,
             ItemInfo {
+                #[cfg(debug_assertions)]
                 r#type: TypeId::of::<T>(),
                 item_size: Self::round_up(size_of::<T>(), align_of::<T>()),
             },
@@ -34,6 +36,7 @@ impl AnyVec {
     }
 
     pub fn get<T: 'static>(&self, index: usize) -> Option<&T> {
+        #[cfg(debug_assertions)]
         assert_eq!(self.types[index].r#type, TypeId::of::<T>());
 
         let offset = self.calculate_offset(index);
@@ -46,6 +49,7 @@ impl AnyVec {
     }
 
     pub fn get_mut<T: 'static>(&mut self, index: usize) -> Option<&mut T> {
+        #[cfg(debug_assertions)]
         assert_eq!(self.types[index].r#type, TypeId::of::<T>());
 
         let offset = self.calculate_offset(index);
