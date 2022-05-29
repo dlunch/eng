@@ -19,7 +19,12 @@ hashbrown = { version = "^0.12", features = ["ahash", "inline-more"], default-fe
 spinning_top = { version = "^0.2", default-features = false }
 naga = { version = "^0.8", features = ["wgsl-in" ] }
 lazy_static = { version = "^1.4", default-features = false}
+
+[target.'cfg(unix)'.dependencies]
 winit = { version = "^0.26", features = ["x11", "wayland"], default-features = false }
+
+[target.'cfg(not(unix))'.dependencies]
+winit = { version = "^0.26", default-features = false }
 
 [dev-dependencies]
 tokio = { version = "^1.12", features = ["full"] }
