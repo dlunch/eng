@@ -1,10 +1,10 @@
 use core::f32;
 
-use nalgebra::{Matrix4, Point3, Vector3};
+use glam::{Mat4, Vec3};
 
 pub trait Camera: Sync + Send {
-    fn view(&self) -> Matrix4<f32>;
-    fn projection(&self) -> Matrix4<f32>;
+    fn view(&self) -> Mat4;
+    fn projection(&self) -> Mat4;
 }
 
 pub struct OrthographicCamera {
@@ -19,19 +19,19 @@ impl OrthographicCamera {
 }
 
 impl Camera for OrthographicCamera {
-    fn view(&self) -> Matrix4<f32> {
-        Matrix4::identity()
+    fn view(&self) -> Mat4 {
+        Mat4::IDENTITY
     }
 
-    fn projection(&self) -> Matrix4<f32> {
-        Matrix4::new_orthographic(0., self.width as f32, self.height as f32, 0., -1., 1.)
+    fn projection(&self) -> Mat4 {
+        Mat4::orthographic_rh(0., self.width as f32, self.height as f32, 0., -1., 1.)
     }
 }
 
 pub trait PerspectiveCameraController: Sync + Send {
-    fn position(&self) -> Point3<f32>;
-    fn target(&self) -> Point3<f32>;
-    fn up(&self) -> Vector3<f32>;
+    fn position(&self) -> Vec3;
+    fn target(&self) -> Vec3;
+    fn up(&self) -> Vec3;
 }
 
 pub struct PerspectiveCamera<T: PerspectiveCameraController> {
@@ -59,62 +59,53 @@ impl<T: PerspectiveCameraController> PerspectiveCamera<T> {
 }
 
 impl<T: PerspectiveCameraController> Camera for PerspectiveCamera<T> {
-    fn view(&self) -> Matrix4<f32> {
+    fn view(&self) -> Mat4 {
         let position = self.controller.position();
         let target = self.controller.target();
         let up = self.controller.up();
 
-        Matrix4::look_at_rh(&position, &target, &up)
+        Mat4::look_at_rh(position, target, up)
     }
 
-    fn projection(&self) -> Matrix4<f32> {
-        // nalgebra's perspective uses [-1, 1] NDC z range, so convert it to [0, 1].
-        #[rustfmt::skip]
-        let correction = Matrix4::<f32>::new(
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 0.5, 0.5,
-            0.0, 0.0, 0.0, 1.0,
-        );
-
-        correction * Matrix4::new_perspective(self.aspect, self.fov, self.near, self.far)
+    fn projection(&self) -> Mat4 {
+        Mat4::perspective_rh(self.fov, self.aspect, self.near, self.far)
     }
 }
 
 pub struct StaticCameraController {
-    position: Point3<f32>,
-    target: Point3<f32>,
+    position: Vec3,
+    target: Vec3,
 }
 
 impl StaticCameraController {
-    pub fn new(position: Point3<f32>, target: Point3<f32>) -> Self {
+    pub fn new(position: Vec3, target: Vec3) -> Self {
         Self { position, target }
     }
 }
 
 impl PerspectiveCameraController for StaticCameraController {
-    fn position(&self) -> Point3<f32> {
+    fn position(&self) -> Vec3 {
         self.position
     }
 
-    fn target(&self) -> Point3<f32> {
+    fn target(&self) -> Vec3 {
         self.target
     }
 
-    fn up(&self) -> Vector3<f32> {
-        Vector3::y()
+    fn up(&self) -> Vec3 {
+        Vec3::Y
     }
 }
 
 pub struct ArcballCameraController {
-    target: Point3<f32>,
+    target: Vec3,
     radius: f32,
     phi: f32,
     theta: f32,
 }
 
 impl ArcballCameraController {
-    pub fn new(target: Point3<f32>, radius: f32) -> Self {
+    pub fn new(target: Vec3, radius: f32) -> Self {
         Self {
             target,
             radius,
@@ -135,8 +126,8 @@ impl ArcballCameraController {
     }
 
     pub fn r#move(&mut self, forward: f32, right: f32) {
-        let forward_dir = Vector3::new(-self.phi.sin() * self.theta.cos(), -self.theta.sin(), -self.phi.cos() * self.theta.cos()).normalize();
-        let right_dir = Vector3::new(-self.phi.cos(), 0.0, self.phi.sin()).normalize();
+        let forward_dir = Vec3::new(-self.phi.sin() * self.theta.cos(), -self.theta.sin(), -self.phi.cos() * self.theta.cos()).normalize();
+        let right_dir = Vec3::new(-self.phi.cos(), 0.0, self.phi.sin()).normalize();
 
         self.target += forward_dir * forward;
         self.target += right_dir * right;
@@ -144,20 +135,20 @@ impl ArcballCameraController {
 }
 
 impl PerspectiveCameraController for ArcballCameraController {
-    fn position(&self) -> Point3<f32> {
-        let forward = Vector3::new(-self.phi.sin() * self.theta.cos(), -self.theta.sin(), -self.phi.cos() * self.theta.cos()).normalize();
+    fn position(&self) -> Vec3 {
+        let forward = Vec3::new(-self.phi.sin() * self.theta.cos(), -self.theta.sin(), -self.phi.cos() * self.theta.cos()).normalize();
 
         self.target - forward * self.radius
     }
 
-    fn target(&self) -> Point3<f32> {
+    fn target(&self) -> Vec3 {
         self.target
     }
 
-    fn up(&self) -> Vector3<f32> {
-        let forward = Vector3::new(-self.phi.sin() * self.theta.cos(), -self.theta.sin(), -self.phi.cos() * self.theta.cos()).normalize();
-        let right = Vector3::new(-self.phi.cos(), 0.0, self.phi.sin()).normalize();
-        forward.cross(&right).normalize()
+    fn up(&self) -> Vec3 {
+        let forward = Vec3::new(-self.phi.sin() * self.theta.cos(), -self.theta.sin(), -self.phi.cos() * self.theta.cos()).normalize();
+        let right = Vec3::new(-self.phi.cos(), 0.0, self.phi.sin()).normalize();
+        forward.cross(right).normalize()
     }
 }
 
@@ -165,7 +156,7 @@ impl PerspectiveCameraController for ArcballCameraController {
 mod test {
     use core::f32::consts::PI;
 
-    use nalgebra::Point3;
+    use glam::Vec3;
 
     use super::{Camera, OrthographicCamera, PerspectiveCamera, StaticCameraController};
 
@@ -173,28 +164,28 @@ mod test {
     fn test_orthographic() {
         let camera = OrthographicCamera::new(100, 100);
         assert_eq!(
-            camera.view().as_slice(),
+            camera.view().to_cols_array(),
             [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,]
         );
 
         assert_eq!(
-            camera.projection().as_slice(),
-            [0.02, 0.0, 0.0, 0.0, 0.0, -0.02, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 1.0, -0.0, 1.0]
+            camera.projection().to_cols_array(),
+            [0.02, 0.0, 0.0, 0.0, 0.0, -0.02, 0.0, 0.0, 0.0, 0.0, -0.5, 0.0, -1.0, 1.0, 0.5, 1.0]
         )
     }
 
     #[test]
     fn test_perspective() {
-        let controller = StaticCameraController::new(Point3::new(5.0, 0.0, 0.0), Point3::new(0.0, 0.0, 0.0));
+        let controller = StaticCameraController::new(Vec3::new(5.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0));
 
         let camera = PerspectiveCamera::new(45.0 * PI / 180.0, 200.0f32 / 100.0f32, 0.1, 100.0, controller);
         assert_eq!(
-            camera.view().as_slice(),
+            camera.view().to_cols_array(),
             [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, -0.0, 0.0, -1.0, 0.0, -0.0, 0.0, 0.0, -0.0, -5.0, 1.0]
         );
 
         assert_eq!(
-            camera.projection().as_slice(),
+            camera.projection().to_cols_array(),
             [1.2071067, 0.0, 0.0, 0.0, 0.0, 2.4142134, 0.0, 0.0, 0.0, 0.0, -1.001001, -1.0, 0.0, 0.0, -0.1001001, 0.0]
         )
     }
