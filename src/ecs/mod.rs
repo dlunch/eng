@@ -1,25 +1,23 @@
-use alloc::boxed::Box;
-use core::{
-    any::{Any, TypeId},
-    ops::{Deref, DerefMut},
-};
+use alloc::collections::BTreeMap;
+use core::any::{Any, TypeId};
 
 mod hierarchy;
-mod sparse_vec;
+mod raw_vec;
+mod sparse_raw_vec;
 
-use sparse_vec::SparseVec;
+use sparse_raw_vec::SparseRawVec;
 
 type ComponentType = TypeId;
 
 pub struct World {
-    components: SparseVec<SparseVec<Box<dyn Component>, Entity>, ComponentType>,
+    components: BTreeMap<ComponentType, SparseRawVec<Entity>>,
     entities: u32,
 }
 
 impl World {
     pub fn new() -> Self {
         Self {
-            components: SparseVec::new(),
+            components: BTreeMap::new(),
             entities: 0,
         }
     }
@@ -35,40 +33,34 @@ impl World {
     pub fn add_component<T: 'static + Component>(&mut self, entity: Entity, component: T) {
         let component_type = TypeId::of::<T>();
 
-        let vec = if let Some(x) = self.components.get_mut(component_type) {
+        let vec = if let Some(x) = self.components.get_mut(&component_type) {
             x
         } else {
-            let vec = SparseVec::new();
+            let vec = SparseRawVec::new::<T>();
             self.components.insert(component_type, vec);
 
-            self.components.get_mut(component_type).unwrap()
+            self.components.get_mut(&component_type).unwrap()
         };
 
-        vec.insert(entity, Box::new(component));
+        vec.insert(entity, component);
     }
 
     pub fn component<T: 'static + Component>(&self, entity: Entity) -> Option<&T> {
         let component_type = TypeId::of::<T>();
 
-        let item = self.components.get(component_type)?.get(entity)?;
-        Some(item.deref().as_any().downcast_ref::<T>().unwrap())
+        self.components.get(&component_type)?.get::<T>(entity)
     }
 
     pub fn component_mut<T: 'static + Component>(&mut self, entity: Entity) -> Option<&mut T> {
         let component_type = TypeId::of::<T>();
 
-        let item = self.components.get_mut(component_type)?.get_mut(entity)?;
-        Some(item.deref_mut().as_any_mut().downcast_mut::<T>().unwrap())
+        self.components.get_mut(&component_type)?.get_mut::<T>(entity)
     }
 
     pub fn components<T: 'static + Component>(&self) -> impl Iterator<Item = (Entity, &T)> {
         let component_type = TypeId::of::<T>();
 
-        self.components
-            .get(component_type)
-            .unwrap()
-            .iter()
-            .map(|(entity, component)| (*entity, component.deref().as_any().downcast_ref::<T>().unwrap()))
+        self.components.get(&component_type).unwrap().iter()
     }
 }
 
