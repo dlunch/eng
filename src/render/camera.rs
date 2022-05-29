@@ -160,3 +160,42 @@ impl PerspectiveCameraController for ArcballCameraController {
         forward.cross(&right).normalize()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use core::f32::consts::PI;
+
+    use nalgebra::Point3;
+
+    use super::{Camera, OrthographicCamera, PerspectiveCamera, StaticCameraController};
+
+    #[test]
+    fn test_orthographic() {
+        let camera = OrthographicCamera::new(100, 100);
+        assert_eq!(
+            camera.view().as_slice(),
+            [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,]
+        );
+
+        assert_eq!(
+            camera.projection().as_slice(),
+            [0.02, 0.0, 0.0, 0.0, 0.0, -0.02, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 1.0, -0.0, 1.0]
+        )
+    }
+
+    #[test]
+    fn test_perspective() {
+        let controller = StaticCameraController::new(Point3::new(5.0, 0.0, 0.0), Point3::new(0.0, 0.0, 0.0));
+
+        let camera = PerspectiveCamera::new(45.0 * PI / 180.0, 200.0f32 / 100.0f32, 0.1, 100.0, controller);
+        assert_eq!(
+            camera.view().as_slice(),
+            [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, -0.0, 0.0, -1.0, 0.0, -0.0, 0.0, 0.0, -0.0, -5.0, 1.0]
+        );
+
+        assert_eq!(
+            camera.projection().as_slice(),
+            [1.2071067, 0.0, 0.0, 0.0, 0.0, 2.4142134, 0.0, 0.0, 0.0, 0.0, -1.001001, -1.0, 0.0, 0.0, -0.1001001, 0.0]
+        )
+    }
+}
