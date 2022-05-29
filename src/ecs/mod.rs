@@ -1,13 +1,12 @@
 use alloc::collections::BTreeMap;
 use core::any::{Any, TypeId};
 
-mod any_vec;
+mod any_storage;
 mod hierarchy;
 mod raw_vec;
-mod sparse_any_vec;
 mod sparse_raw_vec;
 
-use sparse_any_vec::SparseAnyVec;
+use any_storage::AnyStorage;
 use sparse_raw_vec::SparseRawVec;
 
 type ComponentType = TypeId;
@@ -15,7 +14,7 @@ type ResourceType = TypeId;
 
 pub struct World {
     components: BTreeMap<ComponentType, SparseRawVec<Entity>>,
-    resources: SparseAnyVec<ResourceType>,
+    resources: BTreeMap<ResourceType, AnyStorage>,
     entities: u32,
 }
 
@@ -23,7 +22,7 @@ impl World {
     pub fn new() -> Self {
         Self {
             components: BTreeMap::new(),
-            resources: SparseAnyVec::new(),
+            resources: BTreeMap::new(),
             entities: 0,
         }
     }
@@ -72,19 +71,19 @@ impl World {
     pub fn add_resource<T: 'static>(&mut self, resource: T) {
         let resource_type = TypeId::of::<T>();
 
-        self.resources.insert(resource_type, resource);
+        self.resources.insert(resource_type, AnyStorage::new(resource));
     }
 
     pub fn resource<T: 'static>(&self) -> Option<&T> {
         let resource_type = TypeId::of::<T>();
 
-        self.resources.get::<T>(resource_type)
+        Some(self.resources.get(&resource_type)?.get::<T>())
     }
 
     pub fn resource_mut<T: 'static>(&mut self) -> Option<&mut T> {
         let resource_type = TypeId::of::<T>();
 
-        self.resources.get_mut::<T>(resource_type)
+        Some(self.resources.get_mut(&resource_type)?.get_mut::<T>())
     }
 }
 
