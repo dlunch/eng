@@ -93,7 +93,7 @@ impl Renderer {
         T: Iterator<Item = &'a RenderComponent>,
     {
         let mvp = camera.projection() * camera.view();
-        self.mvp_buf.write(mvp.as_slice().as_bytes());
+        self.mvp_buf.write(mvp.to_cols_array().as_bytes());
 
         let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         self.render_scene(&mut command_encoder, components, self.render_target.size());

@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 use std::sync::Arc;
 
-use nalgebra::Point3;
+use glam::Vec3;
 use winit::dpi::LogicalSize;
 
 use eng::ecs::World;
@@ -31,7 +31,7 @@ async fn main() {
 
     let size = LogicalSize::new(1920, 1080);
 
-    let controller = ArcballCameraController::new(Point3::new(0.0, 0.0, 0.0), 5.0);
+    let controller = ArcballCameraController::new(Vec3::new(0.0, 0.0, 0.0), 5.0);
     let camera = PerspectiveCamera::new(45.0 * PI / 180.0, size.width as f32 / size.height as f32, 0.1, 100.0, controller);
 
     App::new().await.setup(setup).run(camera)
