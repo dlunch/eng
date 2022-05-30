@@ -1,10 +1,11 @@
-use alloc::vec::Vec;
-use core::{any::TypeId, mem::size_of, slice};
+use alloc::{boxed::Box, vec::Vec};
+use core::{any::TypeId, mem::size_of, ops::Drop, slice};
 
 pub struct AnyStorage {
     storage: Vec<u8>,
     #[cfg(debug_assertions)]
     actual_type: TypeId,
+    drop: Box<fn(&mut [u8])>,
 }
 
 impl AnyStorage {
@@ -17,6 +18,7 @@ impl AnyStorage {
             storage: value_slice.to_vec(),
             #[cfg(debug_assertions)]
             actual_type: TypeId::of::<T>(),
+            drop: Box::new(Self::drop::<T>),
         }
     }
 
@@ -34,5 +36,16 @@ impl AnyStorage {
 
         let value_ptr = self.storage.as_mut_ptr() as *mut T;
         unsafe { &mut *value_ptr }
+    }
+
+    fn drop<T: 'static>(value_slice: &mut [u8]) {
+        let value_ptr = value_slice.as_mut_ptr() as *mut T;
+        unsafe { value_ptr.drop_in_place() }
+    }
+}
+
+impl Drop for AnyStorage {
+    fn drop(&mut self) {
+        (self.drop)(&mut self.storage)
     }
 }

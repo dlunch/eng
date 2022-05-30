@@ -1,7 +1,8 @@
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 use core::{
     any::TypeId,
     mem::{align_of, size_of},
+    ops::Drop,
     slice,
 };
 
@@ -10,6 +11,7 @@ pub struct RawVec {
     storage: Vec<u8>,
     #[cfg(debug_assertions)]
     actual_type: TypeId,
+    drop_all: Box<fn(&mut [u8])>,
 }
 
 impl RawVec {
@@ -18,6 +20,7 @@ impl RawVec {
             storage: Vec::new(),
             #[cfg(debug_assertions)]
             actual_type: TypeId::of::<T>(),
+            drop_all: Box::new(Self::drop_all::<T>),
         }
     }
 
@@ -87,6 +90,21 @@ impl RawVec {
         } else {
             num_to_round + multiple - remainder
         }
+    }
+
+    fn drop_all<T: 'static>(storage: &mut [u8]) {
+        let item_size = Self::round_up(size_of::<T>(), align_of::<T>());
+
+        storage.chunks_mut(item_size).for_each(|x| {
+            let value_ptr = x.as_mut_ptr() as *mut T;
+            unsafe { value_ptr.drop_in_place() }
+        })
+    }
+}
+
+impl Drop for RawVec {
+    fn drop(&mut self) {
+        (self.drop_all)(&mut self.storage)
     }
 }
 
