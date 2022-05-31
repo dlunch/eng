@@ -110,8 +110,10 @@ impl Drop for RawVec {
 
 #[cfg(test)]
 mod test {
+    use alloc::{rc::Rc, vec, vec::Vec};
+    use core::cell::RefCell;
+
     use super::RawVec;
-    use alloc::{vec, vec::Vec};
 
     #[test]
     fn test_push() {
@@ -163,5 +165,28 @@ mod test {
 
         assert_eq!(vec.get::<TestStruct>(0).unwrap().test[0], 1);
         assert_eq!(vec.get::<TestStruct>(0).unwrap().test[1], 2);
+    }
+
+    #[test]
+    fn test_drop() {
+        let dropped = vec![Rc::new(RefCell::new(false)), Rc::new(RefCell::new(false))];
+
+        struct TestStruct {
+            dropped: Rc<RefCell<bool>>,
+        }
+
+        impl Drop for TestStruct {
+            fn drop(&mut self) {
+                *self.dropped.borrow_mut() = true;
+            }
+        }
+        {
+            let mut vec = RawVec::new::<TestStruct>();
+            vec.insert(0, TestStruct { dropped: dropped[0].clone() });
+            vec.insert(1, TestStruct { dropped: dropped[1].clone() });
+        }
+
+        assert!(*dropped[0].borrow());
+        assert!(*dropped[1].borrow());
     }
 }
