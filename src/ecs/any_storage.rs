@@ -49,3 +49,43 @@ impl Drop for AnyStorage {
         (self.drop)(&mut self.storage)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use alloc::{rc::Rc, vec, vec::Vec};
+    use core::cell::RefCell;
+
+    use super::AnyStorage;
+
+    #[test]
+    fn test_storage() {
+        struct TestStruct {
+            a: usize,
+            b: Vec<u32>,
+        }
+
+        let storage = AnyStorage::new(TestStruct { a: 123, b: vec![1, 2, 3, 4] });
+
+        assert_eq!(storage.get::<TestStruct>().a, 123);
+        assert_eq!(storage.get::<TestStruct>().b, [1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn test_drop() {
+        let dropped = Rc::new(RefCell::new(false));
+
+        struct TestStruct {
+            dropped: Rc<RefCell<bool>>,
+        }
+
+        impl Drop for TestStruct {
+            fn drop(&mut self) {
+                *self.dropped.borrow_mut() = true;
+            }
+        }
+        {
+            AnyStorage::new(TestStruct { dropped: dropped.clone() });
+        }
+        assert!(*dropped.borrow());
+    }
+}
