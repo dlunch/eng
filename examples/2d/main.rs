@@ -3,7 +3,7 @@ use std::sync::Arc;
 use winit::dpi::LogicalSize;
 
 use eng::ecs::World;
-use eng::render::{Material, Mesh, OrthographicCamera, RenderComponent, Renderer, Shader, SimpleVertex};
+use eng::render::{CameraComponent, Material, Mesh, OrthographicCamera, RenderComponent, Renderer, Shader, SimpleVertex};
 use eng::App;
 
 fn setup(world: &mut World) {
@@ -21,17 +21,19 @@ fn setup(world: &mut World) {
 
     let entity = world.spawn();
     world.add_component(entity, render_component);
+
+    let size = LogicalSize::new(1920, 1080);
+    let camera = OrthographicCamera::new(size.width, size.height);
+
+    let entity = world.spawn();
+    world.add_component(entity, CameraComponent { camera: Box::new(camera) })
 }
 
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
 
-    let size = LogicalSize::new(1920, 1080);
-
-    let camera = OrthographicCamera::new(size.width, size.height);
-
-    App::new().await.setup(setup).run(camera)
+    App::new().await.setup(setup).run()
 }
 
 fn create_vertices() -> (Vec<SimpleVertex>, Vec<u16>) {

@@ -1,8 +1,7 @@
-use alloc::sync::Arc;
+use alloc::{boxed::Box, sync::Arc};
 
+use super::{constants::INTERNAL_COLOR_ATTACHMENT_FORMAT, pipeline_cache::PipelineCache, Camera, Material, Mesh, Renderer};
 use crate::ecs::Component;
-
-use super::{constants::INTERNAL_COLOR_ATTACHMENT_FORMAT, pipeline_cache::PipelineCache, Material, Mesh, Renderer};
 
 pub struct RenderComponent {
     pub mesh: Mesh,
@@ -37,3 +36,9 @@ impl RenderComponent {
         Self { mesh, material, pipeline }
     }
 }
+
+pub struct CameraComponent {
+    pub camera: Box<dyn Camera>,
+}
+
+impl Component for CameraComponent {}
