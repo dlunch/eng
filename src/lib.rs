@@ -15,7 +15,6 @@ pub struct App {
     event_loop: EventLoop<()>,
     window: Window,
     world: ecs::World,
-    renderer: render::Renderer,
 }
 
 impl App {
@@ -28,19 +27,17 @@ impl App {
 
         let renderer = render::Renderer::new(&window, 1920, 1080).await;
 
-        Self {
-            event_loop,
-            window,
-            world: ecs::World::new(),
-            renderer,
-        }
+        let mut world = ecs::World::new();
+        world.add_resource(renderer);
+
+        Self { event_loop, window, world }
     }
 
     pub fn setup<F>(mut self, setup: F) -> Self
     where
-        F: FnOnce(&mut ecs::World, &render::Renderer),
+        F: FnOnce(&mut ecs::World),
     {
-        setup(&mut self.world, &self.renderer);
+        setup(&mut self.world);
         self
     }
 
@@ -51,10 +48,12 @@ impl App {
         self.event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Poll;
 
+            let mut renderer = self.world.take_resource::<render::Renderer>().unwrap();
+
             match event {
                 Event::MainEventsCleared => self.window.request_redraw(),
                 Event::RedrawRequested(_) => {
-                    self.renderer.render_world(&camera, &self.world);
+                    renderer.render_world(&camera, &self.world);
                 }
                 Event::WindowEvent { event, .. } => match event {
                     WindowEvent::KeyboardInput {
@@ -73,6 +72,8 @@ impl App {
                 },
                 _ => {}
             }
+
+            self.world.add_resource(renderer);
         });
     }
 }

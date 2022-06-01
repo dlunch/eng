@@ -85,6 +85,12 @@ impl World {
 
         Some(self.resources.get_mut(&resource_type)?.get_mut::<T>())
     }
+
+    pub fn take_resource<T: 'static>(&mut self) -> Option<T> {
+        let resource_type = TypeId::of::<T>();
+
+        Some(self.resources.remove(&resource_type)?.into_inner::<T>())
+    }
 }
 
 impl Default for World {

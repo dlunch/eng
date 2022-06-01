@@ -6,16 +6,21 @@ use eng::ecs::World;
 use eng::render::{Material, Mesh, OrthographicCamera, RenderComponent, Renderer, Shader, SimpleVertex};
 use eng::App;
 
-fn setup(world: &mut World, renderer: &Renderer) {
-    let (vertices, indices) = create_vertices();
-    let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
+fn setup(world: &mut World) {
+    let render_component = {
+        let renderer = world.resource::<Renderer>().unwrap();
 
-    let shader = Shader::new(renderer, include_str!("shader.wgsl"));
+        let (vertices, indices) = create_vertices();
+        let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
 
-    let material = Material::new(renderer, &[], &[], Arc::new(shader));
+        let shader = Shader::new(renderer, include_str!("shader.wgsl"));
+
+        let material = Material::new(renderer, &[], &[], Arc::new(shader));
+        RenderComponent::new(renderer, mesh, material)
+    };
 
     let entity = world.spawn();
-    world.add_component(entity, RenderComponent::new(renderer, mesh, material));
+    world.add_component(entity, render_component);
 }
 
 #[tokio::main]
