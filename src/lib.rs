@@ -41,10 +41,7 @@ impl App {
         self
     }
 
-    pub fn run<T>(mut self, camera: T)
-    where
-        T: render::Camera + 'static,
-    {
+    pub fn run(mut self) {
         self.event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Poll;
 
@@ -53,7 +50,7 @@ impl App {
             match event {
                 Event::MainEventsCleared => self.window.request_redraw(),
                 Event::RedrawRequested(_) => {
-                    renderer.render_world(&camera, &self.world);
+                    renderer.render_world(&self.world);
                 }
                 Event::WindowEvent { event, .. } => match event {
                     WindowEvent::KeyboardInput {

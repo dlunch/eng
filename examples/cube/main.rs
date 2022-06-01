@@ -6,7 +6,8 @@ use winit::dpi::LogicalSize;
 
 use eng::ecs::World;
 use eng::render::{
-    ArcballCameraController, Material, Mesh, PerspectiveCamera, RenderComponent, Renderer, Shader, SimpleVertex, Texture, TextureFormat,
+    ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderComponent, Renderer, Shader, SimpleVertex, Texture,
+    TextureFormat,
 };
 use eng::App;
 
@@ -28,18 +29,20 @@ fn setup(world: &mut World) {
 
     let entity = world.spawn();
     world.add_component(entity, render_component);
+
+    let size = LogicalSize::new(1920, 1080);
+    let controller = ArcballCameraController::new(Vec3::new(0.0, 0.0, 0.0), 5.0);
+    let camera = PerspectiveCamera::new(45.0 * PI / 180.0, size.width as f32 / size.height as f32, 0.1, 100.0, controller);
+
+    let entity = world.spawn();
+    world.add_component(entity, CameraComponent { camera: Box::new(camera) })
 }
 
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
 
-    let size = LogicalSize::new(1920, 1080);
-
-    let controller = ArcballCameraController::new(Vec3::new(0.0, 0.0, 0.0), 5.0);
-    let camera = PerspectiveCamera::new(45.0 * PI / 180.0, size.width as f32 / size.height as f32, 0.1, 100.0, controller);
-
-    App::new().await.setup(setup).run(camera)
+    App::new().await.setup(setup).run()
 }
 
 // Copied from https://github.com/gfx-rs/wgpu-rs/blob/master/examples/cube/main.rs#L23

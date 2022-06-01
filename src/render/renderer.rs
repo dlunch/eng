@@ -5,8 +5,13 @@ use raw_window_handle::HasRawWindowHandle;
 use zerocopy::AsBytes;
 
 use super::{
-    buffer::Buffer, buffer_pool::BufferPool, camera::Camera, components::RenderComponent, pipeline_cache::PipelineCache,
-    render_target::OffscreenRenderTarget, Material, Mesh, RenderTarget, Shader, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
+    buffer::Buffer,
+    buffer_pool::BufferPool,
+    camera::Camera,
+    components::{CameraComponent, RenderComponent},
+    pipeline_cache::PipelineCache,
+    render_target::OffscreenRenderTarget,
+    Material, Mesh, RenderTarget, Shader, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
 use crate::ecs::World;
 
@@ -82,10 +87,11 @@ impl Renderer {
         }
     }
 
-    pub fn render_world(&mut self, camera: &dyn Camera, world: &World) {
+    pub fn render_world(&mut self, world: &World) {
         let render_components = world.components::<RenderComponent>().map(|x| x.1);
+        let camera = &world.components::<CameraComponent>().next().unwrap().1.camera;
 
-        self.render_components(camera, render_components);
+        self.render_components(camera.as_ref(), render_components);
     }
 
     fn render_components<'a, T>(&mut self, camera: &dyn Camera, components: T)
