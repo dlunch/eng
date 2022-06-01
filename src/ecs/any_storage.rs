@@ -38,6 +38,16 @@ impl AnyStorage {
         unsafe { &mut *value_ptr }
     }
 
+    pub fn into_inner<T: 'static>(self) -> T {
+        #[cfg(debug_assertions)]
+        assert_eq!(self.actual_type, TypeId::of::<T>());
+
+        let value_ptr = self.storage.as_ptr() as *const T;
+        core::mem::forget(self);
+
+        unsafe { value_ptr.read() }
+    }
+
     fn drop<T: 'static>(value_slice: &mut [u8]) {
         let value_ptr = value_slice.as_mut_ptr() as *mut T;
         unsafe { value_ptr.drop_in_place() }
@@ -86,6 +96,29 @@ mod test {
         {
             AnyStorage::new(TestStruct { dropped: dropped.clone() });
         }
+        assert!(*dropped.borrow());
+    }
+
+    #[test]
+    fn test_into_inner() {
+        let dropped = Rc::new(RefCell::new(false));
+
+        struct TestStruct {
+            dropped: Rc<RefCell<bool>>,
+        }
+
+        impl Drop for TestStruct {
+            fn drop(&mut self) {
+                *self.dropped.borrow_mut() = true;
+            }
+        }
+        let test = {
+            let storage = AnyStorage::new(TestStruct { dropped: dropped.clone() });
+            storage.into_inner::<TestStruct>()
+        };
+
+        assert!(!*dropped.borrow());
+        core::mem::drop(test);
         assert!(*dropped.borrow());
     }
 }
