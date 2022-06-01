@@ -10,19 +10,24 @@ use eng::render::{
 };
 use eng::App;
 
-fn setup(world: &mut World, renderer: &Renderer) {
-    let (vertices, indices) = create_vertices();
-    let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
+fn setup(world: &mut World) {
+    let render_component = {
+        let renderer = world.resource::<Renderer>().unwrap();
 
-    let texture_data = create_texels(512, 512);
-    let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
+        let (vertices, indices) = create_vertices();
+        let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
 
-    let shader = Shader::new(renderer, include_str!("shader.wgsl"));
+        let texture_data = create_texels(512, 512);
+        let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-    let material = Material::new(renderer, &[("texture", Arc::new(texture))], &[], Arc::new(shader));
+        let shader = Shader::new(renderer, include_str!("shader.wgsl"));
+
+        let material = Material::new(renderer, &[("texture", Arc::new(texture))], &[], Arc::new(shader));
+        RenderComponent::new(renderer, mesh, material)
+    };
 
     let entity = world.spawn();
-    world.add_component(entity, RenderComponent::new(renderer, mesh, material));
+    world.add_component(entity, render_component);
 }
 
 #[tokio::main]
