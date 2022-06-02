@@ -130,9 +130,9 @@ mod test {
 
         let mut world = World::new();
 
-        let entity = world.spawn().with(TestComponent { test: 1 }).entity();
+        world.spawn().with(TestComponent { test: 1 }).entity();
 
-        let entity = world.spawn().with(TestComponent { test: 2 }).entity();
+        world.spawn().with(TestComponent { test: 2 }).entity();
 
         let mut it = world.components::<TestComponent>();
         assert_eq!(it.next().unwrap().1.test, 1);
