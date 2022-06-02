@@ -7,7 +7,7 @@ use winit::dpi::LogicalSize;
 use eng::ecs::World;
 use eng::render::{
     ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderComponent, Renderer, Shader, SimpleVertex, Texture,
-    TextureFormat,
+    TextureFormat, Transform,
 };
 use eng::App;
 
@@ -24,7 +24,7 @@ fn setup(world: &mut World) {
         let shader = Shader::new(renderer, include_str!("shader.wgsl"));
 
         let material = Material::new(renderer, &[("texture", Arc::new(texture))], &[], Arc::new(shader));
-        RenderComponent::new(renderer, mesh, material)
+        RenderComponent::new(renderer, mesh, material, Transform::new())
     };
 
     world.spawn().with(render_component);

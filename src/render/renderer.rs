@@ -11,6 +11,7 @@ use super::{
     components::{CameraComponent, RenderComponent},
     pipeline_cache::PipelineCache,
     render_target::OffscreenRenderTarget,
+    transform::Transform,
     Material, Mesh, RenderTarget, Shader, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
 use crate::ecs::World;
@@ -159,7 +160,7 @@ impl Renderer {
 
         (
             offscreen_target,
-            RenderComponent::with_device(device, pipeline_cache, mesh, material, format, None),
+            RenderComponent::with_device(device, pipeline_cache, mesh, material, Transform::new(), format, None),
         )
     }
 

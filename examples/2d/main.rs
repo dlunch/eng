@@ -3,7 +3,7 @@ use std::sync::Arc;
 use winit::dpi::LogicalSize;
 
 use eng::ecs::World;
-use eng::render::{CameraComponent, Material, Mesh, OrthographicCamera, RenderComponent, Renderer, Shader, SimpleVertex};
+use eng::render::{CameraComponent, Material, Mesh, OrthographicCamera, RenderComponent, Renderer, Shader, SimpleVertex, Transform};
 use eng::App;
 
 fn setup(world: &mut World) {
@@ -16,7 +16,7 @@ fn setup(world: &mut World) {
         let shader = Shader::new(renderer, include_str!("shader.wgsl"));
 
         let material = Material::new(renderer, &[], &[], Arc::new(shader));
-        RenderComponent::new(renderer, mesh, material)
+        RenderComponent::new(renderer, mesh, material, Transform::new())
     };
 
     world.spawn().with(render_component);
