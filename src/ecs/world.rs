@@ -1,7 +1,7 @@
 use alloc::collections::BTreeMap;
 use core::any::TypeId;
 
-use super::{any_storage::AnyStorage, sparse_raw_vec::SparseRawVec, Component, Entity};
+use super::{any_storage::AnyStorage, builder::EntityBuilder, sparse_raw_vec::SparseRawVec, Component, Entity};
 
 type ComponentType = TypeId;
 type ResourceType = TypeId;
@@ -21,12 +21,12 @@ impl World {
         }
     }
 
-    pub fn spawn(&mut self) -> Entity {
+    pub fn spawn(&mut self) -> EntityBuilder<'_> {
         let id = self.entities;
 
         self.entities += 1;
 
-        Entity { id }
+        EntityBuilder::new(self, Entity { id })
     }
 
     pub fn add_component<T: 'static + Component>(&mut self, entity: Entity, component: T) {
@@ -115,9 +115,8 @@ mod test {
         impl Component for TestComponent {}
 
         let mut world = World::new();
-        let entity = world.spawn();
+        let entity = world.spawn().with(TestComponent { test: 1 }).entity();
 
-        world.add_component(entity, TestComponent { test: 1 });
         assert_eq!(world.component::<TestComponent>(entity).unwrap().test, 1);
     }
 
@@ -131,11 +130,9 @@ mod test {
 
         let mut world = World::new();
 
-        let entity = world.spawn();
-        world.add_component(entity, TestComponent { test: 1 });
+        let entity = world.spawn().with(TestComponent { test: 1 }).entity();
 
-        let entity = world.spawn();
-        world.add_component(entity, TestComponent { test: 2 });
+        let entity = world.spawn().with(TestComponent { test: 2 }).entity();
 
         let mut it = world.components::<TestComponent>();
         assert_eq!(it.next().unwrap().1.test, 1);

@@ -72,8 +72,8 @@ mod test {
     fn test_add_children() {
         let mut world = World::new();
 
-        let entity = world.spawn();
-        let child = world.spawn();
+        let entity = world.spawn().entity();
+        let child = world.spawn().entity();
 
         world.add_child(entity, child);
 
@@ -85,8 +85,8 @@ mod test {
     fn test_remove_children() {
         let mut world = World::new();
 
-        let entity = world.spawn();
-        let child = world.spawn();
+        let entity = world.spawn().entity();
+        let child = world.spawn().entity();
 
         assert!(!world.remove_child(entity, child));
 

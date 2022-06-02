@@ -19,14 +19,12 @@ fn setup(world: &mut World) {
         RenderComponent::new(renderer, mesh, material)
     };
 
-    let entity = world.spawn();
-    world.add_component(entity, render_component);
+    world.spawn().with(render_component);
 
     let size = LogicalSize::new(1920, 1080);
     let camera = OrthographicCamera::new(size.width, size.height);
 
-    let entity = world.spawn();
-    world.add_component(entity, CameraComponent { camera: Box::new(camera) })
+    world.spawn().with(CameraComponent { camera: Box::new(camera) });
 }
 
 #[tokio::main]
