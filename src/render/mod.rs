@@ -10,6 +10,7 @@ mod render_target;
 mod renderer;
 mod shader;
 mod texture;
+mod transform;
 mod vertex_format;
 
 pub use buffer::Buffer;
@@ -21,4 +22,5 @@ pub use render_target::{RenderTarget, WindowRenderTarget};
 pub use renderer::Renderer;
 pub use shader::{Shader, ShaderBinding, ShaderBindingType};
 pub use texture::{CompressedTextureFormat, Texture, TextureFormat};
+pub use transform::Transform;
 pub use vertex_format::{VertexFormat, VertexFormatItem, VertexItemType};
