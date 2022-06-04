@@ -23,7 +23,7 @@ fn setup(world: &mut World) {
 
         let shader = Shader::new(renderer, include_str!("shader.wgsl"));
 
-        let material = Material::new(renderer, &[("texture", Arc::new(texture))], &[], Arc::new(shader));
+        let material = Material::new(renderer, &[("texture", Arc::new(texture))], Arc::new(shader));
         RenderComponent::new(renderer, mesh, material, Transform::new())
     };
 

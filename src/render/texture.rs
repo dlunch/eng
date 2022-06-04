@@ -1,6 +1,6 @@
 use alloc::{vec, vec::Vec};
 
-use super::Renderer;
+use super::{resource::Resource, Renderer};
 
 pub enum TextureFormat {
     Rgba8Unorm,
@@ -129,5 +129,11 @@ impl Texture {
         format.decompress(data, width as usize, height as usize, result.as_mut());
 
         result
+    }
+}
+
+impl Resource for Texture {
+    fn wgpu_resource(&self) -> wgpu::BindingResource {
+        wgpu::BindingResource::TextureView(&self.texture_view)
     }
 }

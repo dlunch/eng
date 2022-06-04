@@ -2,30 +2,22 @@ use alloc::{string::String, sync::Arc, vec::Vec};
 
 use hashbrown::HashMap;
 
-use super::{buffer::Buffer, Renderer, Shader, ShaderBindingType, Texture};
+use super::{buffer::Buffer, resource::Resource, Renderer, Shader, ShaderBindingType};
 
 pub struct Material {
     pub(crate) shader: Arc<Shader>,
     pub(crate) bind_group: wgpu::BindGroup,
 
-    _textures: HashMap<String, Arc<Texture>>,
-    _uniforms: HashMap<String, Arc<Buffer>>,
+    _resources: HashMap<String, Arc<dyn Resource>>,
 }
 
 impl Material {
-    pub fn new(renderer: &Renderer, textures: &[(&str, Arc<Texture>)], uniforms: &[(&str, Arc<Buffer>)], shader: Arc<Shader>) -> Self {
-        Self::with_device(&*renderer.device, Some(&renderer.mvp_buf), textures, uniforms, shader)
+    pub fn new(renderer: &Renderer, resources: &[(&str, Arc<dyn Resource>)], shader: Arc<Shader>) -> Self {
+        Self::with_device(&*renderer.device, Some(&renderer.mvp_buf), resources, shader)
     }
 
-    pub fn with_device(
-        device: &wgpu::Device,
-        mvp_buf: Option<&Buffer>,
-        textures: &[(&str, Arc<Texture>)],
-        uniforms: &[(&str, Arc<Buffer>)],
-        shader: Arc<Shader>,
-    ) -> Self {
-        let textures = textures.iter().map(|x| (x.0.into(), x.1.clone())).collect::<HashMap<_, _>>();
-        let uniforms = uniforms.iter().map(|x| (x.0.into(), x.1.clone())).collect::<HashMap<_, _>>();
+    pub fn with_device(device: &wgpu::Device, mvp_buf: Option<&Buffer>, resources: &[(&str, Arc<dyn Resource>)], shader: Arc<Shader>) -> Self {
+        let resources = resources.iter().map(|x| (x.0.into(), x.1.clone())).collect::<HashMap<_, _>>();
 
         // TODO wip
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -47,27 +39,14 @@ impl Material {
             .bindings
             .iter()
             .map(|(binding_name, binding)| {
-                let resource = match binding.binding_type {
-                    ShaderBindingType::UniformBuffer => {
-                        if *binding_name == "mvp" {
-                            // TODO temp hardcode
-                            mvp_buf.unwrap().binding_resource()
-                        } else {
-                            let buffer = uniforms.get(binding_name);
-                            match buffer {
-                                Some(x) => x.binding_resource(),
-                                None => panic!("No such buffer named {}", binding_name),
-                            }
-                        }
-                    }
-                    ShaderBindingType::Texture2D => {
-                        let texture = textures.get(binding_name);
-                        match texture {
-                            Some(x) => wgpu::BindingResource::TextureView(&x.texture_view),
-                            None => panic!("No such texture named {}", binding_name),
-                        }
-                    }
-                    ShaderBindingType::Sampler => wgpu::BindingResource::Sampler(&sampler),
+                let resource = if *binding_name == "mvp" {
+                    // TODO temp hardcode
+                    mvp_buf.unwrap().wgpu_resource()
+                } else if binding.binding_type == ShaderBindingType::Sampler {
+                    wgpu::BindingResource::Sampler(&sampler)
+                } else {
+                    let resource = resources.get(binding_name).unwrap();
+                    resource.wgpu_resource()
                 };
 
                 wgpu::BindGroupEntry {
@@ -86,8 +65,7 @@ impl Material {
         Self {
             shader,
             bind_group,
-            _textures: textures,
-            _uniforms: uniforms,
+            _resources: resources,
         }
     }
 }
