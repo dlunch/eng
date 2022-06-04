@@ -8,10 +8,10 @@ mod mesh;
 mod pipeline_cache;
 mod render_target;
 mod renderer;
+mod resource;
 mod shader;
 mod texture;
 mod transform;
-mod resource;
 mod vertex_format;
 
 pub use buffer::Buffer;
