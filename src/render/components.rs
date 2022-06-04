@@ -20,7 +20,7 @@ impl RenderComponent {
             mesh,
             material,
             transform,
-            INTERNAL_COLOR_ATTACHMENT_FORMAT.wgpu_type(),
+            INTERNAL_COLOR_ATTACHMENT_FORMAT.wgpu_format(),
             Some(wgpu::TextureFormat::Depth32Float),
         )
     }

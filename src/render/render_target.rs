@@ -105,6 +105,6 @@ impl RenderTarget for OffscreenRenderTarget {
     }
 
     fn output_format(&self) -> wgpu::TextureFormat {
-        INTERNAL_COLOR_ATTACHMENT_FORMAT.wgpu_type()
+        INTERNAL_COLOR_ATTACHMENT_FORMAT.wgpu_format()
     }
 }

@@ -10,7 +10,7 @@ pub enum TextureFormat {
 }
 
 impl TextureFormat {
-    pub(crate) fn wgpu_type(&self) -> wgpu::TextureFormat {
+    pub(crate) fn wgpu_format(&self) -> wgpu::TextureFormat {
         match self {
             TextureFormat::Rgba8Unorm => wgpu::TextureFormat::Rgba8Unorm,
             TextureFormat::Bgra8Unorm => wgpu::TextureFormat::Bgra8Unorm,
@@ -65,7 +65,7 @@ impl Texture {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: format.wgpu_type(),
+            format: format.wgpu_format(),
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT,
             label: None,
         });
@@ -86,7 +86,7 @@ impl Texture {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: format.wgpu_type(),
+            format: format.wgpu_format(),
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT,
             label: None,
         });
