@@ -4,7 +4,7 @@ use hashbrown::HashMap;
 
 use super::Renderer;
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub enum ShaderBindingType {
     UniformBuffer,
     Texture2D,

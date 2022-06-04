@@ -1,6 +1,8 @@
 use alloc::{boxed::Box, sync::Arc, vec};
 use core::ops::Drop;
 
+use super::resource::Resource;
+
 pub struct Buffer {
     queue: Arc<wgpu::Queue>,
     pub(crate) buffer: Arc<wgpu::Buffer>,
@@ -36,14 +38,6 @@ impl Buffer {
         }
     }
 
-    pub(crate) fn binding_resource(&self) -> wgpu::BindingResource {
-        wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-            buffer: &self.buffer,
-            offset: self.offset as wgpu::BufferAddress,
-            size: wgpu::BufferSize::new(self.size as u64),
-        })
-    }
-
     pub(crate) fn as_slice(&self) -> wgpu::BufferSlice {
         self.buffer.slice(self.offset as u64..self.offset as u64 + self.size as u64)
     }
@@ -52,5 +46,15 @@ impl Buffer {
 impl Drop for Buffer {
     fn drop(&mut self) {
         (self.free)()
+    }
+}
+
+impl Resource for Buffer {
+    fn wgpu_resource(&self) -> wgpu::BindingResource {
+        wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+            buffer: &self.buffer,
+            offset: self.offset as wgpu::BufferAddress,
+            size: wgpu::BufferSize::new(self.size as u64),
+        })
     }
 }

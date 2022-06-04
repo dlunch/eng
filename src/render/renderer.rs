@@ -150,13 +150,7 @@ impl Renderer {
 
         let shader = Shader::with_device(device, include_str!("./shaders/shader.wgsl"));
 
-        let material = Material::with_device(
-            device,
-            None,
-            &[("texture", offscreen_target.color_attachment.clone())],
-            &[],
-            Arc::new(shader),
-        );
+        let material = Material::with_device(device, None, &[("texture", offscreen_target.color_attachment.clone())], Arc::new(shader));
 
         (
             offscreen_target,
