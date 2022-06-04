@@ -1,5 +1,6 @@
-use alloc::collections::BTreeMap;
 use core::any::TypeId;
+
+use hashbrown::HashMap;
 
 use super::{any_storage::AnyStorage, builder::EntityBuilder, sparse_raw_vec::SparseRawVec, Component, Entity};
 
@@ -7,16 +8,16 @@ type ComponentType = TypeId;
 type ResourceType = TypeId;
 
 pub struct World {
-    components: BTreeMap<ComponentType, SparseRawVec<Entity>>,
-    resources: BTreeMap<ResourceType, AnyStorage>,
+    components: HashMap<ComponentType, SparseRawVec<Entity>>,
+    resources: HashMap<ResourceType, AnyStorage>,
     entities: u32,
 }
 
 impl World {
     pub fn new() -> Self {
         Self {
-            components: BTreeMap::new(),
-            resources: BTreeMap::new(),
+            components: HashMap::new(),
+            resources: HashMap::new(),
             entities: 0,
         }
     }
