@@ -10,6 +10,7 @@ use winit::{
 
 pub mod ecs;
 pub mod render;
+mod utils;
 
 pub struct App {
     event_loop: EventLoop<()>,

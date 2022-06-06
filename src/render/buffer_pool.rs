@@ -3,6 +3,7 @@ use alloc::{collections::BTreeMap, sync::Arc, vec::Vec};
 use spinning_top::Spinlock;
 
 use super::buffer::Buffer;
+use crate::utils::round_up;
 
 const BUFFER_SIZE: usize = 10485760;
 
@@ -33,7 +34,7 @@ impl BufferPoolItem {
 
     pub fn alloc(&mut self, size: usize) -> Option<(Arc<wgpu::Buffer>, usize)> {
         let alignment = 4096; // TODO limits
-        let rounded_size = Self::round_up(size, alignment);
+        let rounded_size = round_up(size, alignment);
 
         let offset = self.find_offset(rounded_size)?;
 
@@ -59,19 +60,6 @@ impl BufferPoolItem {
             }
         }
         None
-    }
-
-    fn round_up(num_to_round: usize, multiple: usize) -> usize {
-        if multiple == 0 {
-            return num_to_round;
-        }
-
-        let remainder = num_to_round % multiple;
-        if remainder == 0 {
-            num_to_round
-        } else {
-            num_to_round + multiple - remainder
-        }
     }
 }
 
