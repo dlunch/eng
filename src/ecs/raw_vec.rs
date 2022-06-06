@@ -6,6 +6,8 @@ use core::{
     slice,
 };
 
+use crate::utils::round_up;
+
 // homogeneous vec
 pub struct RawVec {
     storage: Vec<u8>,
@@ -25,7 +27,7 @@ impl RawVec {
     }
 
     pub fn insert<T: 'static>(&mut self, index: usize, value: T) {
-        let item_size = Self::round_up(size_of::<T>(), align_of::<T>());
+        let item_size = round_up(size_of::<T>(), align_of::<T>());
         let offset = index * item_size;
 
         self.insert_at(offset, value);
@@ -35,7 +37,7 @@ impl RawVec {
         #[cfg(debug_assertions)]
         assert!(TypeId::of::<T>() == self.actual_type);
 
-        let item_size = Self::round_up(size_of::<T>(), align_of::<T>());
+        let item_size = round_up(size_of::<T>(), align_of::<T>());
         let offset = index * item_size;
 
         if offset >= self.storage.len() {
@@ -50,7 +52,7 @@ impl RawVec {
         #[cfg(debug_assertions)]
         assert!(TypeId::of::<T>() == self.actual_type);
 
-        let item_size = Self::round_up(size_of::<T>(), align_of::<T>());
+        let item_size = round_up(size_of::<T>(), align_of::<T>());
         let offset = index * item_size;
         if offset >= self.storage.len() {
             return None;
@@ -64,7 +66,7 @@ impl RawVec {
         #[cfg(debug_assertions)]
         assert!(TypeId::of::<T>() == self.actual_type);
 
-        let item_size = Self::round_up(size_of::<T>(), align_of::<T>());
+        let item_size = round_up(size_of::<T>(), align_of::<T>());
         self.storage.chunks(item_size).map(move |x| unsafe { &*(x as *const [u8] as *const T) })
     }
 
@@ -79,21 +81,8 @@ impl RawVec {
         core::mem::forget(value);
     }
 
-    fn round_up(num_to_round: usize, multiple: usize) -> usize {
-        if multiple == 0 {
-            return num_to_round;
-        }
-
-        let remainder = num_to_round % multiple;
-        if remainder == 0 {
-            num_to_round
-        } else {
-            num_to_round + multiple - remainder
-        }
-    }
-
     fn drop_all<T: 'static>(storage: &mut [u8]) {
-        let item_size = Self::round_up(size_of::<T>(), align_of::<T>());
+        let item_size = round_up(size_of::<T>(), align_of::<T>());
 
         storage.chunks_mut(item_size).for_each(|x| {
             let value_ptr = x.as_mut_ptr() as *mut T;
