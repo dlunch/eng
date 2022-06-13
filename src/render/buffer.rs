@@ -6,13 +6,13 @@ use super::resource::Resource;
 pub struct Buffer {
     queue: Arc<wgpu::Queue>,
     pub(crate) buffer: Arc<wgpu::Buffer>,
-    pub(crate) offset: usize,
-    size: usize,
+    pub(crate) offset: u64,
+    size: u64,
     free: Box<dyn Fn() + Sync + Send + 'static>,
 }
 
 impl Buffer {
-    pub(crate) fn new<F>(queue: Arc<wgpu::Queue>, buffer: Arc<wgpu::Buffer>, offset: usize, size: usize, free: F) -> Self
+    pub(crate) fn new<F>(queue: Arc<wgpu::Queue>, buffer: Arc<wgpu::Buffer>, offset: u64, size: u64, free: F) -> Self
     where
         F: Fn() + Sync + Send + 'static,
     {
@@ -32,9 +32,9 @@ impl Buffer {
             let mut new_buf = vec![0; data.len() + count];
             new_buf[..data.len()].copy_from_slice(data);
 
-            self.queue.write_buffer(&self.buffer, self.offset as u64, &new_buf)
+            self.queue.write_buffer(&self.buffer, self.offset, &new_buf)
         } else {
-            self.queue.write_buffer(&self.buffer, self.offset as u64, data)
+            self.queue.write_buffer(&self.buffer, self.offset, data)
         }
     }
 

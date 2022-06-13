@@ -50,14 +50,14 @@ impl Mesh {
     pub(crate) fn with_buffer_pool(buffer_pool: &BufferPool, vertex_data: &[&[u8]], indices: &[u16], vertex_formats: Vec<VertexFormat>) -> Self {
         let mut vertex_buffers = Vec::with_capacity(vertex_data.len());
         for vertex_datum in vertex_data {
-            let buffer = buffer_pool.alloc(vertex_datum.len());
+            let buffer = buffer_pool.alloc(vertex_datum.len() as u64);
             buffer.write(vertex_datum);
 
             vertex_buffers.push(buffer);
         }
 
         let index_data = indices.as_bytes();
-        let index_buffer = buffer_pool.alloc_index(index_data.len());
+        let index_buffer = buffer_pool.alloc_index(index_data.len() as u64);
         index_buffer.write(index_data);
 
         Self {
