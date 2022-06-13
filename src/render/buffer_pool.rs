@@ -5,12 +5,12 @@ use spinning_top::Spinlock;
 use super::buffer::Buffer;
 use crate::utils::round_up;
 
-const BUFFER_SIZE: usize = 10485760;
+const BUFFER_SIZE: u64 = 10485760;
 
 struct BufferPoolItem {
     buffer: Arc<wgpu::Buffer>,
-    allocated: usize,
-    allocations: BTreeMap<usize, usize>,
+    allocated: u64,
+    allocations: BTreeMap<u64, u64>,
 }
 
 impl BufferPoolItem {
@@ -32,7 +32,7 @@ impl BufferPoolItem {
         }
     }
 
-    pub fn alloc(&mut self, size: usize) -> Option<(Arc<wgpu::Buffer>, usize)> {
+    pub fn alloc(&mut self, size: u64) -> Option<(Arc<wgpu::Buffer>, u64)> {
         let alignment = 4096; // TODO limits
         let rounded_size = round_up(size, alignment);
 
@@ -44,13 +44,13 @@ impl BufferPoolItem {
         Some((self.buffer.clone(), offset))
     }
 
-    pub fn free(&mut self, offset: usize, size: usize) {
+    pub fn free(&mut self, offset: u64, size: u64) {
         self.allocated -= size;
         self.allocations.remove(&offset);
     }
 
     // simple allocator. may fragment a lot.
-    fn find_offset(&self, size: usize) -> Option<usize> {
+    fn find_offset(&self, size: u64) -> Option<u64> {
         let mut cursor = 0;
         for (allocation_offset, allocation_size) in self.allocations.iter() {
             if allocation_offset - cursor >= size {
@@ -82,15 +82,15 @@ impl BufferPool {
         }
     }
 
-    pub fn alloc_index(&self, size: usize) -> Buffer {
+    pub fn alloc_index(&self, size: u64) -> Buffer {
         self.do_alloc(size, true)
     }
 
-    pub fn alloc(&self, size: usize) -> Buffer {
+    pub fn alloc(&self, size: u64) -> Buffer {
         self.do_alloc(size, false)
     }
 
-    fn do_alloc(&self, size: usize, is_index: bool) -> Buffer {
+    fn do_alloc(&self, size: u64, is_index: bool) -> Buffer {
         let buffers = if is_index { &self.index_buffers } else { &self.buffers };
         let mut buffers = buffers.lock();
 
@@ -104,7 +104,7 @@ impl BufferPool {
         self.try_alloc(buffers.last().unwrap(), size).unwrap()
     }
 
-    fn try_alloc(&self, buffers: &Arc<Spinlock<BufferPoolItem>>, size: usize) -> Option<Buffer> {
+    fn try_alloc(&self, buffers: &Arc<Spinlock<BufferPoolItem>>, size: u64) -> Option<Buffer> {
         let (buffer, offset) = buffers.lock().alloc(size)?;
 
         let buffer_item = buffers.clone();
