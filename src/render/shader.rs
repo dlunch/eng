@@ -82,7 +82,7 @@ impl Shader {
             .filter_map(|(_, x)| match x.class {
                 naga::StorageClass::Uniform => {
                     let name = x.name.as_ref().unwrap().clone();
-                    if name.ends_with("_d") {
+                    if name == "transform" {
                         Some((
                             name,
                             ShaderBinding::new(x.binding.as_ref().unwrap().binding, ShaderBindingType::DynamicUniformBuffer),

@@ -202,6 +202,7 @@ impl Renderer {
                 &component.pipeline,
                 &mut render_pass,
                 &[0..component.mesh.index_count as u32],
+                Some(0),
             );
         }
     }
@@ -212,9 +213,10 @@ impl Renderer {
         pipeline: &'a wgpu::RenderPipeline,
         render_pass: &mut wgpu::RenderPass<'a>,
         ranges: &[Range<u32>],
+        offset: Option<u32>,
     ) {
         render_pass.set_pipeline(pipeline);
-        render_pass.set_bind_group(0, &material.bind_group, &[]);
+        render_pass.set_bind_group(0, &material.bind_group, &offset.map(|x| vec![x]).unwrap_or_default());
         render_pass.set_index_buffer(mesh.index_buffer.as_slice(), wgpu::IndexFormat::Uint16);
         for (i, vertex_buffer) in mesh.vertex_buffers.iter().enumerate() {
             render_pass.set_vertex_buffer(i as u32, vertex_buffer.as_slice());
@@ -260,6 +262,7 @@ impl Renderer {
                 &pipeline,
                 &mut render_pass,
                 &[0..self.offscreen_to_render_target_component.mesh.index_count as u32],
+                None,
             );
         }
     }

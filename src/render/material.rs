@@ -16,7 +16,12 @@ impl Material {
         Self::with_device(&*renderer.device, Some(&renderer.shader_transform), resources, shader)
     }
 
-    pub fn with_device(device: &wgpu::Device, mvp_buf: Option<&dyn Resource>, resources: &[(&str, Arc<dyn Resource>)], shader: Arc<Shader>) -> Self {
+    pub fn with_device(
+        device: &wgpu::Device,
+        transform: Option<&dyn Resource>,
+        resources: &[(&str, Arc<dyn Resource>)],
+        shader: Arc<Shader>,
+    ) -> Self {
         let resources = resources.iter().map(|x| (x.0.into(), x.1.clone())).collect::<HashMap<_, _>>();
 
         // TODO wip
@@ -39,9 +44,8 @@ impl Material {
             .bindings
             .iter()
             .map(|(binding_name, binding)| {
-                let resource = if *binding_name == "mvp" {
-                    // TODO temp hardcode
-                    mvp_buf.unwrap().wgpu_resource()
+                let resource = if *binding_name == "transform" {
+                    transform.unwrap().wgpu_resource()
                 } else if binding.binding_type == ShaderBindingType::Sampler {
                     wgpu::BindingResource::Sampler(&sampler)
                 } else {
