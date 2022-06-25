@@ -1,4 +1,4 @@
-use alloc::{boxed::Box, sync::Arc, vec};
+use alloc::{boxed::Box, sync::Arc, vec, vec::Vec};
 use core::ops::Range;
 
 use raw_window_handle::HasRawWindowHandle;
@@ -97,22 +97,22 @@ impl Renderer {
     }
 
     pub fn render_world(&mut self, world: &World) {
-        let render_components = world.components::<RenderComponent>().map(|x| x.1);
+        let render_components = world.components::<RenderComponent>().map(|x| x.1).collect::<Vec<_>>();
         let camera = &world.components::<CameraComponent>().next().unwrap().1.camera;
 
-        self.render_components(camera.as_ref(), render_components);
+        self.render_components(camera.as_ref(), &render_components);
     }
 
-    fn render_components<'a, T>(&mut self, camera: &dyn Camera, components: T)
-    where
-        T: Iterator<Item = &'a RenderComponent>,
-    {
-        let transform = ShaderTransform {
-            model: [1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.],
-            view: camera.view().to_cols_array(),
-            projection: camera.projection().to_cols_array(),
-        };
-        self.shader_transform.write(0, &transform);
+    fn render_components(&mut self, camera: &dyn Camera, components: &[&RenderComponent]) {
+        for (idx, component) in components.iter().enumerate() {
+            // TODO can be optimized to single write
+            let transform = ShaderTransform {
+                model: component.transform.to_matrix().to_cols_array(),
+                view: camera.view().to_cols_array(),
+                projection: camera.projection().to_cols_array(),
+            };
+            self.shader_transform.write(idx, &transform);
+        }
 
         let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         self.render_scene(&mut command_encoder, components, self.render_target.size());
@@ -122,10 +122,7 @@ impl Renderer {
         self.render_target.submit();
     }
 
-    fn render_scene<'a, T>(&self, command_encoder: &mut wgpu::CommandEncoder, components: T, viewport_size: (u32, u32))
-    where
-        T: Iterator<Item = &'a RenderComponent>,
-    {
+    fn render_scene(&self, command_encoder: &mut wgpu::CommandEncoder, components: &[&RenderComponent], viewport_size: (u32, u32)) {
         let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             color_attachments: &[wgpu::RenderPassColorAttachment {
                 view: self.offscreen_target.color_attachment(),
@@ -147,14 +144,14 @@ impl Renderer {
         });
         render_pass.set_viewport(0.0, 0.0, viewport_size.0 as f32, viewport_size.1 as f32, 0.0, 1.0);
 
-        for component in components {
+        for (idx, component) in components.iter().enumerate() {
             Self::render_ranges(
                 &component.mesh,
                 &component.material,
                 &component.pipeline,
                 &mut render_pass,
                 &[0..component.mesh.index_count as u32],
-                Some(0),
+                Some(idx as u32),
             );
         }
     }
