@@ -18,7 +18,7 @@ fn vs_main(
 ) -> VertexOutput {
     var out: VertexOutput;
 
-    out.position = transform.projection * transform.view * position;
+    out.position = transform.projection * transform.view * transform.model * position;
     out.tex_coord = tex_coord;
 
     return out;
