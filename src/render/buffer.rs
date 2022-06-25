@@ -25,16 +25,18 @@ impl Buffer {
         }
     }
 
-    pub fn write(&self, data: &[u8]) {
+    pub fn write(&self, offset: u64, data: &[u8]) {
+        assert!(offset < self.size);
+
         // TODO raise error or warn
         if data.len() % wgpu::COPY_BUFFER_ALIGNMENT as usize != 0 {
             let count = data.len() % wgpu::COPY_BUFFER_ALIGNMENT as usize;
             let mut new_buf = vec![0; data.len() + count];
             new_buf[..data.len()].copy_from_slice(data);
 
-            self.queue.write_buffer(&self.buffer, self.offset, &new_buf)
+            self.queue.write_buffer(&self.buffer, self.offset + offset, &new_buf)
         } else {
-            self.queue.write_buffer(&self.buffer, self.offset, data)
+            self.queue.write_buffer(&self.buffer, self.offset + offset, data)
         }
     }
 
