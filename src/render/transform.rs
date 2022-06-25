@@ -1,7 +1,7 @@
 use glam::{EulerRot, Mat4, Quat, Vec3};
 
 pub struct Transform {
-    pub position: Vec3,
+    pub translation: Vec3,
     pub rotation: Vec3,
     pub scale: Vec3,
 }
@@ -9,7 +9,7 @@ pub struct Transform {
 impl Transform {
     pub fn new() -> Self {
         Self {
-            position: Vec3::ZERO,
+            translation: Vec3::ZERO,
             rotation: Vec3::ZERO,
             scale: Vec3::ONE,
         }
@@ -20,7 +20,7 @@ impl Transform {
         let rotation = rotation.to_euler(EulerRot::YXZ);
 
         Self {
-            position: translation,
+            translation,
             rotation: Vec3::new(rotation.1, rotation.0, rotation.2),
             scale,
         }
@@ -28,7 +28,7 @@ impl Transform {
 
     pub fn to_matrix(&self) -> Mat4 {
         let rotation = Quat::from_euler(EulerRot::YXZ, self.rotation.y, self.rotation.x, self.rotation.z);
-        Mat4::from_scale_rotation_translation(self.scale, rotation, self.position)
+        Mat4::from_scale_rotation_translation(self.scale, rotation, self.translation)
     }
 }
 
