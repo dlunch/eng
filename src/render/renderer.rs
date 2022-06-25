@@ -32,6 +32,7 @@ pub struct Renderer {
     pub(crate) queue: Arc<wgpu::Queue>,
 
     render_target: Box<dyn RenderTarget>,
+    pub(crate) standard_shader: Arc<Shader>,
 
     offscreen_target: OffscreenRenderTarget,
     offscreen_to_render_target_component: RenderComponent,
@@ -83,6 +84,7 @@ impl Renderer {
             Self::create_offscreen_target(&device, &pipeline_cache, &buffer_pool, width, height, render_target.output_format());
 
         let shader_transform = DynamicUniformBuffer::with_buffer_pool(&buffer_pool, 64); // TODO realloc
+        let standard_shader = Arc::new(Shader::with_device(&device, include_str!("./shaders/standard.wgsl")));
 
         Self {
             device,
@@ -90,6 +92,7 @@ impl Renderer {
             buffer_pool,
             queue,
             render_target,
+            standard_shader,
             offscreen_target,
             offscreen_to_render_target_component,
             pipeline_cache,

@@ -1,13 +1,12 @@
 use std::f32::consts::PI;
-use std::sync::Arc;
 
 use glam::Vec3;
 use winit::dpi::LogicalSize;
 
 use eng::ecs::World;
 use eng::render::{
-    ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderComponent, Renderer, Shader, SimpleVertex, Texture,
-    TextureFormat, Transform,
+    ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderComponent, Renderer, SimpleVertex, Texture, TextureFormat,
+    Transform,
 };
 use eng::App;
 
@@ -21,9 +20,7 @@ fn setup(world: &mut World) {
         let texture_data = create_texels(512, 512);
         let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let shader = Shader::new(renderer, include_str!("shader.wgsl"));
-
-        let material = Material::new(renderer, &[("texture", Arc::new(texture))], Arc::new(shader));
+        let material = Material::new(renderer, texture);
         RenderComponent::new(renderer, mesh, material, Transform::new())
     };
     render_component1.transform.translation.x = 1.0;
@@ -41,9 +38,7 @@ fn setup(world: &mut World) {
         let texture_data = create_texels(512, 512);
         let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let shader = Shader::new(renderer, include_str!("shader.wgsl"));
-
-        let material = Material::new(renderer, &[("texture", Arc::new(texture))], Arc::new(shader));
+        let material = Material::new(renderer, texture);
         RenderComponent::new(renderer, mesh, material, Transform::new())
     };
     render_component2.transform.translation.x = -1.0;
