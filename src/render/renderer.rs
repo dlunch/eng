@@ -5,20 +5,28 @@ use raw_window_handle::HasRawWindowHandle;
 use zerocopy::AsBytes;
 
 use super::{
-    buffer::Buffer,
     buffer_pool::BufferPool,
     camera::Camera,
     components::{CameraComponent, RenderComponent},
     pipeline_cache::PipelineCache,
     render_target::OffscreenRenderTarget,
     transform::Transform,
+    uniform_buffer::DynamicUniformBuffer,
     Material, Mesh, RenderTarget, Shader, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
 use crate::ecs::World;
 
+#[derive(AsBytes)]
+#[repr(C)]
+pub(crate) struct ShaderTransform {
+    pub model: [f32; 16],
+    pub view: [f32; 16],
+    pub projection: [f32; 16],
+}
+
 pub struct Renderer {
     pub(crate) device: Arc<wgpu::Device>,
-    pub(crate) mvp_buf: Buffer,
+    pub(crate) shader_transform: DynamicUniformBuffer<ShaderTransform>,
     pub buffer_pool: BufferPool,
 
     pub(crate) queue: Arc<wgpu::Queue>,
@@ -74,11 +82,11 @@ impl Renderer {
         let (offscreen_target, offscreen_to_render_target_component) =
             Self::create_offscreen_target(&device, &pipeline_cache, &buffer_pool, width, height, render_target.output_format());
 
-        let mvp_buf = buffer_pool.alloc(64);
+        let shader_transform = DynamicUniformBuffer::with_buffer_pool(&buffer_pool, 64); // TODO realloc
 
         Self {
             device,
-            mvp_buf,
+            shader_transform,
             buffer_pool,
             queue,
             render_target,
@@ -99,8 +107,12 @@ impl Renderer {
     where
         T: Iterator<Item = &'a RenderComponent>,
     {
-        let mvp = camera.projection() * camera.view();
-        self.mvp_buf.write(0, mvp.to_cols_array().as_bytes());
+        let transform = ShaderTransform {
+            model: [1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.],
+            view: camera.view().to_cols_array(),
+            projection: camera.projection().to_cols_array(),
+        };
+        self.shader_transform.write(0, &transform);
 
         let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         self.render_scene(&mut command_encoder, components, self.render_target.size());

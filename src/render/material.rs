@@ -2,7 +2,7 @@ use alloc::{string::String, sync::Arc, vec::Vec};
 
 use hashbrown::HashMap;
 
-use super::{buffer::Buffer, resource::Resource, Renderer, Shader, ShaderBindingType};
+use super::{resource::Resource, Renderer, Shader, ShaderBindingType};
 
 pub struct Material {
     pub(crate) shader: Arc<Shader>,
@@ -13,10 +13,10 @@ pub struct Material {
 
 impl Material {
     pub fn new(renderer: &Renderer, resources: &[(&str, Arc<dyn Resource>)], shader: Arc<Shader>) -> Self {
-        Self::with_device(&*renderer.device, Some(&renderer.mvp_buf), resources, shader)
+        Self::with_device(&*renderer.device, Some(&renderer.shader_transform), resources, shader)
     }
 
-    pub fn with_device(device: &wgpu::Device, mvp_buf: Option<&Buffer>, resources: &[(&str, Arc<dyn Resource>)], shader: Arc<Shader>) -> Self {
+    pub fn with_device(device: &wgpu::Device, mvp_buf: Option<&dyn Resource>, resources: &[(&str, Arc<dyn Resource>)], shader: Arc<Shader>) -> Self {
         let resources = resources.iter().map(|x| (x.0.into(), x.1.clone())).collect::<HashMap<_, _>>();
 
         // TODO wip

@@ -12,6 +12,7 @@ mod resource;
 mod shader;
 mod texture;
 mod transform;
+mod uniform_buffer;
 mod vertex_format;
 
 pub use buffer::Buffer;
