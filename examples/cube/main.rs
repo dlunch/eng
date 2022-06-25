@@ -12,7 +12,7 @@ use eng::render::{
 use eng::App;
 
 fn setup(world: &mut World) {
-    let mut render_component = {
+    let mut render_component1 = {
         let renderer = world.resource::<Renderer>().unwrap();
 
         let (vertices, indices) = create_vertices();
@@ -26,10 +26,31 @@ fn setup(world: &mut World) {
         let material = Material::new(renderer, &[("texture", Arc::new(texture))], Arc::new(shader));
         RenderComponent::new(renderer, mesh, material, Transform::new())
     };
-    render_component.transform.rotation.y = 0.7;
-    render_component.transform.rotation.z = 0.7;
+    render_component1.transform.translation.x = 1.0;
+    render_component1.transform.rotation.y = 0.7;
+    render_component1.transform.rotation.z = 0.7;
 
-    world.spawn().with(render_component);
+    world.spawn().with(render_component1);
+
+    let mut render_component2 = {
+        let renderer = world.resource::<Renderer>().unwrap();
+
+        let (vertices, indices) = create_vertices();
+        let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
+
+        let texture_data = create_texels(512, 512);
+        let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
+
+        let shader = Shader::new(renderer, include_str!("shader.wgsl"));
+
+        let material = Material::new(renderer, &[("texture", Arc::new(texture))], Arc::new(shader));
+        RenderComponent::new(renderer, mesh, material, Transform::new())
+    };
+    render_component2.transform.translation.x = -1.0;
+    render_component2.transform.rotation.y = 0.1;
+    render_component2.transform.rotation.z = 0.1;
+
+    world.spawn().with(render_component2);
 
     let size = LogicalSize::new(1920, 1080);
     let controller = ArcballCameraController::new(Vec3::new(0.0, 0.0, 0.0), 5.0);
