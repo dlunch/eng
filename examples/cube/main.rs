@@ -11,7 +11,7 @@ use eng::render::{
 use eng::App;
 
 fn setup(world: &mut World) {
-    let mut render_component1 = {
+    let render_component1 = {
         let renderer = world.resource::<Renderer>().unwrap();
 
         let (vertices, indices) = create_vertices();
@@ -21,15 +21,17 @@ fn setup(world: &mut World) {
         let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
         let material = Material::new(renderer, texture);
-        RenderComponent::new(renderer, mesh, material, Transform::new())
+        RenderComponent::new(
+            renderer,
+            mesh,
+            material,
+            Transform::with_values(Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.7, 0.7), Vec3::new(1.0, 1.0, 1.0)),
+        )
     };
-    render_component1.transform.translation.x = 1.0;
-    render_component1.transform.rotation.y = 0.7;
-    render_component1.transform.rotation.z = 0.7;
 
     world.spawn().with(render_component1);
 
-    let mut render_component2 = {
+    let render_component2 = {
         let renderer = world.resource::<Renderer>().unwrap();
 
         let (vertices, indices) = create_vertices();
@@ -39,11 +41,13 @@ fn setup(world: &mut World) {
         let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
         let material = Material::new(renderer, texture);
-        RenderComponent::new(renderer, mesh, material, Transform::new())
+        RenderComponent::new(
+            renderer,
+            mesh,
+            material,
+            Transform::with_values(Vec3::new(-1.0, 0.0, 0.0), Vec3::new(0.0, 0.1, 0.1), Vec3::new(1.0, 1.0, 1.0)),
+        )
     };
-    render_component2.transform.translation.x = -1.0;
-    render_component2.transform.rotation.y = 0.1;
-    render_component2.transform.rotation.z = 0.1;
 
     world.spawn().with(render_component2);
 

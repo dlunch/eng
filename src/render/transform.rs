@@ -15,6 +15,14 @@ impl Transform {
         }
     }
 
+    pub fn with_values(translation: Vec3, rotation: Vec3, scale: Vec3) -> Self {
+        Self {
+            translation,
+            rotation,
+            scale,
+        }
+    }
+
     pub fn from_matrix(matrix: &Mat4) -> Self {
         let (scale, rotation, translation) = matrix.to_scale_rotation_translation();
         let rotation = rotation.to_euler(EulerRot::YXZ);
