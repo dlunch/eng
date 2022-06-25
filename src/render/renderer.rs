@@ -122,54 +122,6 @@ impl Renderer {
         self.render_target.submit();
     }
 
-    fn create_offscreen_target(
-        device: &wgpu::Device,
-        pipeline_cache: &PipelineCache,
-        buffer_pool: &BufferPool,
-        width: u32,
-        height: u32,
-        format: wgpu::TextureFormat,
-    ) -> (OffscreenRenderTarget, RenderComponent) {
-        let texture_width = Self::round_up_power_of_two(width);
-        let texture_height = Self::round_up_power_of_two(height);
-        let offscreen_target = OffscreenRenderTarget::with_device(device, texture_width, texture_height);
-
-        let right = width as f32 / texture_width as f32;
-        let bottom = height as f32 / texture_height as f32;
-
-        #[rustfmt::skip]
-        let quad = [
-            -1.0,  1.0, 0.0,   0.0,
-            -1.0, -1.0, 0.0,   bottom,
-             1.0, -1.0, right, bottom,
-            -1.0,  1.0, 0.0,   0.0,
-             1.0, -1.0, right, bottom,
-             1.0,  1.0, right, 0.0,
-        ];
-
-        let mesh = Mesh::with_buffer_pool(
-            buffer_pool,
-            &[quad.as_bytes()],
-            &[0u16, 1, 2, 3, 4, 5],
-            vec![VertexFormat::new(
-                vec![
-                    VertexFormatItem::new("position", VertexItemType::Float2, 0),
-                    VertexFormatItem::new("tex_coord", VertexItemType::Float2, core::mem::size_of::<f32>() * 2),
-                ],
-                core::mem::size_of::<f32>() * 4,
-            )],
-        );
-
-        let shader = Shader::with_device(device, include_str!("./shaders/shader.wgsl"));
-
-        let material = Material::with_device(device, None, &[("texture", offscreen_target.color_attachment.clone())], Arc::new(shader));
-
-        (
-            offscreen_target,
-            RenderComponent::with_device(device, pipeline_cache, mesh, material, Transform::new(), format, None),
-        )
-    }
-
     fn render_scene<'a, T>(&self, command_encoder: &mut wgpu::CommandEncoder, components: T, viewport_size: (u32, u32))
     where
         T: Iterator<Item = &'a RenderComponent>,
@@ -265,6 +217,54 @@ impl Renderer {
                 None,
             );
         }
+    }
+
+    fn create_offscreen_target(
+        device: &wgpu::Device,
+        pipeline_cache: &PipelineCache,
+        buffer_pool: &BufferPool,
+        width: u32,
+        height: u32,
+        format: wgpu::TextureFormat,
+    ) -> (OffscreenRenderTarget, RenderComponent) {
+        let texture_width = Self::round_up_power_of_two(width);
+        let texture_height = Self::round_up_power_of_two(height);
+        let offscreen_target = OffscreenRenderTarget::with_device(device, texture_width, texture_height);
+
+        let right = width as f32 / texture_width as f32;
+        let bottom = height as f32 / texture_height as f32;
+
+        #[rustfmt::skip]
+        let quad = [
+            -1.0,  1.0, 0.0,   0.0,
+            -1.0, -1.0, 0.0,   bottom,
+             1.0, -1.0, right, bottom,
+            -1.0,  1.0, 0.0,   0.0,
+             1.0, -1.0, right, bottom,
+             1.0,  1.0, right, 0.0,
+        ];
+
+        let mesh = Mesh::with_buffer_pool(
+            buffer_pool,
+            &[quad.as_bytes()],
+            &[0u16, 1, 2, 3, 4, 5],
+            vec![VertexFormat::new(
+                vec![
+                    VertexFormatItem::new("position", VertexItemType::Float2, 0),
+                    VertexFormatItem::new("tex_coord", VertexItemType::Float2, core::mem::size_of::<f32>() * 2),
+                ],
+                core::mem::size_of::<f32>() * 4,
+            )],
+        );
+
+        let shader = Shader::with_device(device, include_str!("./shaders/shader.wgsl"));
+
+        let material = Material::with_device(device, None, &[("texture", offscreen_target.color_attachment.clone())], Arc::new(shader));
+
+        (
+            offscreen_target,
+            RenderComponent::with_device(device, pipeline_cache, mesh, material, Transform::new(), format, None),
+        )
     }
 
     //returns zero if v is zero.
