@@ -12,7 +12,7 @@ use eng::render::{
 use eng::App;
 
 fn setup(world: &mut World) {
-    let render_component = {
+    let mut render_component = {
         let renderer = world.resource::<Renderer>().unwrap();
 
         let (vertices, indices) = create_vertices();
@@ -26,6 +26,8 @@ fn setup(world: &mut World) {
         let material = Material::new(renderer, &[("texture", Arc::new(texture))], Arc::new(shader));
         RenderComponent::new(renderer, mesh, material, Transform::new())
     };
+    render_component.transform.rotation.y = 0.7;
+    render_component.transform.rotation.z = 0.7;
 
     world.spawn().with(render_component);
 
