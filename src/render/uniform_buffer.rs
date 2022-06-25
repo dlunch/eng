@@ -11,7 +11,7 @@ where
     T: AsBytes,
 {
     buffer: Buffer,
-    item_size: u64,
+    item_size: u32,
     _phantom: PhantomData<T>,
 }
 
@@ -21,9 +21,9 @@ where
 {
     pub(crate) fn with_buffer_pool(buffer_pool: &BufferPool, count: usize) -> Self {
         let alignment = 256; // TODO limts
-        let item_size = round_up(size_of::<T>(), alignment) as u64;
+        let item_size = round_up(size_of::<T>(), alignment) as u32;
 
-        let buffer = buffer_pool.alloc(item_size * count as u64);
+        let buffer = buffer_pool.alloc(item_size as u64 * count as u64);
 
         Self {
             buffer,
@@ -33,9 +33,13 @@ where
     }
 
     pub fn write(&mut self, index: usize, data: &T) {
-        let offset = self.item_size * index as u64;
+        let offset = self.item_size * index as u32;
 
-        self.buffer.write(offset, data.as_bytes());
+        self.buffer.write(offset as u64, data.as_bytes());
+    }
+
+    pub fn offset_for_index(&self, index: usize) -> u32 {
+        self.item_size as u32 * index as u32
     }
 }
 
