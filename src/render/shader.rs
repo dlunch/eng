@@ -6,6 +6,7 @@ use super::Renderer;
 
 #[derive(Clone, Eq, PartialEq)]
 pub enum ShaderBindingType {
+    DynamicUniformBuffer,
     UniformBuffer,
     Texture2D,
     Sampler,
@@ -14,6 +15,11 @@ pub enum ShaderBindingType {
 impl ShaderBindingType {
     pub fn wgpu_type(&self) -> wgpu::BindingType {
         match self {
+            ShaderBindingType::DynamicUniformBuffer => wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: true,
+                min_binding_size: None,
+            },
             ShaderBindingType::UniformBuffer => wgpu::BindingType::Buffer {
                 ty: wgpu::BufferBindingType::Uniform,
                 has_dynamic_offset: false,
@@ -74,10 +80,20 @@ impl Shader {
             .global_variables
             .iter()
             .filter_map(|(_, x)| match x.class {
-                naga::StorageClass::Uniform => Some((
-                    x.name.as_ref().unwrap().clone(),
-                    ShaderBinding::new(x.binding.as_ref().unwrap().binding, ShaderBindingType::UniformBuffer),
-                )),
+                naga::StorageClass::Uniform => {
+                    let name = x.name.as_ref().unwrap().clone();
+                    if name.ends_with("_d") {
+                        Some((
+                            name,
+                            ShaderBinding::new(x.binding.as_ref().unwrap().binding, ShaderBindingType::DynamicUniformBuffer),
+                        ))
+                    } else {
+                        Some((
+                            name,
+                            ShaderBinding::new(x.binding.as_ref().unwrap().binding, ShaderBindingType::UniformBuffer),
+                        ))
+                    }
+                }
                 naga::StorageClass::Handle => {
                     let ty = module.types.get_handle(x.ty).unwrap();
 
