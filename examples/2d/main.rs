@@ -15,7 +15,7 @@ fn setup(world: &mut World) {
 
         let shader = Shader::new(renderer, include_str!("shader.wgsl"));
 
-        let material = Material::new(renderer, &[], Arc::new(shader));
+        let material = Material::with_custom_shader(renderer, &[], Arc::new(shader));
         RenderComponent::new(renderer, mesh, material, Transform::new())
     };
 
