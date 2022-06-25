@@ -4,10 +4,12 @@ struct VertexOutput {
 };
 
 struct transform {
-    mvp: mat4x4<f32>;
+    model: mat4x4<f32>;
+    view: mat4x4<f32>;
+    projection: mat4x4<f32>;
 };
 [[group(0), binding(0)]]
-var<uniform> mvp: transform;
+var<uniform> transform: transform;
 
 [[stage(vertex)]]
 fn vs_main(
@@ -16,7 +18,7 @@ fn vs_main(
 ) -> VertexOutput {
     var out: VertexOutput;
 
-    out.position = mvp.mvp * position;
+    out.position = transform.projection * transform.view * position;
     out.tex_coord = tex_coord;
 
     return out;
