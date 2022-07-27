@@ -22,7 +22,7 @@ lazy_static = { version = "^1.4", default-features = false }
 num-traits = { version = "^0.2", default-features = false }
 
 [target.'cfg(unix)'.dependencies]
-winit = { version = "^0.26", features = ["x11", "wayland"], default-features = false }
+winit = { version = "^0.27", features = ["x11", "wayland"], default-features = false }
 
 [target.'cfg(not(unix))'.dependencies]
 winit = { version = "^0.26", default-features = false }
