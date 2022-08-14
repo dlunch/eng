@@ -23,14 +23,14 @@ pub struct WindowRenderTarget {
 
 impl WindowRenderTarget {
     pub(crate) fn new(surface: wgpu::Surface, adapter: &wgpu::Adapter, device: &wgpu::Device, width: u32, height: u32) -> Self {
-        let format = surface.get_preferred_format(adapter).unwrap();
+        let format = surface.get_supported_formats(adapter)[0];
 
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format,
             width,
             height,
-            present_mode: wgpu::PresentMode::Mailbox,
+            present_mode: wgpu::PresentMode::Fifo,
         };
 
         surface.configure(device, &config);

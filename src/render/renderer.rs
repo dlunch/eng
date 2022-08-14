@@ -58,7 +58,7 @@ impl Renderer {
         log::info!("{:?}", adapter.get_info());
         log::info!("{:?}", adapter.features());
         log::info!("{:?}", limits);
-        log::info!("{:?}", adapter.get_downlevel_properties());
+        log::info!("{:?}", adapter.get_downlevel_capabilities());
 
         let (device, queue) = adapter
             .request_device(
@@ -127,14 +127,14 @@ impl Renderer {
 
     fn render_scene(&self, command_encoder: &mut wgpu::CommandEncoder, components: &[&RenderComponent], viewport_size: (u32, u32)) {
         let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            color_attachments: &[wgpu::RenderPassColorAttachment {
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: self.offscreen_target.color_attachment(),
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color { r: 1., g: 1., b: 1., a: 1. }),
                     store: true,
                 },
-            }],
+            })],
             depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                 view: &self.offscreen_target.depth_attachment.texture_view,
                 depth_ops: Some(wgpu::Operations {
@@ -196,14 +196,14 @@ impl Renderer {
         );
         {
             let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                color_attachments: &[wgpu::RenderPassColorAttachment {
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: target.color_attachment(),
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color { r: 1., g: 1., b: 1., a: 1. }),
                         store: true,
                     },
-                }],
+                })],
                 depth_stencil_attachment: None,
                 label: None,
             });
