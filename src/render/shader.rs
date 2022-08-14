@@ -75,6 +75,8 @@ impl Shader {
 
         let vs_entry = module.entry_points.iter().find(|&e| e.stage == naga::ShaderStage::Vertex).unwrap();
         let fs_entry = module.entry_points.iter().find(|&e| e.stage == naga::ShaderStage::Fragment).unwrap();
+        let vs_entry_name = vs_entry.name.clone();
+        let fs_entry_name = fs_entry.name.clone();
 
         let bindings = module
             .global_variables
@@ -127,7 +129,7 @@ impl Shader {
 
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
-            source: wgpu::ShaderSource::Wgsl(source.into()),
+            source: wgpu::ShaderSource::Naga(module),
         });
 
         let bind_group_entries = bindings.iter().map(|(_, x)| x.wgpu_entry()).collect::<Vec<_>>();
@@ -139,8 +141,8 @@ impl Shader {
 
         Self {
             module,
-            vs_entry: vs_entry.name.clone(),
-            fs_entry: fs_entry.name.clone(),
+            vs_entry: vs_entry_name,
+            fs_entry: fs_entry_name,
             bindings,
             inputs,
             bind_group_layout,

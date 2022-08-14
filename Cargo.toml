@@ -10,7 +10,7 @@ doctest = false
 [dependencies]
 futures = { version = "^0.3", features = ["async-await"], default-features = false }
 log = { version = "^0.4", default-features = false }
-wgpu = { version = "^0.13", features = ["webgl"], default-features = false }
+wgpu = { version = "^0.13", features = ["webgl", "naga"], default-features = false }
 zerocopy = { version = "^0.6", default-features = false }
 glam = { version = "^0.21", features = ["libm"], default-features = false }
 squish = { version = "^1", default-features = false }
