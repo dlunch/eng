@@ -117,7 +117,7 @@ impl PipelineCache {
             fragment: Some(wgpu::FragmentState {
                 module: &shader.module,
                 entry_point: &shader.fs_entry,
-                targets: &[wgpu::ColorTargetState {
+                targets: &[Some(wgpu::ColorTargetState {
                     format: surface_format,
                     blend: Some(wgpu::BlendState {
                         color: wgpu::BlendComponent {
@@ -128,7 +128,7 @@ impl PipelineCache {
                         alpha: wgpu::BlendComponent::REPLACE,
                     }),
                     write_mask: wgpu::ColorWrites::ALL,
-                }],
+                })],
             }),
             primitive: wgpu::PrimitiveState {
                 cull_mode: Some(wgpu::Face::Back),

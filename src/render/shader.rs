@@ -79,8 +79,8 @@ impl Shader {
         let bindings = module
             .global_variables
             .iter()
-            .filter_map(|(_, x)| match x.class {
-                naga::StorageClass::Uniform => {
+            .filter_map(|(_, x)| match x.space {
+                naga::AddressSpace::Uniform => {
                     let name = x.name.as_ref().unwrap().clone();
                     if name == "transform" {
                         Some((
@@ -94,7 +94,7 @@ impl Shader {
                         ))
                     }
                 }
-                naga::StorageClass::Handle => {
+                naga::AddressSpace::Handle => {
                     let ty = module.types.get_handle(x.ty).unwrap();
 
                     let binding_type = match ty.inner {
@@ -125,7 +125,7 @@ impl Shader {
             })
             .collect::<HashMap<_, _>>();
 
-        let module = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+        let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(source.into()),
         });
