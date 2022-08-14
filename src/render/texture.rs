@@ -51,7 +51,7 @@ pub struct Texture {
 
 impl Texture {
     pub fn new(renderer: &Renderer, width: u32, height: u32, format: TextureFormat) -> Self {
-        Self::with_device(&*renderer.device, width, height, format)
+        Self::with_device(&renderer.device, width, height, format)
     }
 
     pub(crate) fn with_device(device: &wgpu::Device, width: u32, height: u32, format: TextureFormat) -> Self {

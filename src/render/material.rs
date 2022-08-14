@@ -14,7 +14,7 @@ pub struct Material {
 impl Material {
     pub fn new(renderer: &Renderer, texture: Texture) -> Self {
         Self::with_device(
-            &*renderer.device,
+            &renderer.device,
             Some(&renderer.shader_transform),
             &[("texture", Arc::new(texture))],
             renderer.standard_shader.clone(),
@@ -22,7 +22,7 @@ impl Material {
     }
 
     pub fn with_custom_shader(renderer: &Renderer, resources: &[(&str, Arc<dyn Resource>)], shader: Arc<Shader>) -> Self {
-        Self::with_device(&*renderer.device, Some(&renderer.shader_transform), resources, shader)
+        Self::with_device(&renderer.device, Some(&renderer.shader_transform), resources, shader)
     }
 
     pub(crate) fn with_device(

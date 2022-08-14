@@ -67,7 +67,7 @@ pub struct Shader {
 
 impl Shader {
     pub fn new(renderer: &Renderer, source: &str) -> Self {
-        Self::with_device(&*renderer.device, source)
+        Self::with_device(&renderer.device, source)
     }
 
     pub(crate) fn with_device(device: &wgpu::Device, source: &str) -> Self {
