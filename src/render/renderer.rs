@@ -151,6 +151,7 @@ impl Renderer {
         });
         render_pass.set_viewport(0.0, 0.0, viewport_size.0 as f32, viewport_size.1 as f32, 0.0, 1.0);
 
+        // TODO sort by pipeline
         for (idx, component) in components.iter().enumerate() {
             Self::render_ranges(
                 &component.mesh,
