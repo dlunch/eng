@@ -104,8 +104,16 @@ impl Renderer {
         let render_components = world.components::<RenderComponent>().map(|x| x.1).collect::<Vec<_>>();
         let camera = &world.components::<CameraComponent>().next().unwrap().1.camera;
 
+        let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
         self.write_transforms(camera.as_ref(), &render_components);
-        self.render_components(&render_components);
+
+        self.render(&mut command_encoder, &render_components, self.render_target.size());
+
+        self.present(&mut command_encoder, &*self.render_target);
+
+        self.queue.submit(Some(command_encoder.finish()));
+        self.render_target.submit();
     }
 
     fn write_transforms(&mut self, camera: &dyn Camera, components: &[&RenderComponent]) {
@@ -121,16 +129,7 @@ impl Renderer {
         self.shader_transform.write_all(&transforms);
     }
 
-    fn render_components(&mut self, components: &[&RenderComponent]) {
-        let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-        self.render_scene(&mut command_encoder, components, self.render_target.size());
-        self.present(&mut command_encoder, &*self.render_target);
-
-        self.queue.submit(Some(command_encoder.finish()));
-        self.render_target.submit();
-    }
-
-    fn render_scene(&self, command_encoder: &mut wgpu::CommandEncoder, components: &[&RenderComponent], viewport_size: (u32, u32)) {
+    fn render(&self, command_encoder: &mut wgpu::CommandEncoder, components: &[&RenderComponent], viewport_size: (u32, u32)) {
         let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: self.offscreen_target.color_attachment(),
