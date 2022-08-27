@@ -104,20 +104,24 @@ impl Renderer {
         let render_components = world.components::<RenderComponent>().map(|x| x.1).collect::<Vec<_>>();
         let camera = &world.components::<CameraComponent>().next().unwrap().1.camera;
 
-        self.render_components(camera.as_ref(), &render_components);
+        self.write_transforms(camera.as_ref(), &render_components);
+        self.render_components(&render_components);
     }
 
-    fn render_components(&mut self, camera: &dyn Camera, components: &[&RenderComponent]) {
-        for (idx, component) in components.iter().enumerate() {
-            // TODO can be optimized to single write
-            let transform = ShaderTransform {
-                model: component.transform.to_matrix().to_cols_array(),
+    fn write_transforms(&mut self, camera: &dyn Camera, components: &[&RenderComponent]) {
+        let transforms = components
+            .iter()
+            .map(|x| ShaderTransform {
+                model: x.transform.to_matrix().to_cols_array(),
                 view: camera.view().to_cols_array(),
                 projection: camera.projection().to_cols_array(),
-            };
-            self.shader_transform.write(idx, &transform);
-        }
+            })
+            .collect::<Vec<_>>();
 
+        self.shader_transform.write_all(&transforms);
+    }
+
+    fn render_components(&mut self, components: &[&RenderComponent]) {
         let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         self.render_scene(&mut command_encoder, components, self.render_target.size());
         self.present(&mut command_encoder, &*self.render_target);

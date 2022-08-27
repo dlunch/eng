@@ -1,3 +1,4 @@
+use alloc::vec;
 use core::{marker::PhantomData, mem::size_of};
 
 use zerocopy::AsBytes;
@@ -32,10 +33,14 @@ where
         }
     }
 
-    pub fn write(&mut self, index: usize, data: &T) {
-        let offset = self.item_size * index as u32;
+    pub fn write_all(&mut self, data: &[T]) {
+        let mut buf = vec![0; data.len() * (self.item_size as usize)];
 
-        self.buffer.write(offset as u64, data.as_bytes());
+        buf.chunks_mut(self.item_size as usize)
+            .zip(data.iter())
+            .for_each(|(buf, data)| buf[..size_of::<T>()].copy_from_slice(data.as_bytes()));
+
+        self.buffer.write(0, &buf);
     }
 
     pub fn offset_for_index(&self, index: usize) -> u32 {
