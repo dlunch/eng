@@ -10,7 +10,6 @@ use super::{
     components::{CameraComponent, RenderComponent},
     pipeline_cache::PipelineCache,
     render_target::OffscreenRenderTarget,
-    transform::Transform,
     uniform_buffer::DynamicUniformBuffer,
     Material, Mesh, RenderTarget, Shader, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
@@ -35,7 +34,8 @@ pub struct Renderer {
     pub(crate) standard_shader: Arc<Shader>,
 
     offscreen_target: OffscreenRenderTarget,
-    offscreen_to_render_target_component: RenderComponent,
+    offscreen_render_mesh: Mesh,
+    offscreen_render_material: Material,
     pub(crate) pipeline_cache: PipelineCache,
 }
 
@@ -80,8 +80,8 @@ impl Renderer {
 
         let render_target = Box::new(WindowRenderTarget::new(surface, &adapter, &device, width, height));
 
-        let (offscreen_target, offscreen_to_render_target_component) =
-            Self::create_offscreen_target(&device, &pipeline_cache, &buffer_pool, width, height, render_target.output_format());
+        let (offscreen_target, offscreen_render_mesh, offscreen_render_material) =
+            Self::create_offscreen_target(&device, &buffer_pool, width, height);
 
         let shader_transform = DynamicUniformBuffer::with_buffer_pool(&buffer_pool, 64); // TODO realloc
         let standard_shader = Arc::new(Shader::with_device(&device, include_str!("./shaders/standard.wgsl")));
@@ -94,7 +94,8 @@ impl Renderer {
             render_target,
             standard_shader,
             offscreen_target,
-            offscreen_to_render_target_component,
+            offscreen_render_mesh,
+            offscreen_render_material,
             pipeline_cache,
         }
     }
@@ -189,8 +190,8 @@ impl Renderer {
     fn present(&self, command_encoder: &mut wgpu::CommandEncoder, target: &dyn RenderTarget) {
         let pipeline = self.pipeline_cache.get(
             &self.device,
-            &self.offscreen_to_render_target_component.material.shader,
-            &self.offscreen_to_render_target_component.mesh.vertex_formats,
+            &self.offscreen_render_material.shader,
+            &self.offscreen_render_mesh.vertex_formats,
             target.output_format(),
             None,
         );
@@ -209,24 +210,17 @@ impl Renderer {
             });
 
             Self::render_ranges(
-                &self.offscreen_to_render_target_component.mesh,
-                &self.offscreen_to_render_target_component.material,
+                &self.offscreen_render_mesh,
+                &self.offscreen_render_material,
                 &pipeline,
                 &mut render_pass,
-                &[0..self.offscreen_to_render_target_component.mesh.index_count as u32],
+                &[0..self.offscreen_render_mesh.index_count as u32],
                 None,
             );
         }
     }
 
-    fn create_offscreen_target(
-        device: &wgpu::Device,
-        pipeline_cache: &PipelineCache,
-        buffer_pool: &BufferPool,
-        width: u32,
-        height: u32,
-        format: wgpu::TextureFormat,
-    ) -> (OffscreenRenderTarget, RenderComponent) {
+    fn create_offscreen_target(device: &wgpu::Device, buffer_pool: &BufferPool, width: u32, height: u32) -> (OffscreenRenderTarget, Mesh, Material) {
         let texture_width = Self::round_up_power_of_two(width);
         let texture_height = Self::round_up_power_of_two(height);
         let offscreen_target = OffscreenRenderTarget::with_device(device, texture_width, texture_height);
@@ -261,10 +255,7 @@ impl Renderer {
 
         let material = Material::with_device(device, None, &[("texture", offscreen_target.color_attachment.clone())], Arc::new(shader));
 
-        (
-            offscreen_target,
-            RenderComponent::with_device(device, pipeline_cache, mesh, material, Transform::new(), format, None),
-        )
+        (offscreen_target, mesh, material)
     }
 
     //returns zero if v is zero.
