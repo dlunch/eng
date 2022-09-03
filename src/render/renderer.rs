@@ -8,6 +8,7 @@ use super::{
     buffer_pool::BufferPool,
     camera::Camera,
     components::{CameraComponent, RenderComponent},
+    constants::INTERNAL_COLOR_ATTACHMENT_FORMAT,
     pipeline_cache::PipelineCache,
     render_target::OffscreenRenderTarget,
     uniform_buffer::DynamicUniformBuffer,
@@ -130,37 +131,53 @@ impl Renderer {
     }
 
     fn render(&self, command_encoder: &mut wgpu::CommandEncoder, components: &[&RenderComponent], viewport_size: (u32, u32)) {
-        let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: self.offscreen_target.color_attachment(),
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color { r: 1., g: 1., b: 1., a: 1. }),
-                    store: true,
-                },
-            })],
-            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                view: &self.offscreen_target.depth_attachment.texture_view,
-                depth_ops: Some(wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(1.0),
-                    store: true,
-                }),
-                stencil_ops: None,
-            }),
-            label: None,
-        });
-        render_pass.set_viewport(0.0, 0.0, viewport_size.0 as f32, viewport_size.1 as f32, 0.0, 1.0);
+        let component_pipelines = components
+            .iter()
+            .map(|&x| {
+                let pipeline = self.pipeline_cache.get(
+                    &self.device,
+                    &x.material.shader,
+                    &x.mesh.vertex_formats,
+                    INTERNAL_COLOR_ATTACHMENT_FORMAT.wgpu_format(),
+                    Some(wgpu::TextureFormat::Depth32Float),
+                );
 
-        // TODO sort by pipeline
-        for (idx, component) in components.iter().enumerate() {
-            Self::render_ranges(
-                &component.mesh,
-                &component.material,
-                &component.pipeline,
-                &mut render_pass,
-                &component.ranges,
-                Some(self.shader_transform.offset_for_index(idx) as u32),
-            );
+                (x, pipeline)
+            })
+            .collect::<Vec<_>>();
+        {
+            let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: self.offscreen_target.color_attachment(),
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color { r: 1., g: 1., b: 1., a: 1. }),
+                        store: true,
+                    },
+                })],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &self.offscreen_target.depth_attachment.texture_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: true,
+                    }),
+                    stencil_ops: None,
+                }),
+                label: None,
+            });
+            render_pass.set_viewport(0.0, 0.0, viewport_size.0 as f32, viewport_size.1 as f32, 0.0, 1.0);
+
+            // TODO sort by pipeline
+            for (idx, (component, pipeline)) in component_pipelines.iter().enumerate() {
+                Self::render_ranges(
+                    &component.mesh,
+                    &component.material,
+                    pipeline,
+                    &mut render_pass,
+                    &component.ranges,
+                    Some(self.shader_transform.offset_for_index(idx) as u32),
+                );
+            }
         }
     }
 
