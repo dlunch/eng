@@ -24,7 +24,6 @@ fn setup(world: &mut World) {
         RenderComponent::new(
             mesh,
             material,
-            &[0..36],
             Transform::with_values(Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.7, 0.7), Vec3::new(1.0, 1.0, 1.0)),
         )
     };
@@ -44,7 +43,6 @@ fn setup(world: &mut World) {
         RenderComponent::new(
             mesh,
             material,
-            &[0..36],
             Transform::with_values(Vec3::new(-1.0, 0.0, 0.0), Vec3::new(0.0, 0.1, 0.1), Vec3::new(1.0, 1.0, 1.0)),
         )
     };
