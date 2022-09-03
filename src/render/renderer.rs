@@ -158,7 +158,7 @@ impl Renderer {
                 &component.material,
                 &component.pipeline,
                 &mut render_pass,
-                &[0..component.mesh.index_count as u32],
+                &component.ranges,
                 Some(self.shader_transform.offset_for_index(idx) as u32),
             );
         }
