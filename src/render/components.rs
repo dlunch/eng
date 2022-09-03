@@ -14,7 +14,13 @@ pub struct RenderComponent {
 impl Component for RenderComponent {}
 
 impl RenderComponent {
-    pub fn new(mesh: Mesh, material: Material, ranges: &[Range<u32>], transform: Transform) -> Self {
+    pub fn new(mesh: Mesh, material: Material, transform: Transform) -> Self {
+        let range = 0..mesh.index_count as u32;
+
+        Self::with_range(mesh, material, &[range], transform)
+    }
+
+    pub fn with_range(mesh: Mesh, material: Material, ranges: &[Range<u32>], transform: Transform) -> Self {
         Self {
             mesh,
             material,
