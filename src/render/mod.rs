@@ -22,6 +22,7 @@ pub use material::Material;
 pub use mesh::{Mesh, SimpleVertex};
 pub use render_target::{RenderTarget, WindowRenderTarget};
 pub use renderer::Renderer;
+pub use resource::Resource;
 pub use shader::{Shader, ShaderBinding, ShaderBindingType};
 pub use texture::{CompressedTextureFormat, Texture, TextureFormat};
 pub use transform::Transform;
