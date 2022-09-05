@@ -1,6 +1,8 @@
 #![no_std]
 extern crate alloc;
 
+use core::future::Future;
+
 use winit::{
     dpi::LogicalSize,
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -34,11 +36,15 @@ impl App {
         Self { event_loop, window, world }
     }
 
-    pub fn setup<F>(mut self, setup: F) -> Self
+    pub async fn setup<'a, F, Fut>(mut self, setup: F) -> Self
     where
-        F: FnOnce(&mut ecs::World),
+        F: FnOnce(&'a mut ecs::World) -> Fut,
+        Fut: Future<Output = ()>,
     {
-        setup(&mut self.world);
+        // why do we need to remove lifetime here?
+        let world = unsafe { core::mem::transmute(&mut self.world) };
+        setup(world).await;
+
         self
     }
 

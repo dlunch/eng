@@ -6,7 +6,7 @@ use eng::ecs::World;
 use eng::render::{CameraComponent, Material, Mesh, OrthographicCamera, RenderComponent, Renderer, Shader, SimpleVertex, Transform};
 use eng::App;
 
-fn setup(world: &mut World) {
+async fn setup(world: &mut World) {
     let render_component = {
         let renderer = world.resource::<Renderer>().unwrap();
 
@@ -31,7 +31,7 @@ fn setup(world: &mut World) {
 async fn main() {
     pretty_env_logger::init();
 
-    App::new().await.setup(setup).run()
+    App::new().await.setup(setup).await.run()
 }
 
 fn create_vertices() -> (Vec<SimpleVertex>, Vec<u16>) {
