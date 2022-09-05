@@ -28,7 +28,8 @@ impl App {
         builder = builder.with_title("test").with_inner_size(LogicalSize::new(1920, 1080));
         let window = builder.build(&event_loop).unwrap();
 
-        let renderer = render::Renderer::new(&window, 1920, 1080).await;
+        let window_size = window.inner_size();
+        let renderer = render::Renderer::new(&window, window_size.width, window_size.height).await;
 
         let mut world = ecs::World::new();
         world.add_resource(renderer);

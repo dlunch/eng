@@ -118,12 +118,14 @@ impl Renderer {
     }
 
     fn write_transforms(&mut self, camera: &dyn Camera, components: &[&RenderComponent]) {
+        let size = self.render_target.size();
+
         let transforms = components
             .iter()
             .map(|x| ShaderTransform {
                 model: x.transform.to_matrix().to_cols_array(),
                 view: camera.view().to_cols_array(),
-                projection: camera.projection().to_cols_array(),
+                projection: camera.projection(size.0, size.1).to_cols_array(),
             })
             .collect::<Vec<_>>();
 

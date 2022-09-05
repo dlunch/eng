@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use winit::dpi::LogicalSize;
-
 use eng::ecs::World;
 use eng::render::{CameraComponent, Material, Mesh, OrthographicCamera, RenderComponent, Renderer, Shader, SimpleVertex, Transform};
 use eng::App;
@@ -21,9 +19,7 @@ async fn setup(world: &mut World) {
 
     world.spawn().with(render_component);
 
-    let size = LogicalSize::new(1920, 1080);
-    let camera = OrthographicCamera::new(size.width, size.height);
-
+    let camera = OrthographicCamera::new();
     world.spawn().with(CameraComponent { camera: Box::new(camera) });
 }
 

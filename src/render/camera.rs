@@ -4,17 +4,14 @@ use glam::{Mat4, Vec3};
 
 pub trait Camera: Sync + Send {
     fn view(&self) -> Mat4;
-    fn projection(&self) -> Mat4;
+    fn projection(&self, width: u32, height: u32) -> Mat4;
 }
 
-pub struct OrthographicCamera {
-    width: u32,
-    height: u32,
-}
+pub struct OrthographicCamera {}
 
 impl OrthographicCamera {
-    pub fn new(width: u32, height: u32) -> Self {
-        Self { width, height }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
@@ -23,8 +20,8 @@ impl Camera for OrthographicCamera {
         Mat4::IDENTITY
     }
 
-    fn projection(&self) -> Mat4 {
-        Mat4::orthographic_rh(0., self.width as f32, self.height as f32, 0., -1., 1.)
+    fn projection(&self, width: u32, height: u32) -> Mat4 {
+        Mat4::orthographic_rh(0., width as f32, height as f32, 0., -1., 1.)
     }
 }
 
@@ -36,21 +33,14 @@ pub trait PerspectiveCameraController: Sync + Send {
 
 pub struct PerspectiveCamera<T: PerspectiveCameraController> {
     pub fov: f32,
-    pub aspect: f32,
     pub near: f32,
     pub far: f32,
     controller: T,
 }
 
 impl<T: PerspectiveCameraController> PerspectiveCamera<T> {
-    pub fn new(fov: f32, aspect: f32, near: f32, far: f32, controller: T) -> Self {
-        Self {
-            fov,
-            aspect,
-            near,
-            far,
-            controller,
-        }
+    pub fn new(fov: f32, near: f32, far: f32, controller: T) -> Self {
+        Self { fov, near, far, controller }
     }
 
     pub fn controller_mut(&mut self) -> &mut T {
@@ -67,8 +57,10 @@ impl<T: PerspectiveCameraController> Camera for PerspectiveCamera<T> {
         Mat4::look_at_rh(position, target, up)
     }
 
-    fn projection(&self) -> Mat4 {
-        Mat4::perspective_rh(self.fov, self.aspect, self.near, self.far)
+    fn projection(&self, width: u32, height: u32) -> Mat4 {
+        let aspect = width as f32 / height as f32;
+
+        Mat4::perspective_rh(self.fov, aspect, self.near, self.far)
     }
 }
 
@@ -162,14 +154,14 @@ mod test {
 
     #[test]
     fn test_orthographic() {
-        let camera = OrthographicCamera::new(100, 100);
+        let camera = OrthographicCamera::new();
         assert_eq!(
             camera.view().to_cols_array(),
             [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,]
         );
 
         assert_eq!(
-            camera.projection().to_cols_array(),
+            camera.projection(100, 100).to_cols_array(),
             [0.02, 0.0, 0.0, 0.0, 0.0, -0.02, 0.0, 0.0, 0.0, 0.0, -0.5, 0.0, -1.0, 1.0, 0.5, 1.0]
         )
     }
@@ -178,14 +170,14 @@ mod test {
     fn test_perspective() {
         let controller = StaticCameraController::new(Vec3::new(5.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0));
 
-        let camera = PerspectiveCamera::new(45.0 * PI / 180.0, 200.0f32 / 100.0f32, 0.1, 100.0, controller);
+        let camera = PerspectiveCamera::new(45.0 * PI / 180.0, 0.1, 100.0, controller);
         assert_eq!(
             camera.view().to_cols_array(),
             [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, -0.0, 0.0, -1.0, 0.0, -0.0, 0.0, 0.0, -0.0, -5.0, 1.0]
         );
 
         assert_eq!(
-            camera.projection().to_cols_array(),
+            camera.projection(200, 100).to_cols_array(),
             [1.2071067, 0.0, 0.0, 0.0, 0.0, 2.4142134, 0.0, 0.0, 0.0, 0.0, -1.001001, -1.0, 0.0, 0.0, -0.1001001, 0.0]
         )
     }

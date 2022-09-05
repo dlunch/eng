@@ -1,7 +1,6 @@
 use std::f32::consts::PI;
 
 use glam::Vec3;
-use winit::dpi::LogicalSize;
 
 use eng::ecs::World;
 use eng::render::{
@@ -49,9 +48,8 @@ async fn setup(world: &mut World) {
 
     world.spawn().with(render_component2);
 
-    let size = LogicalSize::new(1920, 1080);
     let controller = ArcballCameraController::new(Vec3::new(0.0, 0.0, 0.0), 5.0);
-    let camera = PerspectiveCamera::new(45.0 * PI / 180.0, size.width as f32 / size.height as f32, 0.1, 100.0, controller);
+    let camera = PerspectiveCamera::new(45.0 * PI / 180.0, 0.1, 100.0, controller);
 
     world.spawn().with(CameraComponent { camera: Box::new(camera) });
 }
