@@ -10,7 +10,7 @@ use eng::render::{
 };
 use eng::App;
 
-fn setup(world: &mut World) {
+async fn setup(world: &mut World) {
     let render_component1 = {
         let renderer = world.resource::<Renderer>().unwrap();
 
@@ -60,7 +60,7 @@ fn setup(world: &mut World) {
 async fn main() {
     pretty_env_logger::init();
 
-    App::new().await.setup(setup).run()
+    App::new().await.setup(setup).await.run()
 }
 
 // Copied from https://github.com/gfx-rs/wgpu-rs/blob/master/examples/cube/main.rs#L23
