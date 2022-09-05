@@ -15,6 +15,12 @@ impl OrthographicCamera {
     }
 }
 
+impl Default for OrthographicCamera {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Camera for OrthographicCamera {
     fn view(&self) -> Mat4 {
         Mat4::IDENTITY
