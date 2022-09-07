@@ -2,7 +2,7 @@ use core::any::TypeId;
 
 use hashbrown::HashMap;
 
-use super::{any_storage::AnyStorage, builder::EntityBuilder, sparse_raw_vec::SparseRawVec, Component, Entity};
+use super::{any_storage::AnyStorage, builder::EntityBuilder, bundle::ComponentBundle, sparse_raw_vec::SparseRawVec, Component, Entity};
 
 type ComponentType = TypeId;
 type ResourceType = TypeId;
@@ -28,6 +28,14 @@ impl World {
         self.entities += 1;
 
         EntityBuilder::new(self, Entity { id })
+    }
+
+    pub fn spawn_bundle<T: 'static + ComponentBundle>(&mut self, bundle: T) -> Entity {
+        let entity = self.spawn().entity();
+
+        bundle.add_components(self, entity);
+
+        entity
     }
 
     pub fn add_component<T: 'static + Component>(&mut self, entity: Entity, component: T) {
@@ -170,5 +178,25 @@ mod test {
 
         world.add_resource(TestResource { a: 1234 });
         assert_eq!(world.resource::<TestResource>().unwrap().a, 1234);
+    }
+
+    #[test]
+    fn test_bundle() {
+        struct TestComponent1 {
+            a: u32,
+        }
+        impl Component for TestComponent1 {}
+        struct TestComponent2 {
+            a: u32,
+        }
+        impl Component for TestComponent2 {}
+
+        let mut world = World::new();
+
+        let bundle = (TestComponent1 { a: 1 }, TestComponent2 { a: 2 });
+        let entity = world.spawn_bundle(bundle);
+
+        assert_eq!(world.component::<TestComponent1>(entity).unwrap().a, 1);
+        assert_eq!(world.component::<TestComponent2>(entity).unwrap().a, 2);
     }
 }
