@@ -12,6 +12,7 @@ use winit::{
 
 pub mod ecs;
 pub mod render;
+pub mod ui;
 mod utils;
 
 pub struct App {
