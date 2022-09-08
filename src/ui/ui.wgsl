@@ -24,7 +24,14 @@ fn vs_main(
     return out;
 }
 
+@group(0) @binding(1)
+var texture: texture_2d<f32>;
+@group(0) @binding(2)
+var textureSampler: sampler;
+
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return vec4<f32>(0.5, 0.5, 0.5, 1.0);
+    var diffuse: vec4<f32> = textureSample(texture, textureSampler, in.tex_coord);
+
+    return vec4<f32>(diffuse.xyz, 1.0);
 }

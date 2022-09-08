@@ -29,3 +29,4 @@ winit = { version = "^0.27", default-features = false }
 [dev-dependencies]
 tokio = { version = "^1.12", features = ["full"] }
 pretty_env_logger = { version = "^0.4" }
+image = { version = "^0.24" }
