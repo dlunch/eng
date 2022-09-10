@@ -4,7 +4,7 @@ use glam::Vec3;
 
 use super::{
     ecs::ComponentBundle,
-    render::{Material, Mesh, RenderComponent, Renderer, Shader, SimpleVertex, Texture, TextureFormat, Transform},
+    render::{Material, Mesh, RenderBundle, Renderer, Shader, SimpleVertex, Texture, TextureFormat, Transform},
 };
 
 pub struct Rectangle {
@@ -38,9 +38,14 @@ impl ComponentBundle for Rectangle {
             Vec3::new(self.width as f32, self.height as f32, 0.0),
         );
 
-        let component = RenderComponent::new(mesh, material, transform);
+        let bundle = RenderBundle {
+            mesh,
+            material,
+            transform,
+            ranges: None,
+        };
 
-        world.add_component(entity, component)
+        world.add_bundle(entity, bundle)
     }
 }
 
@@ -78,8 +83,13 @@ impl ComponentBundle for Sprite {
             Vec3::new(self.width as f32, self.height as f32, 0.0),
         );
 
-        let component = RenderComponent::new(mesh, material, transform);
+        let bundle = RenderBundle {
+            mesh,
+            material,
+            transform,
+            ranges: None,
+        };
 
-        world.add_component(entity, component)
+        world.add_bundle(entity, bundle)
     }
 }

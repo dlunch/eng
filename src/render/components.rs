@@ -1,37 +1,48 @@
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, vec, vec::Vec};
 use core::ops::Range;
 
 use super::{transform::Transform, Camera, Material, Mesh};
-use crate::ecs::Component;
+use crate::ecs::{Component, ComponentBundle};
 
 pub struct RenderComponent {
     pub mesh: Mesh,
     pub material: Material,
-    pub transform: Transform,
     pub ranges: Vec<Range<u32>>,
 }
 
 impl Component for RenderComponent {}
 
-impl RenderComponent {
-    pub fn new(mesh: Mesh, material: Material, transform: Transform) -> Self {
-        let range = 0..mesh.index_count as u32;
-
-        Self::with_range(mesh, material, &[range], transform)
-    }
-
-    pub fn with_range(mesh: Mesh, material: Material, ranges: &[Range<u32>], transform: Transform) -> Self {
-        Self {
-            mesh,
-            material,
-            transform,
-            ranges: ranges.to_vec(),
-        }
-    }
+pub struct TransformComponent {
+    pub transform: Transform,
 }
+
+impl Component for TransformComponent {}
 
 pub struct CameraComponent {
     pub camera: Box<dyn Camera>,
 }
 
 impl Component for CameraComponent {}
+
+pub struct RenderBundle {
+    pub mesh: Mesh,
+    pub material: Material,
+    pub ranges: Option<Vec<Range<u32>>>,
+    pub transform: Transform,
+}
+
+impl ComponentBundle for RenderBundle {
+    fn add_components(self, world: &mut crate::ecs::World, entity: crate::ecs::Entity) {
+        let index_count = self.mesh.index_count;
+
+        world.add_component(
+            entity,
+            RenderComponent {
+                mesh: self.mesh,
+                material: self.material,
+                ranges: self.ranges.unwrap_or_else(|| vec![0..index_count as u32]),
+            },
+        );
+        world.add_component(entity, TransformComponent { transform: self.transform });
+    }
+}

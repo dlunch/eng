@@ -7,7 +7,7 @@ use zerocopy::AsBytes;
 use super::{
     buffer_pool::BufferPool,
     camera::Camera,
-    components::{CameraComponent, RenderComponent},
+    components::{CameraComponent, RenderComponent, TransformComponent},
     constants::INTERNAL_COLOR_ATTACHMENT_FORMAT,
     pipeline_cache::PipelineCache,
     render_target::OffscreenRenderTarget,
@@ -102,13 +102,21 @@ impl Renderer {
     }
 
     pub fn render_world(&mut self, world: &World) {
-        let render_components = world.components::<RenderComponent>().map(|x| x.1).collect::<Vec<_>>();
+        let entities = world.query::<(RenderComponent, TransformComponent)>().collect::<Vec<_>>();
         let camera = &world.components::<CameraComponent>().next().unwrap().1.camera;
 
         let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        self.write_transforms(camera.as_ref(), &render_components);
+        let transform_components = entities
+            .iter()
+            .map(|&x| world.component::<TransformComponent>(x).unwrap())
+            .collect::<Vec<_>>();
+        self.write_transforms(camera.as_ref(), &transform_components);
 
+        let render_components = entities
+            .iter()
+            .map(|&x| world.component::<RenderComponent>(x).unwrap())
+            .collect::<Vec<_>>();
         self.render(&mut command_encoder, &render_components, self.render_target.size());
 
         self.present(&mut command_encoder, &*self.render_target);
@@ -117,7 +125,7 @@ impl Renderer {
         self.render_target.submit();
     }
 
-    fn write_transforms(&mut self, camera: &dyn Camera, components: &[&RenderComponent]) {
+    fn write_transforms(&mut self, camera: &dyn Camera, components: &[&TransformComponent]) {
         let size = self.render_target.size();
 
         let transforms = components

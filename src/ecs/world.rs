@@ -35,9 +35,13 @@ impl World {
     pub fn spawn_bundle<T: 'static + ComponentBundle>(&mut self, bundle: T) -> Entity {
         let entity = self.spawn().entity();
 
-        bundle.add_components(self, entity);
+        self.add_bundle(entity, bundle);
 
         entity
+    }
+
+    pub fn add_bundle<T: 'static + ComponentBundle>(&mut self, entity: Entity, bundle: T) {
+        bundle.add_components(self, entity)
     }
 
     pub fn add_component<T: 'static + Component>(&mut self, entity: Entity, component: T) {
