@@ -2,6 +2,7 @@ mod any_storage;
 mod builder;
 mod bundle;
 mod hierarchy;
+mod query;
 mod raw_vec;
 mod sparse_raw_vec;
 mod world;

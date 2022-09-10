@@ -83,6 +83,9 @@ impl RawVec {
 
     fn drop_all<T: 'static>(storage: &mut [u8]) {
         let item_size = round_up(size_of::<T>(), align_of::<T>());
+        if item_size == 0 {
+            return;
+        }
 
         storage.chunks_mut(item_size).for_each(|x| {
             let value_ptr = x.as_mut_ptr() as *mut T;

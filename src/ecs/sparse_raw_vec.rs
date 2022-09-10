@@ -44,6 +44,10 @@ where
     pub fn iter<T: 'static>(&self) -> impl Iterator<Item = (IndexType, &T)> {
         self.indices.iter().cloned().zip(self.data.iter())
     }
+
+    pub fn contains(&self, index: IndexType) -> bool {
+        self.indices.binary_search(&index).is_ok()
+    }
 }
 
 #[cfg(test)]
@@ -75,5 +79,16 @@ mod test {
         assert_eq!(*vec.get_mut::<i32>(10).unwrap(), 12);
 
         assert_eq!(vec.get::<i32>(1234), None);
+    }
+
+    #[test]
+    fn test_contains() {
+        let mut vec = SparseRawVec::new::<i32>();
+
+        vec.insert(0, 10);
+        vec.insert(10, 12);
+
+        assert!(vec.contains(0));
+        assert!(!vec.contains(1));
     }
 }
