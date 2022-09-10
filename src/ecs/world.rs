@@ -2,7 +2,9 @@ use core::any::TypeId;
 
 use hashbrown::HashMap;
 
-use super::{any_storage::AnyStorage, builder::EntityBuilder, bundle::ComponentBundle, sparse_raw_vec::SparseRawVec, Component, Entity};
+use super::{
+    any_storage::AnyStorage, builder::EntityBuilder, bundle::ComponentBundle, query::Query, sparse_raw_vec::SparseRawVec, Component, Entity,
+};
 
 type ComponentType = TypeId;
 type ResourceType = TypeId;
@@ -69,6 +71,20 @@ impl World {
         let component_type = TypeId::of::<T>();
 
         self.components.get(&component_type).unwrap().iter()
+    }
+
+    pub fn query<T: 'static + Query>(&self) -> impl Iterator<Item = Entity> + '_ {
+        (0..self.entities).map(|x| Entity { id: x }).filter(|&x| T::matches(self, x))
+    }
+
+    pub fn has_component<T: 'static + Component>(&self, entity: Entity) -> bool {
+        let component_type = TypeId::of::<T>();
+
+        if let Some(components) = self.components.get(&component_type) {
+            components.contains(entity)
+        } else {
+            false
+        }
     }
 
     pub fn add_resource<T: 'static>(&mut self, resource: T) {
@@ -198,5 +214,53 @@ mod test {
 
         assert_eq!(world.component::<TestComponent1>(entity).unwrap().a, 1);
         assert_eq!(world.component::<TestComponent2>(entity).unwrap().a, 2);
+    }
+
+    #[test]
+    fn test_has_component() {
+        struct TestComponent {}
+
+        impl Component for TestComponent {}
+
+        let mut world = World::new();
+
+        let entity1 = world.spawn().with(TestComponent {}).entity();
+        let entity2 = world.spawn().entity();
+
+        assert!(world.has_component::<TestComponent>(entity1));
+        assert!(!world.has_component::<TestComponent>(entity2));
+    }
+
+    #[test]
+    fn test_quer1y() {
+        struct TestComponent {}
+
+        impl Component for TestComponent {}
+
+        let mut world = World::new();
+
+        let entity1 = world.spawn().with(TestComponent {}).entity();
+        world.spawn().entity();
+
+        let mut query = world.query::<(TestComponent,)>();
+        assert!(query.next().unwrap() == entity1);
+        assert!(query.next().is_none());
+    }
+
+    #[test]
+    fn test_query2() {
+        struct TestComponent1 {}
+        impl Component for TestComponent1 {}
+        struct TestComponent2 {}
+        impl Component for TestComponent2 {}
+
+        let mut world = World::new();
+
+        let entity1 = world.spawn().with(TestComponent1 {}).with(TestComponent2 {}).entity();
+        world.spawn().with(TestComponent1 {}).entity();
+
+        let mut query = world.query::<(TestComponent1, TestComponent2)>();
+        assert!(query.next().unwrap() == entity1);
+        assert!(query.next().is_none());
     }
 }
