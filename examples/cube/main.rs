@@ -4,13 +4,13 @@ use glam::Vec3;
 
 use eng::ecs::World;
 use eng::render::{
-    ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderComponent, Renderer, SimpleVertex, Texture, TextureFormat,
+    ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderBundle, Renderer, SimpleVertex, Texture, TextureFormat,
     Transform,
 };
 use eng::App;
 
 async fn setup(world: &mut World) {
-    let render_component1 = {
+    let render_bundle1 = {
         let renderer = world.resource::<Renderer>().unwrap();
 
         let (vertices, indices) = create_vertices();
@@ -20,16 +20,17 @@ async fn setup(world: &mut World) {
         let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
         let material = Material::new(renderer, texture);
-        RenderComponent::new(
+        RenderBundle {
             mesh,
             material,
-            Transform::with_values(Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.7, 0.7), Vec3::new(1.0, 1.0, 1.0)),
-        )
+            transform: Transform::with_values(Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.7, 0.7), Vec3::new(1.0, 1.0, 1.0)),
+            ranges: None,
+        }
     };
 
-    world.spawn().with(render_component1);
+    world.spawn_bundle(render_bundle1);
 
-    let render_component2 = {
+    let render_bundle2 = {
         let renderer = world.resource::<Renderer>().unwrap();
 
         let (vertices, indices) = create_vertices();
@@ -39,14 +40,15 @@ async fn setup(world: &mut World) {
         let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
         let material = Material::new(renderer, texture);
-        RenderComponent::new(
+        RenderBundle {
             mesh,
             material,
-            Transform::with_values(Vec3::new(-1.0, 0.0, 0.0), Vec3::new(0.0, 0.1, 0.1), Vec3::new(1.0, 1.0, 1.0)),
-        )
+            transform: Transform::with_values(Vec3::new(-1.0, 0.0, 0.0), Vec3::new(0.0, 0.1, 0.1), Vec3::new(1.0, 1.0, 1.0)),
+            ranges: None,
+        }
     };
 
-    world.spawn().with(render_component2);
+    world.spawn_bundle(render_bundle2);
 
     let controller = ArcballCameraController::new(Vec3::new(0.0, 0.0, 0.0), 5.0);
     let camera = PerspectiveCamera::new(45.0 * PI / 180.0, 0.1, 100.0, controller);

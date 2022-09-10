@@ -17,7 +17,7 @@ mod vertex_format;
 
 pub use buffer::Buffer;
 pub use camera::{ArcballCameraController, Camera, OrthographicCamera, PerspectiveCamera, StaticCameraController};
-pub use components::{CameraComponent, RenderComponent};
+pub use components::{CameraComponent, RenderBundle, RenderComponent};
 pub use material::Material;
 pub use mesh::{Mesh, SimpleVertex};
 pub use render_target::{RenderTarget, WindowRenderTarget};
