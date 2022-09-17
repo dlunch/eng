@@ -12,9 +12,12 @@ use super::{
     pipeline_cache::PipelineCache,
     render_target::OffscreenRenderTarget,
     uniform_buffer::DynamicUniformBuffer,
-    Material, Mesh, RenderTarget, Shader, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
+    Material, Mesh, OrthographicCamera, RenderTarget, Shader, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
 };
-use crate::ecs::World;
+use crate::{
+    ecs::{Entity, World},
+    ui::UiComponent,
+};
 
 #[derive(AsBytes)]
 #[repr(C)]
@@ -104,14 +107,11 @@ impl Renderer {
     pub fn render_world(&mut self, world: &World) {
         let entities = world.query::<(RenderComponent, TransformComponent)>().collect::<Vec<_>>();
         let camera = &world.components::<CameraComponent>().next().unwrap().1.camera;
+        let ui_camera = OrthographicCamera::new();
 
         let mut command_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        let transform_components = entities
-            .iter()
-            .map(|&x| world.component::<TransformComponent>(x).unwrap())
-            .collect::<Vec<_>>();
-        self.write_transforms(camera.as_ref(), &transform_components);
+        self.write_transforms(world, camera.as_ref(), &ui_camera, &entities);
 
         let render_components = entities
             .iter()
@@ -125,15 +125,26 @@ impl Renderer {
         self.render_target.submit();
     }
 
-    fn write_transforms(&mut self, camera: &dyn Camera, components: &[&TransformComponent]) {
+    fn write_transforms(&mut self, world: &World, camera: &dyn Camera, ui_camera: &dyn Camera, entities: &[Entity]) {
         let size = self.render_target.size();
 
-        let transforms = components
+        let transforms = entities
             .iter()
-            .map(|x| ShaderTransform {
-                model: x.transform.to_matrix().to_cols_array(),
-                view: camera.view().to_cols_array(),
-                projection: camera.projection(size.0, size.1).to_cols_array(),
+            .map(|&entity| {
+                let transform = world.component::<TransformComponent>(entity).unwrap();
+                if world.component::<UiComponent>(entity).is_some() {
+                    ShaderTransform {
+                        model: transform.transform.to_matrix().to_cols_array(),
+                        view: ui_camera.view().to_cols_array(),
+                        projection: ui_camera.projection(size.0, size.1).to_cols_array(),
+                    }
+                } else {
+                    ShaderTransform {
+                        model: transform.transform.to_matrix().to_cols_array(),
+                        view: camera.view().to_cols_array(),
+                        projection: camera.projection(size.0, size.1).to_cols_array(),
+                    }
+                }
             })
             .collect::<Vec<_>>();
 
