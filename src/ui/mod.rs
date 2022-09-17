@@ -3,9 +3,12 @@ use alloc::{sync::Arc, vec, vec::Vec};
 use glam::Vec3;
 
 use super::{
-    ecs::ComponentBundle,
+    ecs::{Component, ComponentBundle},
     render::{Material, Mesh, RenderBundle, Renderer, Shader, SimpleVertex, Texture, TextureFormat, Transform},
 };
+
+pub struct UiComponent {}
+impl Component for UiComponent {}
 
 pub struct Rectangle {
     pub x: u32,
@@ -45,7 +48,8 @@ impl ComponentBundle for Rectangle {
             ranges: None,
         };
 
-        world.add_bundle(entity, bundle)
+        world.add_bundle(entity, bundle);
+        world.add_component(entity, UiComponent {});
     }
 }
 
@@ -90,6 +94,7 @@ impl ComponentBundle for Sprite {
             ranges: None,
         };
 
-        world.add_bundle(entity, bundle)
+        world.add_bundle(entity, bundle);
+        world.add_component(entity, UiComponent {});
     }
 }
