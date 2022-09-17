@@ -150,6 +150,19 @@ mod test {
     }
 
     #[test]
+    fn test_component_empty() {
+        struct TestComponent {}
+
+        impl Component for TestComponent {}
+
+        let mut world = World::new();
+        let entity = world.spawn().with(TestComponent {}).entity();
+
+        assert!(world.has_component::<TestComponent>(entity));
+        assert!(world.component::<TestComponent>(entity).is_some());
+    }
+
+    #[test]
     fn test_components() {
         struct TestComponent {
             test: u32,
