@@ -40,7 +40,7 @@ impl RawVec {
         let item_size = round_up(size_of::<T>(), align_of::<T>());
         let offset = index * item_size;
 
-        if offset >= self.storage.len() {
+        if item_size != 0 && offset >= self.storage.len() {
             return None;
         }
 
@@ -54,7 +54,7 @@ impl RawVec {
 
         let item_size = round_up(size_of::<T>(), align_of::<T>());
         let offset = index * item_size;
-        if offset >= self.storage.len() {
+        if item_size != 0 && offset >= self.storage.len() {
             return None;
         }
 
