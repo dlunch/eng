@@ -10,14 +10,14 @@ use super::{
 pub struct UiComponent {}
 impl Component for UiComponent {}
 
-pub struct Rectangle {
+pub struct UiNode {
     pub x: u32,
     pub y: u32,
     pub width: u32,
     pub height: u32,
 }
 
-impl ComponentBundle for Rectangle {
+impl ComponentBundle for UiNode {
     fn add_components(self, world: &mut crate::ecs::World, entity: crate::ecs::Entity) {
         let vertices = vec![
             SimpleVertex::new([0.0, 0.0, 0.0, 1.0], [0.0, 0.0]),
@@ -53,7 +53,7 @@ impl ComponentBundle for Rectangle {
     }
 }
 
-pub struct Sprite {
+pub struct UiSprite {
     pub x: u32,
     pub y: u32,
     pub width: u32,
@@ -63,7 +63,7 @@ pub struct Sprite {
     pub image_height: u32,
 }
 
-impl ComponentBundle for Sprite {
+impl ComponentBundle for UiSprite {
     fn add_components(self, world: &mut crate::ecs::World, entity: crate::ecs::Entity) {
         let vertices = vec![
             SimpleVertex::new([0.0, 0.0, 0.0, 1.0], [0.0, 0.0]),

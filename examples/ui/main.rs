@@ -9,7 +9,7 @@ use eng::render::{
     ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderBundle, Renderer, SimpleVertex, Texture, TextureFormat,
     Transform,
 };
-use eng::ui::{Rectangle, Sprite};
+use eng::ui::{UiNode, UiSprite};
 use eng::App;
 
 async fn setup(world: &mut World) {
@@ -21,7 +21,7 @@ async fn setup(world: &mut World) {
 
     let img = img.into_rgba8();
 
-    world.spawn_bundle(Sprite {
+    world.spawn_bundle(UiSprite {
         x: 500,
         y: 500,
         width: 500,
@@ -31,7 +31,7 @@ async fn setup(world: &mut World) {
         image_height: img.height(),
     });
 
-    world.spawn_bundle(Rectangle {
+    world.spawn_bundle(UiNode {
         x: 0,
         y: 0,
         width: 500,
