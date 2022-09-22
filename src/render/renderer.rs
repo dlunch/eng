@@ -17,6 +17,7 @@ use super::{
 use crate::{
     ecs::{Entity, World},
     ui::UiComponent,
+    utils,
 };
 
 #[derive(AsBytes)]
@@ -263,8 +264,8 @@ impl Renderer {
     }
 
     fn create_offscreen_target(device: &wgpu::Device, buffer_pool: &BufferPool, width: u32, height: u32) -> (OffscreenRenderTarget, Mesh, Material) {
-        let texture_width = Self::round_up_power_of_two(width);
-        let texture_height = Self::round_up_power_of_two(height);
+        let texture_width = utils::round_up_power_of_two(width);
+        let texture_height = utils::round_up_power_of_two(height);
         let offscreen_target = OffscreenRenderTarget::with_device(device, texture_width, texture_height);
 
         let right = width as f32 / texture_width as f32;
@@ -298,20 +299,5 @@ impl Renderer {
         let material = Material::with_device(device, None, &[("texture", offscreen_target.color_attachment.clone())], Arc::new(shader));
 
         (offscreen_target, mesh, material)
-    }
-
-    //returns zero if v is zero.
-    fn round_up_power_of_two(mut v: u32) -> u32 {
-        //from http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2 (public domain)
-
-        v -= 1;
-        v |= v >> 1;
-        v |= v >> 2;
-        v |= v >> 4;
-        v |= v >> 8;
-        v |= v >> 16;
-        v += 1;
-
-        v
     }
 }
