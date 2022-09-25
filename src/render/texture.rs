@@ -76,6 +76,19 @@ impl Texture {
     }
 
     pub fn with_texels(renderer: &Renderer, width: u32, height: u32, texels: &[u8], format: TextureFormat) -> Self {
+        #[cfg(target_arch = "wasm32")]
+        if format == TextureFormat::Bgra8Unorm {
+            // webgl doesn't support bgra texture
+            let mut rgba_texels = Vec::with_capacity(texels.len());
+            for i in 0..texels.len() / 4 {
+                rgba_texels.push(texels[i * 4 + 2]);
+                rgba_texels.push(texels[i * 4 + 1]);
+                rgba_texels.push(texels[i * 4]);
+                rgba_texels.push(texels[i * 4 + 3]);
+            }
+            return Self::with_texels(renderer, width, height, &rgba_texels, TextureFormat::Rgba8Unorm);
+        }
+
         let extent = wgpu::Extent3d {
             width,
             height,
