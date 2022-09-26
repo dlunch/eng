@@ -2,6 +2,7 @@ use alloc::{vec, vec::Vec};
 
 use super::{resource::Resource, Renderer};
 
+#[derive(PartialEq, Eq)]
 pub enum TextureFormat {
     Rgba8Unorm,
     Bgra8Unorm,
