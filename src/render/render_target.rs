@@ -30,7 +30,7 @@ impl WindowRenderTarget {
             format,
             width,
             height,
-            present_mode: wgpu::PresentMode::Fifo,
+            present_mode: wgpu::PresentMode::AutoVsync,
         };
 
         surface.configure(device, &config);
