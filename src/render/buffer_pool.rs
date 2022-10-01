@@ -32,9 +32,8 @@ impl BufferPoolItem {
         }
     }
 
-    pub fn alloc(&mut self, size: u64) -> Option<(Arc<wgpu::Buffer>, u64)> {
-        let alignment = 4096; // TODO limits
-        let rounded_size = round_up(size, alignment);
+    pub fn alloc(&mut self, size: u64, alignment: u32) -> Option<(Arc<wgpu::Buffer>, u64)> {
+        let rounded_size = round_up(size, alignment as u64);
 
         let offset = self.find_offset(rounded_size)?;
 
@@ -66,6 +65,7 @@ impl BufferPoolItem {
 pub struct BufferPool {
     device: Arc<wgpu::Device>,
     queue: Arc<wgpu::Queue>,
+    alignment: u32,
 
     // WebGL requires separate index buffer (https://www.khronos.org/registry/webgl/specs/latest/2.0/#5.1)
     buffers: Spinlock<Vec<Arc<Spinlock<BufferPoolItem>>>>,
@@ -74,9 +74,12 @@ pub struct BufferPool {
 
 impl BufferPool {
     pub fn new(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>) -> Self {
+        let alignment = device.limits().min_uniform_buffer_offset_alignment;
+
         Self {
             device,
             queue,
+            alignment,
             index_buffers: Spinlock::new(Vec::new()),
             buffers: Spinlock::new(Vec::new()),
         }
@@ -105,7 +108,7 @@ impl BufferPool {
     }
 
     fn try_alloc(&self, buffers: &Arc<Spinlock<BufferPoolItem>>, size: u64) -> Option<Buffer> {
-        let (buffer, offset) = buffers.lock().alloc(size)?;
+        let (buffer, offset) = buffers.lock().alloc(size, self.alignment)?;
 
         let buffer_item = buffers.clone();
         Some(Buffer::new(self.queue.clone(), buffer, offset, size, move || {
