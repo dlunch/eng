@@ -1,4 +1,4 @@
-use alloc::{string::String, vec::Vec};
+use alloc::{borrow::Cow, string::String, vec::Vec};
 
 use hashbrown::HashMap;
 
@@ -129,7 +129,7 @@ impl Shader {
 
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
-            source: wgpu::ShaderSource::Naga(module),
+            source: wgpu::ShaderSource::Naga(Cow::Owned(module)),
         });
 
         let bind_group_entries = bindings.iter().map(|(_, x)| x.wgpu_entry()).collect::<Vec<_>>();
