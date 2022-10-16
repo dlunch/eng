@@ -16,7 +16,7 @@ struct BufferPoolItem {
 impl BufferPoolItem {
     pub fn new(device: &wgpu::Device, usage: wgpu::BufferUsages) -> Self {
         let buffer = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
-            size: BUFFER_SIZE as u64,
+            size: BUFFER_SIZE,
             usage,
             label: None,
             mapped_at_creation: false,

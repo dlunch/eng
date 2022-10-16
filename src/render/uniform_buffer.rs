@@ -44,7 +44,7 @@ where
     }
 
     pub fn offset_for_index(&self, index: usize) -> u32 {
-        self.item_size as u32 * index as u32
+        self.item_size * index as u32
     }
 }
 
