@@ -197,7 +197,7 @@ impl Renderer {
                     pipeline,
                     &mut render_pass,
                     &component.ranges,
-                    Some(self.shader_transform.offset_for_index(idx) as u32),
+                    Some(self.shader_transform.offset_for_index(idx)),
                 );
             }
         }

@@ -116,7 +116,7 @@ impl Texture {
             texels,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: core::num::NonZeroU32::new(format.bytes_per_row() as u32 * extent.width as u32),
+                bytes_per_row: core::num::NonZeroU32::new(format.bytes_per_row() as u32 * extent.width),
                 rows_per_image: None,
             },
             extent,

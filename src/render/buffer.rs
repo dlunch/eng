@@ -41,7 +41,7 @@ impl Buffer {
     }
 
     pub(crate) fn as_slice(&self) -> wgpu::BufferSlice {
-        self.buffer.slice(self.offset as u64..self.offset as u64 + self.size as u64)
+        self.buffer.slice(self.offset..self.offset + self.size)
     }
 }
 
@@ -56,7 +56,7 @@ impl Resource for Buffer {
         wgpu::BindingResource::Buffer(wgpu::BufferBinding {
             buffer: &self.buffer,
             offset: self.offset as wgpu::BufferAddress,
-            size: wgpu::BufferSize::new(self.size as u64),
+            size: wgpu::BufferSize::new(self.size),
         })
     }
 }
