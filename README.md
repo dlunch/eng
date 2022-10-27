@@ -1,6 +1,6 @@
-# Renderer
+# Eng
 
-My toy renderer based on wgpu-rs (https://github.com/gfx-rs/wgpu-rs)
+My toy game engine based on wgpu-rs (https://github.com/gfx-rs/wgpu-rs)
 
 ## Examples
 
