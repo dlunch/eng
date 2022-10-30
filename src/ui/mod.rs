@@ -1,10 +1,10 @@
-use alloc::{sync::Arc, vec, vec::Vec};
+use alloc::{vec, vec::Vec};
 
 use glam::Vec3;
 
 use super::{
     ecs::{Component, ComponentBundle},
-    render::{Material, Mesh, RenderBundle, Renderer, Shader, SimpleVertex, Texture, TextureFormat, Transform},
+    render::{Material, Mesh, RenderBundle, Renderer, SimpleVertex, Texture, TextureFormat, Transform},
 };
 
 pub struct UiComponent {}
@@ -32,8 +32,7 @@ impl ComponentBundle for UiNode {
         let empty_texture = Texture::with_texels(renderer, 1, 1, &[0, 0, 0, 0], TextureFormat::Rgba8Unorm); // TODO remove
 
         let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
-        let shader = Shader::new(renderer, include_str!("ui.wgsl"));
-        let material = Material::with_custom_shader(renderer, &[("texture", Arc::new(empty_texture))], Arc::new(shader));
+        let material = Material::new(renderer, empty_texture);
 
         let transform = Transform::with_values(
             Vec3::new(self.x as f32, self.y as f32, 0.0),
@@ -78,8 +77,7 @@ impl ComponentBundle for UiSprite {
         let texture = Texture::with_texels(renderer, self.image_width, self.image_height, &self.image_data, TextureFormat::Rgba8Unorm);
 
         let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
-        let shader = Shader::new(renderer, include_str!("ui.wgsl"));
-        let material = Material::with_custom_shader(renderer, &[("texture", Arc::new(texture))], Arc::new(shader));
+        let material = Material::new(renderer, texture);
 
         let transform = Transform::with_values(
             Vec3::new(self.x as f32, self.y as f32, 0.0),
