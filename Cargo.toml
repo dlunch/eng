@@ -13,7 +13,7 @@ wgpu = { version = "^0.14", features = ["webgl", "naga"], default-features = fal
 zerocopy = { version = "^0.6", default-features = false }
 glam = { version = "^0.22", features = ["libm"], default-features = false }
 squish = { version = "^1", default-features = false }
-hashbrown = { version = "^0.12", features = ["ahash", "inline-more"], default-features = false }
+hashbrown = { version = "^0.13", features = ["ahash", "inline-more"], default-features = false }
 spinning_top = { version = "^0.2", default-features = false }
 naga = { version = "^0.10", features = ["wgsl-in" ] }
 lazy_static = { version = "^1.4", default-features = false }
