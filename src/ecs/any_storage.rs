@@ -3,9 +3,9 @@ use core::{any::TypeId, mem::size_of, ops::Drop, slice};
 
 pub struct AnyStorage {
     storage: Vec<u8>,
+    drop: Box<fn(&mut [u8])>,
     #[cfg(debug_assertions)]
     actual_type: TypeId,
-    drop: Box<fn(&mut [u8])>,
 }
 
 impl AnyStorage {
@@ -16,9 +16,9 @@ impl AnyStorage {
 
         Self {
             storage: value_slice.to_vec(),
+            drop: Box::new(Self::drop::<T>),
             #[cfg(debug_assertions)]
             actual_type: TypeId::of::<T>(),
-            drop: Box::new(Self::drop::<T>),
         }
     }
 
