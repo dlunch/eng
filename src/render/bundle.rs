@@ -45,17 +45,25 @@ impl ComponentBundle for SpriteBundle {
 
         let indices = vec![0, 1, 2, 2, 1, 3];
 
-        let renderer = world.resource::<Renderer>().unwrap();
-        let texture = Texture::with_texels(renderer, self.image_width, self.image_height, &self.image_data, TextureFormat::Rgba8Unorm);
+        let bundle = {
+            let renderer = world.resource::<Renderer>().unwrap();
+            let texture = Texture::with_texels(
+                &renderer,
+                self.image_width,
+                self.image_height,
+                &self.image_data,
+                TextureFormat::Rgba8Unorm,
+            );
 
-        let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
-        let material = Material::new(renderer, texture);
+            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
+            let material = Material::new(&renderer, texture);
 
-        let bundle = RenderBundle {
-            mesh,
-            material,
-            transform: self.transform,
-            ranges: None,
+            RenderBundle {
+                mesh,
+                material,
+                transform: self.transform,
+                ranges: None,
+            }
         };
 
         world.add_bundle(entity, bundle);

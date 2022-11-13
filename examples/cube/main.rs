@@ -14,12 +14,12 @@ async fn setup(world: &mut World) {
         let renderer = world.resource::<Renderer>().unwrap();
 
         let (vertices, indices) = create_vertices();
-        let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
+        let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
 
         let texture_data = create_texels(512, 512);
-        let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
+        let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let material = Material::new(renderer, texture);
+        let material = Material::new(&renderer, texture);
         RenderBundle {
             mesh,
             material,
@@ -34,12 +34,12 @@ async fn setup(world: &mut World) {
         let renderer = world.resource::<Renderer>().unwrap();
 
         let (vertices, indices) = create_vertices();
-        let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
+        let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
 
         let texture_data = create_texels(512, 512);
-        let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
+        let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let material = Material::new(renderer, texture);
+        let material = Material::new(&renderer, texture);
         RenderBundle {
             mesh,
             material,

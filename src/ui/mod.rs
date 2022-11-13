@@ -28,23 +28,25 @@ impl ComponentBundle for UiNode {
 
         let indices = vec![0, 1, 2, 2, 1, 3];
 
-        let renderer = world.resource::<Renderer>().unwrap();
-        let empty_texture = Texture::with_texels(renderer, 1, 1, &[0, 0, 0, 0], TextureFormat::Rgba8Unorm); // TODO remove
+        let bundle = {
+            let renderer = world.resource::<Renderer>().unwrap();
+            let empty_texture = Texture::with_texels(&renderer, 1, 1, &[0, 0, 0, 0], TextureFormat::Rgba8Unorm); // TODO remove
 
-        let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
-        let material = Material::new(renderer, empty_texture);
+            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
+            let material = Material::new(&renderer, empty_texture);
 
-        let transform = Transform::with_values(
-            Vec3::new(self.x as f32, self.y as f32, 0.0),
-            Vec3::new(0.0, 0.0, 0.0),
-            Vec3::new(self.width as f32, self.height as f32, 0.0),
-        );
+            let transform = Transform::with_values(
+                Vec3::new(self.x as f32, self.y as f32, 0.0),
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(self.width as f32, self.height as f32, 0.0),
+            );
 
-        let bundle = RenderBundle {
-            mesh,
-            material,
-            transform,
-            ranges: None,
+            RenderBundle {
+                mesh,
+                material,
+                transform,
+                ranges: None,
+            }
         };
 
         world.add_bundle(entity, bundle);
@@ -73,23 +75,31 @@ impl ComponentBundle for UiSprite {
 
         let indices = vec![0, 1, 2, 2, 1, 3];
 
-        let renderer = world.resource::<Renderer>().unwrap();
-        let texture = Texture::with_texels(renderer, self.image_width, self.image_height, &self.image_data, TextureFormat::Rgba8Unorm);
+        let bundle = {
+            let renderer = world.resource::<Renderer>().unwrap();
+            let texture = Texture::with_texels(
+                &renderer,
+                self.image_width,
+                self.image_height,
+                &self.image_data,
+                TextureFormat::Rgba8Unorm,
+            );
 
-        let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
-        let material = Material::new(renderer, texture);
+            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
+            let material = Material::new(&renderer, texture);
 
-        let transform = Transform::with_values(
-            Vec3::new(self.x as f32, self.y as f32, 0.0),
-            Vec3::new(0.0, 0.0, 0.0),
-            Vec3::new(self.width as f32, self.height as f32, 0.0),
-        );
+            let transform = Transform::with_values(
+                Vec3::new(self.x as f32, self.y as f32, 0.0),
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(self.width as f32, self.height as f32, 0.0),
+            );
 
-        let bundle = RenderBundle {
-            mesh,
-            material,
-            transform,
-            ranges: None,
+            RenderBundle {
+                mesh,
+                material,
+                transform,
+                ranges: None,
+            }
         };
 
         world.add_bundle(entity, bundle);

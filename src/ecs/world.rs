@@ -1,4 +1,7 @@
-use core::any::TypeId;
+use core::{
+    any::TypeId,
+    cell::{Ref, RefCell, RefMut},
+};
 
 use hashbrown::HashMap;
 
@@ -11,7 +14,7 @@ type ResourceType = TypeId;
 
 pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
-    resources: HashMap<ResourceType, AnyStorage>,
+    resources: HashMap<ResourceType, RefCell<AnyStorage>>,
     entities: u32,
 }
 
@@ -94,25 +97,29 @@ impl World {
     pub fn add_resource<T: 'static>(&mut self, resource: T) {
         let resource_type = TypeId::of::<T>();
 
-        self.resources.insert(resource_type, AnyStorage::new(resource));
+        self.resources.insert(resource_type, RefCell::new(AnyStorage::new(resource)));
     }
 
-    pub fn resource<T: 'static>(&self) -> Option<&T> {
+    pub fn resource<T: 'static>(&self) -> Option<Ref<'_, T>> {
         let resource_type = TypeId::of::<T>();
 
-        Some(self.resources.get(&resource_type)?.get::<T>())
+        let storage = self.resources.get(&resource_type)?.borrow();
+
+        Some(Ref::map(storage, |x| x.get::<T>()))
     }
 
-    pub fn resource_mut<T: 'static>(&mut self) -> Option<&mut T> {
+    pub fn resource_mut<T: 'static>(&self) -> Option<RefMut<'_, T>> {
         let resource_type = TypeId::of::<T>();
 
-        Some(self.resources.get_mut(&resource_type)?.get_mut::<T>())
+        let storage = self.resources.get(&resource_type)?.borrow_mut();
+
+        Some(RefMut::map(storage, |x| x.get_mut::<T>()))
     }
 
     pub fn take_resource<T: 'static>(&mut self) -> Option<T> {
         let resource_type = TypeId::of::<T>();
 
-        Some(self.resources.remove(&resource_type)?.into_inner::<T>())
+        Some(self.resources.remove(&resource_type)?.into_inner().into_inner::<T>())
     }
 }
 
