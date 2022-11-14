@@ -19,7 +19,7 @@ async fn setup(world: &mut World) {
         let texture_data = create_texels(512, 512);
         let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let material = Material::new(&renderer, texture);
+        let material = Material::new(&renderer, &texture);
         RenderBundle {
             mesh,
             material,
@@ -39,7 +39,7 @@ async fn setup(world: &mut World) {
         let texture_data = create_texels(512, 512);
         let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let material = Material::new(&renderer, texture);
+        let material = Material::new(&renderer, &texture);
         RenderBundle {
             mesh,
             material,

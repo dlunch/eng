@@ -2,7 +2,7 @@ use alloc::{vec, vec::Vec};
 
 use super::{resource::Resource, Renderer};
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum TextureFormat {
     Rgba8Unorm,
     Bgra8Unorm,
@@ -56,27 +56,24 @@ impl Texture {
     }
 
     pub(crate) fn with_device(device: &wgpu::Device, width: u32, height: u32, format: TextureFormat) -> Self {
-        let extent = wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        };
-        let texture = device.create_texture(&wgpu::TextureDescriptor {
-            size: extent,
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: format.wgpu_format(),
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT,
-            label: None,
-        });
-
+        let texture = Self::create(device, width, height, format);
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         Self { texture_view }
     }
 
     pub fn with_texels(renderer: &Renderer, width: u32, height: u32, texels: &[u8], format: TextureFormat) -> Self {
+        Self::with_device_texels(&renderer.device, &renderer.queue, width, height, texels, format)
+    }
+
+    pub(crate) fn with_device_texels(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        width: u32,
+        height: u32,
+        texels: &[u8],
+        format: TextureFormat,
+    ) -> Self {
         #[cfg(target_arch = "wasm32")]
         if format == TextureFormat::Bgra8Unorm {
             // webgl doesn't support bgra texture
@@ -90,23 +87,10 @@ impl Texture {
             return Self::with_texels(renderer, width, height, &rgba_texels, TextureFormat::Rgba8Unorm);
         }
 
-        let extent = wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        };
-        let texture = renderer.device.create_texture(&wgpu::TextureDescriptor {
-            size: extent,
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: format.wgpu_format(),
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT,
-            label: None,
-        });
+        let texture = Self::create(device, width, height, format);
 
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        renderer.queue.write_texture(
+        queue.write_texture(
             wgpu::ImageCopyTexture {
                 texture: &texture,
                 mip_level: 0,
@@ -116,10 +100,14 @@ impl Texture {
             texels,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: core::num::NonZeroU32::new(format.bytes_per_row() as u32 * extent.width),
+                bytes_per_row: core::num::NonZeroU32::new(format.bytes_per_row() as u32 * width),
                 rows_per_image: None,
             },
-            extent,
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
         );
 
         Self { texture_view }
@@ -129,6 +117,22 @@ impl Texture {
         let uncompressed = Self::decode_texture(data, width, height, &format);
 
         Self::with_texels(renderer, width, height, &uncompressed, format.decoded_format())
+    }
+
+    fn create(device: &wgpu::Device, width: u32, height: u32, format: TextureFormat) -> wgpu::Texture {
+        device.create_texture(&wgpu::TextureDescriptor {
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: format.wgpu_format(),
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT,
+            label: None,
+        })
     }
 
     fn decode_texture(data: &[u8], width: u32, height: u32, format: &CompressedTextureFormat) -> Vec<u8> {

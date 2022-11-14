@@ -12,7 +12,8 @@ use super::{
     pipeline_cache::PipelineCache,
     render_target::OffscreenRenderTarget,
     uniform_buffer::DynamicUniformBuffer,
-    Material, Mesh, OrthographicCamera, RenderTarget, Shader, VertexFormat, VertexFormatItem, VertexItemType, WindowRenderTarget,
+    Material, Mesh, OrthographicCamera, RenderTarget, Shader, Texture, TextureFormat, VertexFormat, VertexFormatItem, VertexItemType,
+    WindowRenderTarget,
 };
 use crate::{
     ecs::{Entity, World},
@@ -42,6 +43,7 @@ pub struct Renderer {
     offscreen_render_mesh: Mesh,
     offscreen_render_material: Material,
     pub(crate) pipeline_cache: PipelineCache,
+    pub empty_texture: Texture,
 }
 
 impl Renderer {
@@ -91,6 +93,8 @@ impl Renderer {
         let shader_transform = DynamicUniformBuffer::with_buffer_pool(&buffer_pool, 64); // TODO realloc
         let standard_shader = Arc::new(Shader::with_device(&device, include_str!("./shaders/standard.wgsl")));
 
+        let empty_texture = Texture::with_device_texels(&device, &queue, 1, 1, &[0, 0, 0, 0], TextureFormat::Rgba8Unorm);
+
         Self {
             device,
             shader_transform,
@@ -102,6 +106,7 @@ impl Renderer {
             offscreen_render_mesh,
             offscreen_render_material,
             pipeline_cache,
+            empty_texture,
         }
     }
 
@@ -296,7 +301,7 @@ impl Renderer {
 
         let shader = Shader::with_device(device, include_str!("./shaders/offscreen.wgsl"));
 
-        let material = Material::with_device(device, None, &[("texture", offscreen_target.color_attachment.clone())], Arc::new(shader));
+        let material = Material::with_device(device, None, &[("texture", &offscreen_target.color_attachment)], Arc::new(shader));
 
         (offscreen_target, mesh, material)
     }

@@ -1,3 +1,4 @@
+mod asset;
 mod buffer;
 mod buffer_pool;
 mod bundle;
@@ -16,6 +17,7 @@ mod transform;
 mod uniform_buffer;
 mod vertex_format;
 
+pub use asset::{AssetLoader, TextureAsset};
 pub use buffer::Buffer;
 pub use bundle::{RenderBundle, SpriteBundle};
 pub use camera::{ArcballCameraController, Camera, OrthographicCamera, PerspectiveCamera, StaticCameraController};

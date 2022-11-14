@@ -1,10 +1,10 @@
-use alloc::{vec, vec::Vec};
+use alloc::vec;
 
 use glam::Vec3;
 
 use super::{
     ecs::{Component, ComponentBundle},
-    render::{Material, Mesh, RenderBundle, Renderer, SimpleVertex, Texture, TextureFormat, Transform},
+    render::{AssetLoader, Material, Mesh, RenderBundle, Renderer, SimpleVertex, TextureAsset, Transform},
 };
 
 pub struct UiComponent {}
@@ -30,10 +30,9 @@ impl ComponentBundle for UiNode {
 
         let bundle = {
             let renderer = world.resource::<Renderer>().unwrap();
-            let empty_texture = Texture::with_texels(&renderer, 1, 1, &[0, 0, 0, 0], TextureFormat::Rgba8Unorm); // TODO remove
 
             let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
-            let material = Material::new(&renderer, empty_texture);
+            let material = Material::new(&renderer, &renderer.empty_texture);
 
             let transform = Transform::with_values(
                 Vec3::new(self.x as f32, self.y as f32, 0.0),
@@ -59,9 +58,7 @@ pub struct UiSprite {
     pub y: u32,
     pub width: u32,
     pub height: u32,
-    pub image_data: Vec<u8>, // TODO asset storage
-    pub image_width: u32,
-    pub image_height: u32,
+    pub texture_asset: TextureAsset,
 }
 
 impl ComponentBundle for UiSprite {
@@ -77,16 +74,10 @@ impl ComponentBundle for UiSprite {
 
         let bundle = {
             let renderer = world.resource::<Renderer>().unwrap();
-            let texture = Texture::with_texels(
-                &renderer,
-                self.image_width,
-                self.image_height,
-                &self.image_data,
-                TextureFormat::Rgba8Unorm,
-            );
+            let asset_loader = world.resource::<AssetLoader>().unwrap();
 
             let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
-            let material = Material::new(&renderer, texture);
+            let material = Material::new(&renderer, asset_loader.texture(self.texture_asset).unwrap());
 
             let transform = Transform::with_values(
                 Vec3::new(self.x as f32, self.y as f32, 0.0),

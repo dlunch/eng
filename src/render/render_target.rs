@@ -1,5 +1,3 @@
-use alloc::sync::Arc;
-
 use super::{
     constants::{INTERNAL_COLOR_ATTACHMENT_FORMAT, INTERNAL_DEPTH_ATTACHMENT_FORMAT},
     Texture,
@@ -75,14 +73,14 @@ pub struct OffscreenRenderTarget {
     width: u32,
     height: u32,
 
-    pub(crate) color_attachment: Arc<Texture>,
-    pub(crate) depth_attachment: Arc<Texture>,
+    pub(crate) color_attachment: Texture,
+    pub(crate) depth_attachment: Texture,
 }
 
 impl OffscreenRenderTarget {
     pub(crate) fn with_device(device: &wgpu::Device, width: u32, height: u32) -> Self {
-        let color_attachment = Arc::new(Texture::with_device(device, width, height, INTERNAL_COLOR_ATTACHMENT_FORMAT));
-        let depth_attachment = Arc::new(Texture::with_device(device, width, height, INTERNAL_DEPTH_ATTACHMENT_FORMAT));
+        let color_attachment = Texture::with_device(device, width, height, INTERNAL_COLOR_ATTACHMENT_FORMAT);
+        let depth_attachment = Texture::with_device(device, width, height, INTERNAL_DEPTH_ATTACHMENT_FORMAT);
 
         Self {
             width,

@@ -31,9 +31,11 @@ impl App {
 
         let window_size = window.inner_size();
         let renderer = render::Renderer::new(&window, window_size.width, window_size.height).await;
+        let asset_loader = render::AssetLoader::new();
 
         let mut world = ecs::World::new();
         world.add_resource(renderer);
+        world.add_resource(asset_loader);
 
         Self { event_loop, window, world }
     }

@@ -1,4 +1,4 @@
-use alloc::{string::String, sync::Arc, vec::Vec};
+use alloc::{borrow::ToOwned, sync::Arc, vec::Vec};
 
 use hashbrown::HashMap;
 
@@ -7,31 +7,29 @@ use super::{resource::Resource, texture::Texture, Renderer, Shader, ShaderBindin
 pub struct Material {
     pub(crate) shader: Arc<Shader>,
     pub(crate) bind_group: wgpu::BindGroup,
-
-    _resources: HashMap<String, Arc<dyn Resource>>,
 }
 
 impl Material {
-    pub fn new(renderer: &Renderer, texture: Texture) -> Self {
+    pub fn new(renderer: &Renderer, texture: &Texture) -> Self {
         Self::with_device(
             &renderer.device,
             Some(&renderer.shader_transform),
-            &[("texture", Arc::new(texture))],
+            &[("texture", texture)],
             renderer.standard_shader.clone(),
         )
     }
 
-    pub fn with_custom_shader(renderer: &Renderer, resources: &[(&str, Arc<dyn Resource>)], shader: Arc<Shader>) -> Self {
+    pub fn with_custom_shader(renderer: &Renderer, resources: &[(&str, &dyn Resource)], shader: Arc<Shader>) -> Self {
         Self::with_device(&renderer.device, Some(&renderer.shader_transform), resources, shader)
     }
 
     pub(crate) fn with_device(
         device: &wgpu::Device,
         transform: Option<&dyn Resource>,
-        resources: &[(&str, Arc<dyn Resource>)],
+        resources: &[(&str, &dyn Resource)],
         shader: Arc<Shader>,
     ) -> Self {
-        let resources = resources.iter().map(|x| (x.0.into(), x.1.clone())).collect::<HashMap<_, _>>();
+        let resources = resources.iter().map(|x| (x.0.to_owned(), x.1)).collect::<HashMap<_, _>>();
 
         // TODO wip
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -75,10 +73,6 @@ impl Material {
             label: None,
         });
 
-        Self {
-            shader,
-            bind_group,
-            _resources: resources,
-        }
+        Self { shader, bind_group }
     }
 }

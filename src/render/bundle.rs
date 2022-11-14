@@ -1,7 +1,12 @@
 use alloc::{vec, vec::Vec};
 use core::ops::Range;
 
-use super::{components::TransformComponent, transform::Transform, Material, Mesh, RenderComponent, Renderer, SimpleVertex, Texture, TextureFormat};
+use super::{
+    asset::{AssetLoader, TextureAsset},
+    components::TransformComponent,
+    transform::Transform,
+    Material, Mesh, RenderComponent, Renderer, SimpleVertex,
+};
 use crate::ecs::ComponentBundle;
 
 pub struct RenderBundle {
@@ -28,9 +33,7 @@ impl ComponentBundle for RenderBundle {
 }
 
 pub struct SpriteBundle {
-    pub image_data: Vec<u8>,
-    pub image_width: u32,
-    pub image_height: u32,
+    pub texture_asset: TextureAsset,
     pub transform: Transform,
 }
 
@@ -47,13 +50,8 @@ impl ComponentBundle for SpriteBundle {
 
         let bundle = {
             let renderer = world.resource::<Renderer>().unwrap();
-            let texture = Texture::with_texels(
-                &renderer,
-                self.image_width,
-                self.image_height,
-                &self.image_data,
-                TextureFormat::Rgba8Unorm,
-            );
+            let asset_loader = world.resource::<AssetLoader>().unwrap();
+            let texture = asset_loader.texture(self.texture_asset).unwrap();
 
             let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
             let material = Material::new(&renderer, texture);

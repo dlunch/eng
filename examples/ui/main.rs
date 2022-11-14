@@ -4,13 +4,13 @@ use std::io::Cursor;
 use glam::Vec3;
 use image::{io::Reader as ImageReader, EncodableLayout};
 
-use eng::ecs::World;
 use eng::render::{
     ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderBundle, Renderer, SimpleVertex, Texture, TextureFormat,
     Transform,
 };
 use eng::ui::{UiNode, UiSprite};
 use eng::App;
+use eng::{ecs::World, render::AssetLoader};
 
 async fn setup(world: &mut World) {
     let img = ImageReader::new(Cursor::new(include_bytes!("./image.png")))
@@ -20,15 +20,21 @@ async fn setup(world: &mut World) {
         .unwrap();
 
     let img = img.into_rgba8();
+    let image_asset = {
+        let renderer = world.resource::<Renderer>().unwrap();
+
+        world
+            .resource_mut::<AssetLoader>()
+            .unwrap()
+            .load_texture(&renderer, img.width(), img.height(), img.as_bytes(), TextureFormat::Rgba8Unorm)
+    };
 
     world.spawn_bundle(UiSprite {
         x: 500,
         y: 500,
         width: 500,
         height: 500,
-        image_data: img.as_bytes().to_vec(),
-        image_width: img.width(),
-        image_height: img.height(),
+        texture_asset: image_asset,
     });
 
     world.spawn_bundle(UiNode {
@@ -47,7 +53,7 @@ async fn setup(world: &mut World) {
         let texture_data = create_texels(512, 512);
         let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let material = Material::new(&renderer, texture);
+        let material = Material::new(&renderer, &texture);
         RenderBundle {
             mesh,
             material,
