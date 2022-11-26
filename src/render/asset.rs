@@ -1,12 +1,22 @@
+use alloc::vec::Vec;
+
 use hashbrown::HashMap;
 
 use super::{Renderer, Texture, TextureFormat};
 
 pub type TextureAsset = u64;
 
+struct TextureData {
+    width: u32,
+    height: u32,
+    texels: Vec<u8>,
+    format: TextureFormat,
+}
+
 pub struct AssetLoader {
     last_id: u64,
-    textures: HashMap<TextureAsset, Texture>,
+    textures: HashMap<TextureAsset, TextureData>,
+    loaded_textures: HashMap<TextureAsset, Texture>,
 }
 
 impl AssetLoader {
@@ -14,6 +24,7 @@ impl AssetLoader {
         Self {
             last_id: 0,
             textures: HashMap::new(),
+            loaded_textures: HashMap::new(),
         }
     }
 
@@ -23,17 +34,34 @@ impl AssetLoader {
         self.last_id
     }
 
-    pub fn load_texture(&mut self, renderer: &Renderer, width: u32, height: u32, texels: &[u8], format: TextureFormat) -> TextureAsset {
+    pub fn load_texture(&mut self, width: u32, height: u32, texels: &[u8], format: TextureFormat) -> TextureAsset {
         let id = self.new_id();
-        let texture = Texture::with_texels(renderer, width, height, texels, format);
 
-        self.textures.insert(id, texture);
+        self.textures.insert(
+            id,
+            TextureData {
+                width,
+                height,
+                texels: texels.to_vec(),
+                format,
+            },
+        );
 
         id
     }
 
-    pub fn texture(&self, id: TextureAsset) -> Option<&Texture> {
-        self.textures.get(&id)
+    pub fn texture(&mut self, renderer: &Renderer, id: TextureAsset) -> Option<&Texture> {
+        if !(self.loaded_textures.contains_key(&id) || self.textures.contains_key(&id)) {
+            return None;
+        }
+
+        let entry = self.loaded_textures.entry(id);
+
+        Some(entry.or_insert_with(|| {
+            let x = self.textures.get(&id).unwrap();
+
+            Texture::with_texels(renderer, x.width, x.height, &x.texels, x.format)
+        }))
     }
 }
 

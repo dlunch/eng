@@ -21,12 +21,10 @@ async fn setup(world: &mut World) {
 
     let img = img.into_rgba8();
     let image_asset = {
-        let renderer = world.resource::<Renderer>().unwrap();
-
         world
             .resource_mut::<AssetLoader>()
             .unwrap()
-            .load_texture(&renderer, img.width(), img.height(), img.as_bytes(), TextureFormat::Rgba8Unorm)
+            .load_texture(img.width(), img.height(), img.as_bytes(), TextureFormat::Rgba8Unorm)
     };
 
     world.spawn_bundle(UiSprite {

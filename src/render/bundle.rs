@@ -50,8 +50,8 @@ impl ComponentBundle for SpriteBundle {
 
         let bundle = {
             let renderer = world.resource::<Renderer>().unwrap();
-            let asset_loader = world.resource::<AssetLoader>().unwrap();
-            let texture = asset_loader.texture(self.texture_asset).unwrap();
+            let mut asset_loader = world.resource_mut::<AssetLoader>().unwrap();
+            let texture = asset_loader.texture(&renderer, self.texture_asset).unwrap();
 
             let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
             let material = Material::new(&renderer, texture);
