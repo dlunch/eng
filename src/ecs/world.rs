@@ -35,6 +35,12 @@ impl World {
         EntityBuilder::new(self, Entity { id })
     }
 
+    pub fn destroy(&mut self, entity: Entity) {
+        for (_, storage) in self.components.iter_mut() {
+            storage.remove(entity);
+        }
+    }
+
     pub fn spawn_bundle<T: 'static + ComponentBundle>(&mut self, bundle: T) -> Entity {
         let entity = self.spawn().entity();
 
@@ -286,5 +292,19 @@ mod test {
         let mut query = world.query::<(TestComponent1, TestComponent2)>();
         assert!(query.next().unwrap() == entity1);
         assert!(query.next().is_none());
+    }
+
+    #[test]
+    fn test_destroy() {
+        struct TestComponent {}
+
+        impl Component for TestComponent {}
+
+        let mut world = World::new();
+        let entity = world.spawn().with(TestComponent {}).entity();
+
+        world.destroy(entity);
+
+        assert!(world.component::<TestComponent>(entity).is_none());
     }
 }

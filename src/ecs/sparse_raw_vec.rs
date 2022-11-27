@@ -48,6 +48,19 @@ where
     pub fn contains(&self, index: IndexType) -> bool {
         self.indices.binary_search(&index).is_ok()
     }
+
+    pub fn remove(&mut self, index: IndexType) -> bool {
+        let pos = self.indices.binary_search(&index);
+        if pos.is_err() {
+            return false;
+        }
+        let pos = pos.unwrap();
+
+        self.data.remove(pos);
+        self.indices.remove(pos);
+
+        true
+    }
 }
 
 #[cfg(test)]
@@ -90,5 +103,19 @@ mod test {
 
         assert!(vec.contains(0));
         assert!(!vec.contains(1));
+    }
+
+    #[test]
+    fn test_remove() {
+        let mut vec = SparseRawVec::new::<i32>();
+
+        vec.insert(0, 10);
+        vec.insert(10, 12);
+        vec.insert(5, 7);
+        vec.insert(3, 1);
+
+        vec.remove(5);
+
+        assert_eq!(vec.iter().collect::<Vec<_>>(), vec![(0, &10), (3, &1), (10, &12)]);
     }
 }

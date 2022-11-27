@@ -1,6 +1,5 @@
 use alloc::{boxed::Box, vec::Vec};
 use core::{
-    any::TypeId,
     mem::{align_of, size_of},
     ops::Drop,
     slice,
@@ -11,36 +10,41 @@ use crate::utils::round_up;
 // homogeneous vec
 pub struct RawVec {
     storage: Vec<u8>,
-    #[cfg(debug_assertions)]
-    actual_type: TypeId,
     drop_all: Box<fn(&mut [u8])>,
+    item_size: usize,
+    #[cfg(debug_assertions)]
+    actual_type: core::any::TypeId,
 }
 
 impl RawVec {
     pub fn new<T: 'static>() -> Self {
+        let item_size = round_up(size_of::<T>(), align_of::<T>());
+
         Self {
             storage: Vec::new(),
-            #[cfg(debug_assertions)]
-            actual_type: TypeId::of::<T>(),
             drop_all: Box::new(Self::drop_all::<T>),
+            item_size,
+            #[cfg(debug_assertions)]
+            actual_type: core::any::TypeId::of::<T>(),
         }
     }
 
     pub fn insert<T: 'static>(&mut self, index: usize, value: T) {
-        let item_size = round_up(size_of::<T>(), align_of::<T>());
-        let offset = index * item_size;
+        #[cfg(debug_assertions)]
+        assert!(core::any::TypeId::of::<T>() == self.actual_type);
+
+        let offset = index * self.item_size;
 
         self.insert_at(offset, value);
     }
 
     pub fn get<T: 'static>(&self, index: usize) -> Option<&T> {
         #[cfg(debug_assertions)]
-        assert!(TypeId::of::<T>() == self.actual_type);
+        assert!(core::any::TypeId::of::<T>() == self.actual_type);
 
-        let item_size = round_up(size_of::<T>(), align_of::<T>());
-        let offset = index * item_size;
+        let offset = index * self.item_size;
 
-        if item_size != 0 && offset >= self.storage.len() {
+        if self.item_size != 0 && offset >= self.storage.len() {
             return None;
         }
 
@@ -50,11 +54,10 @@ impl RawVec {
 
     pub fn get_mut<T: 'static>(&mut self, index: usize) -> Option<&mut T> {
         #[cfg(debug_assertions)]
-        assert!(TypeId::of::<T>() == self.actual_type);
+        assert!(core::any::TypeId::of::<T>() == self.actual_type);
 
-        let item_size = round_up(size_of::<T>(), align_of::<T>());
-        let offset = index * item_size;
-        if item_size != 0 && offset >= self.storage.len() {
+        let offset = index * self.item_size;
+        if self.item_size != 0 && offset >= self.storage.len() {
             return None;
         }
 
@@ -64,15 +67,24 @@ impl RawVec {
 
     pub fn iter<T: 'static>(&self) -> impl Iterator<Item = &T> {
         #[cfg(debug_assertions)]
-        assert!(TypeId::of::<T>() == self.actual_type);
+        assert!(core::any::TypeId::of::<T>() == self.actual_type);
 
-        let item_size = round_up(size_of::<T>(), align_of::<T>());
-        self.storage.chunks(item_size).map(move |x| unsafe { &*(x as *const [u8] as *const T) })
+        self.storage
+            .chunks(self.item_size)
+            .map(move |x| unsafe { &*(x as *const [u8] as *const T) })
+    }
+
+    pub fn remove(&mut self, index: usize) -> bool {
+        let offset = index * self.item_size;
+
+        self.storage.drain(offset..offset + self.item_size);
+
+        true
     }
 
     fn insert_at<T: 'static>(&mut self, offset: usize, value: T) {
         #[cfg(debug_assertions)]
-        assert!(TypeId::of::<T>() == self.actual_type);
+        assert!(core::any::TypeId::of::<T>() == self.actual_type);
 
         let value_ptr = &value as *const T as *const u8;
         let value_slice = unsafe { slice::from_raw_parts(value_ptr, size_of::<T>()) };
@@ -180,5 +192,27 @@ mod test {
 
         assert!(*dropped[0].borrow());
         assert!(*dropped[1].borrow());
+    }
+
+    #[test]
+    fn test_remove() {
+        struct TestStruct {
+            a: usize,
+            b: usize,
+        }
+
+        let mut vec = RawVec::new::<TestStruct>();
+
+        vec.insert(0, TestStruct { a: 1, b: 2 });
+        vec.insert(1, TestStruct { a: 2, b: 3 });
+        vec.insert(2, TestStruct { a: 4, b: 5 });
+
+        vec.remove(1);
+
+        assert_eq!(vec.get::<TestStruct>(0).unwrap().a, 1);
+        assert_eq!(vec.get::<TestStruct>(0).unwrap().b, 2);
+
+        assert_eq!(vec.get::<TestStruct>(1).unwrap().a, 4);
+        assert_eq!(vec.get::<TestStruct>(1).unwrap().b, 5);
     }
 }
