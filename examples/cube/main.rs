@@ -5,7 +5,7 @@ use glam::Vec3;
 use eng::ecs::World;
 use eng::render::{
     ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderBundle, Renderer, SimpleVertex, Texture, TextureFormat,
-    Transform,
+    Transform, TransformComponent,
 };
 use eng::App;
 
@@ -56,11 +56,19 @@ async fn setup(world: &mut World) {
     world.spawn().with(CameraComponent { camera: Box::new(camera) });
 }
 
+fn update(world: &mut World) {
+    let transforms = world.components_mut::<TransformComponent>();
+
+    for (_, transform) in transforms {
+        transform.transform.rotate(Vec3::new(0.0, 0.01, 0.0));
+    }
+}
+
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
 
-    App::new().await.setup(setup).await.run()
+    App::new().await.setup(setup).await.update(update).run()
 }
 
 // Copied from https://github.com/gfx-rs/wgpu-rs/blob/master/examples/cube/main.rs#L23

@@ -21,7 +21,7 @@ pub use asset::{AssetLoader, TextureAsset};
 pub use buffer::Buffer;
 pub use bundle::{RenderBundle, SpriteBundle};
 pub use camera::{ArcballCameraController, Camera, OrthographicCamera, PerspectiveCamera, StaticCameraController};
-pub use components::{CameraComponent, RenderComponent};
+pub use components::{CameraComponent, RenderComponent, TransformComponent};
 pub use material::Material;
 pub use mesh::{Mesh, SimpleVertex};
 pub use render_target::{RenderTarget, WindowRenderTarget};

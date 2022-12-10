@@ -38,6 +38,10 @@ impl Transform {
         let rotation = Quat::from_euler(EulerRot::YXZ, self.rotation.y, self.rotation.x, self.rotation.z);
         Mat4::from_scale_rotation_translation(self.scale, rotation, self.translation)
     }
+
+    pub fn rotate(&mut self, rotation: Vec3) {
+        self.rotation += rotation;
+    }
 }
 
 impl Default for Transform {
