@@ -1,6 +1,7 @@
 #![no_std]
 extern crate alloc;
 
+use alloc::vec::Vec;
 use core::future::Future;
 
 use winit::{
@@ -15,10 +16,13 @@ pub mod render;
 pub mod ui;
 mod utils;
 
+type UpdateFn = fn(&mut ecs::World) -> ();
+
 pub struct App {
     event_loop: EventLoop<()>,
     window: Window,
     world: ecs::World,
+    update_fn: Vec<UpdateFn>,
 }
 
 impl App {
@@ -37,7 +41,12 @@ impl App {
         world.add_resource(renderer);
         world.add_resource(asset_loader);
 
-        Self { event_loop, window, world }
+        Self {
+            event_loop,
+            window,
+            world,
+            update_fn: Vec::new(),
+        }
     }
 
     pub async fn setup<'a, F, Fut>(mut self, setup: F) -> Self
@@ -49,6 +58,11 @@ impl App {
         let world = unsafe { core::mem::transmute(&mut self.world) };
         setup(world).await;
 
+        self
+    }
+
+    pub fn update(mut self, update: UpdateFn) -> Self {
+        self.update_fn.push(update);
         self
     }
 
