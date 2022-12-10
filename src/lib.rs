@@ -75,6 +75,10 @@ impl App {
             match event {
                 Event::MainEventsCleared => self.window.request_redraw(),
                 Event::RedrawRequested(_) => {
+                    for update in self.update_fn.iter() {
+                        update(&mut self.world);
+                    }
+
                     renderer.render_world(&self.world);
                 }
                 Event::WindowEvent { event, .. } => match event {
