@@ -74,6 +74,15 @@ impl RawVec {
             .map(move |x| unsafe { &*(x as *const [u8] as *const T) })
     }
 
+    pub fn iter_mut<T: 'static>(&mut self) -> impl Iterator<Item = &mut T> {
+        #[cfg(debug_assertions)]
+        assert!(core::any::TypeId::of::<T>() == self.actual_type);
+
+        self.storage
+            .chunks_mut(self.item_size)
+            .map(move |x| unsafe { &mut *(x as *mut [u8] as *mut T) })
+    }
+
     pub fn remove(&mut self, index: usize) -> bool {
         let offset = index * self.item_size;
 

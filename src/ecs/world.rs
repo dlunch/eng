@@ -86,6 +86,12 @@ impl World {
         self.components.get(&component_type).unwrap().iter()
     }
 
+    pub fn components_mut<T: 'static + Component>(&mut self) -> impl Iterator<Item = (Entity, &mut T)> {
+        let component_type = TypeId::of::<T>();
+
+        self.components.get_mut(&component_type).unwrap().iter_mut()
+    }
+
     pub fn query<T: 'static + Query>(&self) -> impl Iterator<Item = Entity> + '_ {
         (0..self.entities).map(|x| Entity { id: x }).filter(|&x| T::matches(self, x))
     }
@@ -193,6 +199,30 @@ mod test {
         assert_eq!(it.next().unwrap().1.test, 1);
         assert_eq!(it.next().unwrap().1.test, 2);
         assert!(it.next().is_none());
+    }
+
+    #[test]
+    fn test_components_mut() {
+        struct TestComponent {
+            test: u32,
+        }
+
+        impl Component for TestComponent {}
+
+        let mut world = World::new();
+
+        world.spawn().with(TestComponent { test: 1 }).entity();
+
+        world.spawn().with(TestComponent { test: 2 }).entity();
+
+        {
+            let mut it = world.components_mut::<TestComponent>();
+            it.next().unwrap().1.test = 123;
+        }
+
+        let mut it = world.components::<TestComponent>();
+
+        assert_eq!(it.next().unwrap().1.test, 123);
     }
 
     #[test]

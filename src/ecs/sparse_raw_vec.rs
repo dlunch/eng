@@ -45,6 +45,10 @@ where
         self.indices.iter().cloned().zip(self.data.iter())
     }
 
+    pub fn iter_mut<T: 'static>(&mut self) -> impl Iterator<Item = (IndexType, &mut T)> {
+        self.indices.iter().cloned().zip(self.data.iter_mut())
+    }
+
     pub fn contains(&self, index: IndexType) -> bool {
         self.indices.binary_search(&index).is_ok()
     }
