@@ -175,7 +175,6 @@ where
     T: FnOnce() -> F,
     for<'a> F: Future<Output = Ret> + Sync + Send + 'a,
     Ret: 'static,
-    Self: core::marker::Sized,
 {
     fn call(self) -> BoxFuture<'static, Box<dyn Any>> {
         self()
@@ -208,7 +207,6 @@ impl<T, Ret> AsyncSystemCallback for AsyncSystemCallbackWrapper<T, Ret>
 where
     T: FnOnce(&mut World, &Ret),
     Ret: 'static,
-    Self: core::marker::Sized,
 {
     fn call(self: Box<Self>, world: &mut World, args: &(dyn Any + 'static)) {
         let args = args.downcast_ref::<Ret>().unwrap();
