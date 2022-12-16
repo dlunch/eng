@@ -20,6 +20,7 @@ pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
     resources: HashMap<ResourceType, RefCell<AnyStorage>>,
     entities: u32,
+    #[allow(clippy::type_complexity)]
     pending: Vec<(BoxFuture<'static, Box<dyn Any>>, Box<dyn AsyncSystemCallback>)>,
 }
 
