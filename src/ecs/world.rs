@@ -144,7 +144,7 @@ impl World {
     pub fn async_job<F, C, Ret>(&mut self, func: F, callback: C)
     where
         F: AsyncSystem<Ret>,
-        C: Fn(&mut World, &Ret) + 'static,
+        C: FnOnce(&mut World, &Ret) + 'static,
         Ret: 'static,
     {
         let fut = func.call();
@@ -192,7 +192,7 @@ where
 pub struct AsyncSystemCallbackWrapper<F, T>(F, PhantomData<T>);
 
 pub trait AsyncSystemCallback {
-    fn call(&self, world: &mut World, args: &(dyn Any + 'static));
+    fn call(self: Box<Self>, world: &mut World, args: &(dyn Any + 'static));
 }
 
 impl<F, T> AsyncSystemCallbackWrapper<F, T>
@@ -206,11 +206,11 @@ where
 
 impl<T, Ret> AsyncSystemCallback for AsyncSystemCallbackWrapper<T, Ret>
 where
-    T: Fn(&mut World, &Ret),
+    T: FnOnce(&mut World, &Ret),
     Ret: 'static,
     Self: core::marker::Sized,
 {
-    fn call(&self, world: &mut World, args: &(dyn Any + 'static)) {
+    fn call(self: Box<Self>, world: &mut World, args: &(dyn Any + 'static)) {
         let args = args.downcast_ref::<Ret>().unwrap();
 
         (self.0)(world, args);
