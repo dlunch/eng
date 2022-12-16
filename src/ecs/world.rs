@@ -1,8 +1,12 @@
+use alloc::{boxed::Box, vec::Vec};
 use core::{
-    any::TypeId,
+    any::{Any, TypeId},
     cell::{Ref, RefCell, RefMut},
+    future::Future,
+    marker::PhantomData,
 };
 
+use futures::{future::BoxFuture, poll, task::Poll, FutureExt};
 use hashbrown::HashMap;
 
 use super::{
@@ -16,6 +20,7 @@ pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
     resources: HashMap<ResourceType, RefCell<AnyStorage>>,
     entities: u32,
+    pending: Vec<(BoxFuture<'static, Box<dyn Any>>, Box<dyn AsyncSystemCallback>)>,
 }
 
 impl World {
@@ -24,6 +29,7 @@ impl World {
             components: HashMap::new(),
             resources: HashMap::new(),
             entities: 0,
+            pending: Vec::new(),
         }
     }
 
@@ -132,6 +138,81 @@ impl World {
         let resource_type = TypeId::of::<T>();
 
         Some(self.resources.remove(&resource_type)?.into_inner().into_inner::<T>())
+    }
+
+    pub fn async_job<F, C, Ret>(&mut self, func: F, callback: C)
+    where
+        F: AsyncSystem<Ret>,
+        C: Fn(&mut World, &Ret) + 'static,
+        Ret: 'static,
+    {
+        let fut = func.call();
+
+        self.pending.push((fut, Box::new(AsyncSystemCallbackWrapper::new(callback))));
+    }
+
+    pub(crate) async fn update(&mut self) {
+        let mut pending = Vec::with_capacity(self.pending.len());
+        core::mem::swap(&mut self.pending, &mut pending);
+
+        for (mut future, callback) in pending {
+            if let Poll::Ready(x) = poll!(&mut future) {
+                callback.call(self, &*x);
+            } else {
+                self.pending.push((future, callback));
+            }
+        }
+    }
+}
+
+pub trait AsyncSystem<Ret> {
+    fn call(self) -> BoxFuture<'static, Box<dyn Any>>;
+}
+
+impl<T, F, Ret> AsyncSystem<Ret> for T
+where
+    T: FnOnce() -> F,
+    for<'a> F: Future<Output = Ret> + Sync + Send + 'a,
+    Ret: 'static,
+    Self: core::marker::Sized,
+{
+    fn call(self) -> BoxFuture<'static, Box<dyn Any>> {
+        self()
+            .map(|x| {
+                let b: Box<dyn Any> = Box::new(x);
+
+                b
+            })
+            .fuse()
+            .boxed()
+    }
+}
+
+pub struct AsyncSystemCallbackWrapper<F, T>(F, PhantomData<T>);
+
+pub trait AsyncSystemCallback {
+    fn call(&self, world: &mut World, args: &(dyn Any + 'static));
+}
+
+impl<F, T> AsyncSystemCallbackWrapper<F, T>
+where
+    AsyncSystemCallbackWrapper<F, T>: AsyncSystemCallback,
+{
+    pub fn new(f: F) -> Self {
+        Self(f, PhantomData)
+    }
+}
+
+impl<T, Ret> AsyncSystemCallback for AsyncSystemCallbackWrapper<T, Ret>
+where
+    T: Fn(&mut World, &Ret),
+    Ret: 'static,
+    Self: core::marker::Sized,
+{
+    fn call(&self, world: &mut World, args: &(dyn Any + 'static)) {
+        let args = args.downcast_ref::<Ret>().unwrap();
+
+        (self.0)(world, args);
     }
 }
 
@@ -336,5 +417,27 @@ mod test {
         world.destroy(entity);
 
         assert!(world.component::<TestComponent>(entity).is_none());
+    }
+
+    #[tokio::test]
+    async fn test_async() {
+        struct TestComponent {
+            v: u32,
+        }
+
+        impl Component for TestComponent {}
+
+        let mut world = World::new();
+
+        world.async_job(
+            || async { 1 },
+            |world, &v| {
+                world.spawn().with(TestComponent { v });
+            },
+        );
+
+        world.update().await;
+
+        assert_eq!(world.components::<TestComponent>().next().unwrap().1.v, 1);
     }
 }

@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 use core::future::Future;
 
+use tokio::runtime::Handle;
 use winit::{
     dpi::LogicalSize,
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -69,6 +70,7 @@ impl App {
             match event {
                 Event::MainEventsCleared => self.window.request_redraw(),
                 Event::RedrawRequested(_) => {
+                    Handle::current().block_on(self.world.update());
                     for update in self.update_fn.iter() {
                         update(&mut self.world);
                     }

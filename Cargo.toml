@@ -18,6 +18,8 @@ spinning_top = { version = "^0.2", default-features = false }
 naga = { version = "^0.10", features = ["wgsl-in" ] }
 lazy_static = { version = "^1.4", default-features = false }
 num-traits = { version = "^0.2", default-features = false }
+futures = { version = "^0.3", features = ["alloc", "async-await"], default-features = false }
+tokio = { version = "^1.12", features = ["rt-multi-thread", "macros"] }
 
 [target.'cfg(unix)'.dependencies]
 winit = { version = "^0.27", features = ["x11", "wayland"], default-features = false }
@@ -26,6 +28,5 @@ winit = { version = "^0.27", features = ["x11", "wayland"], default-features = f
 winit = { version = "^0.27", default-features = false }
 
 [dev-dependencies]
-tokio = { version = "^1.12", features = ["full"] }
 pretty_env_logger = { version = "^0.4" }
 image = { version = "^0.24" }
