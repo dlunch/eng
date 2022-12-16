@@ -177,14 +177,7 @@ where
     Ret: 'static,
 {
     fn call(self) -> BoxFuture<'static, Box<dyn Any>> {
-        self()
-            .map(|x| {
-                let b: Box<dyn Any> = Box::new(x);
-
-                b
-            })
-            .fuse()
-            .boxed()
+        self().map(|x| Box::new(x) as Box<dyn Any>).fuse().boxed()
     }
 }
 
