@@ -9,16 +9,14 @@ use core::{
 use futures::{future::BoxFuture, poll, task::Poll, FutureExt};
 use hashbrown::HashMap;
 
-use super::{
-    any_storage::AnyStorage, builder::EntityBuilder, bundle::ComponentBundle, query::Query, sparse_raw_vec::SparseRawVec, Component, Entity,
-};
+use super::{builder::EntityBuilder, bundle::ComponentBundle, query::Query, sparse_raw_vec::SparseRawVec, Component, Entity};
 
 type ComponentType = TypeId;
 type ResourceType = TypeId;
 
 pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
-    resources: HashMap<ResourceType, RefCell<AnyStorage>>,
+    resources: HashMap<ResourceType, RefCell<Box<dyn Any>>>,
     entities: u32,
     #[allow(clippy::type_complexity)]
     pending: Vec<(BoxFuture<'static, Box<dyn Any>>, Box<dyn AsyncSystemCallback>)>,
@@ -116,7 +114,7 @@ impl World {
     pub fn add_resource<T: 'static>(&mut self, resource: T) {
         let resource_type = TypeId::of::<T>();
 
-        self.resources.insert(resource_type, RefCell::new(AnyStorage::new(resource)));
+        self.resources.insert(resource_type, RefCell::new(Box::new(resource)));
     }
 
     pub fn resource<T: 'static>(&self) -> Option<Ref<'_, T>> {
@@ -124,7 +122,7 @@ impl World {
 
         let storage = self.resources.get(&resource_type)?.borrow();
 
-        Some(Ref::map(storage, |x| x.get::<T>()))
+        Some(Ref::map(storage, |x| x.downcast_ref::<T>().unwrap()))
     }
 
     pub fn resource_mut<T: 'static>(&self) -> Option<RefMut<'_, T>> {
@@ -132,13 +130,13 @@ impl World {
 
         let storage = self.resources.get(&resource_type)?.borrow_mut();
 
-        Some(RefMut::map(storage, |x| x.get_mut::<T>()))
+        Some(RefMut::map(storage, |x| x.downcast_mut::<T>().unwrap()))
     }
 
     pub fn take_resource<T: 'static>(&mut self) -> Option<T> {
         let resource_type = TypeId::of::<T>();
 
-        Some(self.resources.remove(&resource_type)?.into_inner().into_inner::<T>())
+        Some(*self.resources.remove(&resource_type)?.into_inner().downcast::<T>().unwrap())
     }
 
     pub fn async_job<F, C, Ret>(&mut self, func: F, callback: C)
