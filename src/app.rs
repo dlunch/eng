@@ -65,8 +65,6 @@ impl App {
         self.event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Poll;
 
-            let mut renderer = self.world.take_resource::<render::Renderer>().unwrap();
-
             match event {
                 Event::MainEventsCleared => self.window.request_redraw(),
                 Event::RedrawRequested(_) => {
@@ -75,7 +73,9 @@ impl App {
                         update(&mut self.world);
                     }
 
+                    let mut renderer = self.world.take_resource::<render::Renderer>().unwrap();
                     renderer.render_world(&self.world);
+                    self.world.add_resource(renderer);
                 }
                 Event::WindowEvent { event, .. } => match event {
                     WindowEvent::KeyboardInput {
@@ -94,8 +94,6 @@ impl App {
                 },
                 _ => {}
             }
-
-            self.world.add_resource(renderer);
         });
     }
 }
