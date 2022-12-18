@@ -1,5 +1,6 @@
 mod builder;
 mod bundle;
+mod event;
 mod hierarchy;
 mod query;
 mod raw_vec;

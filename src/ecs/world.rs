@@ -7,12 +7,13 @@ use core::{
 };
 
 use futures::{future::BoxFuture, poll, task::Poll, FutureExt};
-use hashbrown::HashMap;
+use hashbrown::{hash_map::Entry, HashMap};
 
 use super::{builder::EntityBuilder, bundle::ComponentBundle, query::Query, sparse_raw_vec::SparseRawVec, Component, Entity};
 
 type ComponentType = TypeId;
 type ResourceType = TypeId;
+type EventType = TypeId;
 
 pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
@@ -20,6 +21,7 @@ pub struct World {
     entities: u32,
     #[allow(clippy::type_complexity)]
     pending: Vec<(BoxFuture<'static, Box<dyn Any>>, Box<dyn SystemCallback>)>,
+    event_handlers: HashMap<TypeId, Vec<Box<dyn SystemCallback>>>,
 }
 
 impl World {
@@ -29,6 +31,7 @@ impl World {
             resources: HashMap::new(),
             entities: 0,
             pending: Vec::new(),
+            event_handlers: HashMap::new(),
         }
     }
 
@@ -161,6 +164,22 @@ impl World {
             } else {
                 self.pending.push((future, callback));
             }
+        }
+    }
+
+    pub fn add_event_handler<EventT, C>(&mut self, callback: C)
+    where
+        C: FnOnce(&mut World, &EventT) + 'static,
+        EventT: 'static,
+    {
+        let entry = self.event_handlers.entry(TypeId::of::<EventT>());
+
+        let value = Box::new(SystemCallbackWrapper::new(callback));
+
+        if let Entry::Occupied(mut entry) = entry {
+            entry.get_mut().push(value);
+        } else {
+            entry.insert(vec![value]);
         }
     }
 }
