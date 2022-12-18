@@ -8,6 +8,7 @@ mod sparse_raw_vec;
 mod world;
 
 pub use bundle::ComponentBundle;
+pub use event::KeyboardEvent;
 pub use hierarchy::HierarchyExt;
 pub use world::World;
 

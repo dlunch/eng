@@ -146,7 +146,7 @@ impl World {
     where
         Func: FnOnce() -> Fut,
         for<'a> Fut: Future<Output = Ret> + Sync + Send + 'a,
-        C: FnOnce(&mut World, &Ret) + 'static,
+        C: Fn(&mut World, &Ret) + 'static,
         Ret: 'static,
     {
         let fut = func().map(|x| Box::new(x) as Box<dyn Any>).fuse().boxed();
@@ -169,7 +169,7 @@ impl World {
 
     pub fn add_event_handler<EventT, C>(&mut self, callback: C)
     where
-        C: FnOnce(&mut World, &EventT) + 'static,
+        C: Fn(&mut World, &EventT) + 'static,
         EventT: 'static,
     {
         let event_type = Self::get_event_type::<EventT>();
@@ -181,6 +181,24 @@ impl World {
         } else {
             entry.insert(vec![value]);
         }
+    }
+
+    pub(crate) fn on_event<EventT>(&mut self, event: EventT)
+    where
+        EventT: 'static,
+    {
+        let event_type = Self::get_event_type::<EventT>();
+
+        let mut event_handlers = HashMap::new();
+        core::mem::swap(&mut event_handlers, &mut self.event_handlers); // TODO remove
+
+        if let Some(callbacks) = event_handlers.get(&event_type) {
+            for callback in callbacks {
+                callback.call(self, &event);
+            }
+        }
+
+        core::mem::swap(&mut event_handlers, &mut self.event_handlers); // TODO remove
     }
 
     fn get_component_type<ComponentT>() -> ComponentType
@@ -208,7 +226,7 @@ impl World {
 pub struct SystemCallbackWrapper<F, T>(F, PhantomData<T>);
 
 pub trait SystemCallback {
-    fn call(self: Box<Self>, world: &mut World, args: &(dyn Any + 'static));
+    fn call(&self, world: &mut World, args: &(dyn Any + 'static));
 }
 
 impl<F, T> SystemCallbackWrapper<F, T>
@@ -222,10 +240,10 @@ where
 
 impl<T, Ret> SystemCallback for SystemCallbackWrapper<T, Ret>
 where
-    T: FnOnce(&mut World, &Ret),
+    T: Fn(&mut World, &Ret),
     Ret: 'static,
 {
-    fn call(self: Box<Self>, world: &mut World, args: &(dyn Any + 'static)) {
+    fn call(&self, world: &mut World, args: &(dyn Any + 'static)) {
         let args = args.downcast_ref::<Ret>().unwrap();
 
         (self.0)(world, args);

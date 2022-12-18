@@ -4,7 +4,7 @@ use core::future::Future;
 use tokio::runtime::Handle;
 use winit::{
     dpi::LogicalSize,
-    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    event::{ElementState, Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
@@ -78,16 +78,14 @@ impl App {
                     self.world.add_resource(renderer);
                 }
                 Event::WindowEvent { event, .. } => match event {
-                    WindowEvent::KeyboardInput {
-                        input:
-                            KeyboardInput {
-                                virtual_keycode: Some(VirtualKeyCode::Escape),
-                                state: ElementState::Pressed,
-                                ..
-                            },
-                        ..
+                    WindowEvent::KeyboardInput { input, .. } => {
+                        if input.state == ElementState::Pressed {
+                            self.world.on_event(crate::ecs::KeyboardEvent::KeyDown(input.virtual_keycode.unwrap()));
+                        } else if input.state == ElementState::Released {
+                            self.world.on_event(crate::ecs::KeyboardEvent::KeyUp(input.virtual_keycode.unwrap()));
+                        }
                     }
-                    | WindowEvent::CloseRequested => {
+                    WindowEvent::CloseRequested => {
                         *control_flow = ControlFlow::Exit;
                     }
                     _ => {}
