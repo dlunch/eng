@@ -19,7 +19,7 @@ pub struct World {
     resources: HashMap<ResourceType, RefCell<Box<dyn Any>>>,
     entities: u32,
     #[allow(clippy::type_complexity)]
-    pending: Vec<(BoxFuture<'static, Box<dyn Any>>, Box<dyn AsyncSystemCallback>)>,
+    pending: Vec<(BoxFuture<'static, Box<dyn Any>>, Box<dyn SystemCallback>)>,
 }
 
 impl World {
@@ -139,15 +139,16 @@ impl World {
         Some(*self.resources.remove(&resource_type)?.into_inner().downcast::<T>().unwrap())
     }
 
-    pub fn async_job<F, C, Ret>(&mut self, func: F, callback: C)
+    pub fn async_job<Func, Fut, C, Ret>(&mut self, func: Func, callback: C)
     where
-        F: AsyncSystem<Ret>,
+        Func: FnOnce() -> Fut,
+        for<'a> Fut: Future<Output = Ret> + Sync + Send + 'a,
         C: FnOnce(&mut World, &Ret) + 'static,
         Ret: 'static,
     {
-        let fut = func.call();
+        let fut = func().map(|x| Box::new(x) as Box<dyn Any>).fuse().boxed();
 
-        self.pending.push((fut, Box::new(AsyncSystemCallbackWrapper::new(callback))));
+        self.pending.push((fut, Box::new(SystemCallbackWrapper::new(callback))));
     }
 
     pub(crate) async fn update(&mut self) {
@@ -164,37 +165,22 @@ impl World {
     }
 }
 
-pub trait AsyncSystem<Ret> {
-    fn call(self) -> BoxFuture<'static, Box<dyn Any>>;
-}
+pub struct SystemCallbackWrapper<F, T>(F, PhantomData<T>);
 
-impl<T, F, Ret> AsyncSystem<Ret> for T
-where
-    T: FnOnce() -> F,
-    for<'a> F: Future<Output = Ret> + Sync + Send + 'a,
-    Ret: 'static,
-{
-    fn call(self) -> BoxFuture<'static, Box<dyn Any>> {
-        self().map(|x| Box::new(x) as Box<dyn Any>).fuse().boxed()
-    }
-}
-
-pub struct AsyncSystemCallbackWrapper<F, T>(F, PhantomData<T>);
-
-pub trait AsyncSystemCallback {
+pub trait SystemCallback {
     fn call(self: Box<Self>, world: &mut World, args: &(dyn Any + 'static));
 }
 
-impl<F, T> AsyncSystemCallbackWrapper<F, T>
+impl<F, T> SystemCallbackWrapper<F, T>
 where
-    AsyncSystemCallbackWrapper<F, T>: AsyncSystemCallback,
+    SystemCallbackWrapper<F, T>: SystemCallback,
 {
     pub fn new(f: F) -> Self {
         Self(f, PhantomData)
     }
 }
 
-impl<T, Ret> AsyncSystemCallback for AsyncSystemCallbackWrapper<T, Ret>
+impl<T, Ret> SystemCallback for SystemCallbackWrapper<T, Ret>
 where
     T: FnOnce(&mut World, &Ret),
     Ret: 'static,
