@@ -21,7 +21,7 @@ pub struct World {
     entities: u32,
     #[allow(clippy::type_complexity)]
     pending: Vec<(BoxFuture<'static, Box<dyn Any>>, Box<dyn SystemCallback>)>,
-    event_handlers: HashMap<TypeId, Vec<Box<dyn SystemCallback>>>,
+    event_handlers: HashMap<EventType, Vec<Box<dyn SystemCallback>>>,
 }
 
 impl World {
@@ -62,7 +62,7 @@ impl World {
     }
 
     pub fn add_component<T: 'static + Component>(&mut self, entity: Entity, component: T) {
-        let component_type = TypeId::of::<T>();
+        let component_type = Self::get_component_type::<T>();
 
         let vec = if let Some(x) = self.components.get_mut(&component_type) {
             x
@@ -77,25 +77,25 @@ impl World {
     }
 
     pub fn component<T: 'static + Component>(&self, entity: Entity) -> Option<&T> {
-        let component_type = TypeId::of::<T>();
+        let component_type = Self::get_component_type::<T>();
 
         self.components.get(&component_type)?.get::<T>(entity)
     }
 
     pub fn component_mut<T: 'static + Component>(&mut self, entity: Entity) -> Option<&mut T> {
-        let component_type = TypeId::of::<T>();
+        let component_type = Self::get_component_type::<T>();
 
         self.components.get_mut(&component_type)?.get_mut::<T>(entity)
     }
 
     pub fn components<T: 'static + Component>(&self) -> impl Iterator<Item = (Entity, &T)> {
-        let component_type = TypeId::of::<T>();
+        let component_type = Self::get_component_type::<T>();
 
         self.components.get(&component_type).unwrap().iter()
     }
 
     pub fn components_mut<T: 'static + Component>(&mut self) -> impl Iterator<Item = (Entity, &mut T)> {
-        let component_type = TypeId::of::<T>();
+        let component_type = Self::get_component_type::<T>();
 
         self.components.get_mut(&component_type).unwrap().iter_mut()
     }
@@ -105,7 +105,7 @@ impl World {
     }
 
     pub fn has_component<T: 'static + Component>(&self, entity: Entity) -> bool {
-        let component_type = TypeId::of::<T>();
+        let component_type = Self::get_component_type::<T>();
 
         if let Some(components) = self.components.get(&component_type) {
             components.contains(entity)
@@ -115,13 +115,13 @@ impl World {
     }
 
     pub fn add_resource<T: 'static>(&mut self, resource: T) {
-        let resource_type = TypeId::of::<T>();
+        let resource_type = Self::get_resource_type::<T>();
 
         self.resources.insert(resource_type, RefCell::new(Box::new(resource)));
     }
 
     pub fn resource<T: 'static>(&self) -> Option<Ref<'_, T>> {
-        let resource_type = TypeId::of::<T>();
+        let resource_type = Self::get_resource_type::<T>();
 
         let storage = self.resources.get(&resource_type)?.borrow();
 
@@ -129,7 +129,7 @@ impl World {
     }
 
     pub fn resource_mut<T: 'static>(&self) -> Option<RefMut<'_, T>> {
-        let resource_type = TypeId::of::<T>();
+        let resource_type = Self::get_resource_type::<T>();
 
         let storage = self.resources.get(&resource_type)?.borrow_mut();
 
@@ -137,7 +137,7 @@ impl World {
     }
 
     pub fn take_resource<T: 'static>(&mut self) -> Option<T> {
-        let resource_type = TypeId::of::<T>();
+        let resource_type = Self::get_resource_type::<T>();
 
         Some(*self.resources.remove(&resource_type)?.into_inner().downcast::<T>().unwrap())
     }
@@ -172,15 +172,36 @@ impl World {
         C: FnOnce(&mut World, &EventT) + 'static,
         EventT: 'static,
     {
-        let entry = self.event_handlers.entry(TypeId::of::<EventT>());
-
+        let event_type = Self::get_event_type::<EventT>();
         let value = Box::new(SystemCallbackWrapper::new(callback));
 
+        let entry = self.event_handlers.entry(event_type);
         if let Entry::Occupied(mut entry) = entry {
             entry.get_mut().push(value);
         } else {
             entry.insert(vec![value]);
         }
+    }
+
+    fn get_component_type<ComponentT>() -> ComponentType
+    where
+        ComponentT: Component + 'static,
+    {
+        TypeId::of::<ComponentT>()
+    }
+
+    fn get_resource_type<ResourceT>() -> ResourceType
+    where
+        ResourceT: 'static,
+    {
+        TypeId::of::<ResourceT>()
+    }
+
+    fn get_event_type<EventT>() -> EventType
+    where
+        EventT: 'static,
+    {
+        TypeId::of::<EventT>()
     }
 }
 
