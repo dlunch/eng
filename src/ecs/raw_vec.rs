@@ -1,50 +1,40 @@
-use alloc::{boxed::Box, vec::Vec};
-use core::{
-    mem::{align_of, size_of},
-    ops::Drop,
-    slice,
-};
+use alloc::vec::Vec;
+use core::{any::TypeId, mem::size_of, ops::Drop, slice};
 
-use crate::utils::round_up;
+use super::type_descriptor::TypeDescriptor;
 
 // homogeneous vec
 pub struct RawVec {
     storage: Vec<u8>,
-    drop_all: Box<fn(&mut [u8])>,
-    item_size: usize,
-    #[cfg(debug_assertions)]
-    actual_type: core::any::TypeId,
+    type_descriptor: TypeDescriptor,
 }
 
 impl RawVec {
     pub fn new<T: 'static>() -> Self {
-        let item_size = round_up(size_of::<T>(), align_of::<T>());
+        let type_descriptor = TypeDescriptor::new::<T>();
 
         Self {
             storage: Vec::new(),
-            drop_all: Box::new(Self::drop_all::<T>),
-            item_size,
-            #[cfg(debug_assertions)]
-            actual_type: core::any::TypeId::of::<T>(),
+            type_descriptor,
         }
     }
 
     pub fn insert<T: 'static>(&mut self, index: usize, value: T) {
         #[cfg(debug_assertions)]
-        assert!(core::any::TypeId::of::<T>() == self.actual_type);
+        assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
 
-        let offset = index * self.item_size;
+        let offset = index * self.type_descriptor.item_size;
 
         self.insert_at(offset, value);
     }
 
     pub fn get<T: 'static>(&self, index: usize) -> Option<&T> {
         #[cfg(debug_assertions)]
-        assert!(core::any::TypeId::of::<T>() == self.actual_type);
+        assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
 
-        let offset = index * self.item_size;
+        let offset = index * self.type_descriptor.item_size;
 
-        if self.item_size != 0 && offset >= self.storage.len() {
+        if self.type_descriptor.item_size != 0 && offset >= self.storage.len() {
             return None;
         }
 
@@ -54,10 +44,10 @@ impl RawVec {
 
     pub fn get_mut<T: 'static>(&mut self, index: usize) -> Option<&mut T> {
         #[cfg(debug_assertions)]
-        assert!(core::any::TypeId::of::<T>() == self.actual_type);
+        assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
 
-        let offset = index * self.item_size;
-        if self.item_size != 0 && offset >= self.storage.len() {
+        let offset = index * self.type_descriptor.item_size;
+        if self.type_descriptor.item_size != 0 && offset >= self.storage.len() {
             return None;
         }
 
@@ -67,33 +57,33 @@ impl RawVec {
 
     pub fn iter<T: 'static>(&self) -> impl Iterator<Item = &T> {
         #[cfg(debug_assertions)]
-        assert!(core::any::TypeId::of::<T>() == self.actual_type);
+        assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
 
         self.storage
-            .chunks(self.item_size)
+            .chunks(self.type_descriptor.item_size)
             .map(move |x| unsafe { &*(x as *const [u8] as *const T) })
     }
 
     pub fn iter_mut<T: 'static>(&mut self) -> impl Iterator<Item = &mut T> {
         #[cfg(debug_assertions)]
-        assert!(core::any::TypeId::of::<T>() == self.actual_type);
+        assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
 
         self.storage
-            .chunks_mut(self.item_size)
+            .chunks_mut(self.type_descriptor.item_size)
             .map(move |x| unsafe { &mut *(x as *mut [u8] as *mut T) })
     }
 
     pub fn remove(&mut self, index: usize) -> bool {
-        let offset = index * self.item_size;
+        let offset = index * self.type_descriptor.item_size;
 
-        self.storage.drain(offset..offset + self.item_size);
+        self.storage.drain(offset..offset + self.type_descriptor.item_size);
 
         true
     }
 
     fn insert_at<T: 'static>(&mut self, offset: usize, value: T) {
         #[cfg(debug_assertions)]
-        assert!(core::any::TypeId::of::<T>() == self.actual_type);
+        assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
 
         let value_ptr = &value as *const T as *const u8;
         let value_slice = unsafe { slice::from_raw_parts(value_ptr, size_of::<T>()) };
@@ -101,23 +91,17 @@ impl RawVec {
 
         core::mem::forget(value);
     }
-
-    fn drop_all<T: 'static>(storage: &mut [u8]) {
-        let item_size = round_up(size_of::<T>(), align_of::<T>());
-        if item_size == 0 {
-            return;
-        }
-
-        storage.chunks_mut(item_size).for_each(|x| {
-            let value_ptr = x.as_mut_ptr() as *mut T;
-            unsafe { value_ptr.drop_in_place() }
-        })
-    }
 }
 
 impl Drop for RawVec {
     fn drop(&mut self) {
-        (self.drop_all)(&mut self.storage)
+        if self.type_descriptor.item_size == 0 {
+            return;
+        }
+
+        self.storage.chunks_mut(self.type_descriptor.item_size).for_each(|x| {
+            (self.type_descriptor.drop)(x);
+        })
     }
 }
 

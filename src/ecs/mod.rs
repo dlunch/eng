@@ -5,6 +5,7 @@ mod hierarchy;
 mod query;
 mod raw_vec;
 mod sparse_raw_vec;
+mod type_descriptor;
 mod world;
 
 pub use bundle::ComponentBundle;

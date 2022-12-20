@@ -1,0 +1,32 @@
+use alloc::boxed::Box;
+use core::{
+    any::TypeId,
+    mem::{align_of, size_of},
+};
+
+use crate::utils::round_up;
+
+pub(super) struct TypeDescriptor {
+    pub(super) item_size: usize,
+    pub(super) drop: Box<dyn Fn(&mut [u8])>,
+
+    #[cfg(debug_assertions)]
+    pub(super) actual_type: TypeId,
+}
+
+impl TypeDescriptor {
+    pub fn new<T: 'static>() -> Self {
+        Self {
+            item_size: round_up(size_of::<T>(), align_of::<T>()),
+            drop: Box::new(Self::drop::<T>),
+
+            #[cfg(debug_assertions)]
+            actual_type: TypeId::of::<T>(),
+        }
+    }
+
+    fn drop<T: 'static>(data: &mut [u8]) {
+        let value_ptr = data.as_mut_ptr() as *mut T;
+        unsafe { value_ptr.drop_in_place() }
+    }
+}
