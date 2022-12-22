@@ -6,9 +6,11 @@ use core::{
 
 use crate::utils::round_up;
 
+type DropFn = Box<dyn Fn(&mut [u8])>;
+
 pub struct TypeDescriptor {
     pub(super) item_size: usize,
-    pub(super) drop: Box<dyn Fn(&mut [u8])>,
+    pub(super) drop: DropFn,
 
     #[cfg(debug_assertions)]
     pub(super) actual_type: TypeId,

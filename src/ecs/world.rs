@@ -18,12 +18,13 @@ pub type ComponentType = TypeId;
 pub type ResourceType = TypeId;
 pub type EventType = TypeId;
 
+type PendingFuture = BoxFuture<'static, Box<dyn Any>>;
+
 pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
     resources: HashMap<ResourceType, RefCell<Box<dyn Any>>>,
     entities: u32,
-    #[allow(clippy::type_complexity)]
-    pending: Vec<(BoxFuture<'static, Box<dyn Any>>, Box<dyn SystemCallback>)>,
+    pending: Vec<(PendingFuture, Box<dyn SystemCallback>)>,
     event_handlers: HashMap<EventType, Vec<Box<dyn SystemCallback>>>,
 }
 
