@@ -1,5 +1,7 @@
 mod builder;
 mod bundle;
+mod command;
+mod component;
 mod event;
 mod hierarchy;
 mod query;
@@ -9,6 +11,8 @@ mod type_descriptor;
 mod world;
 
 pub use bundle::ComponentBundle;
+pub use command::CommandList;
+pub use component::Component;
 pub use event::KeyboardEvent;
 pub use hierarchy::HierarchyExt;
 pub use world::World;
@@ -17,5 +21,3 @@ pub use world::World;
 pub struct Entity {
     id: u32,
 }
-
-pub trait Component {}

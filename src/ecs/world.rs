@@ -9,11 +9,14 @@ use core::{
 use futures::{future::BoxFuture, poll, task::Poll, FutureExt};
 use hashbrown::{hash_map::Entry, HashMap};
 
-use super::{builder::EntityBuilder, bundle::ComponentBundle, query::Query, sparse_raw_vec::SparseRawVec, Component, Entity};
+use super::{
+    builder::EntityBuilder, bundle::ComponentBundle, command::Command, component::ComponentContainer, query::Query, sparse_raw_vec::SparseRawVec,
+    CommandList, Component, Entity,
+};
 
-type ComponentType = TypeId;
-type ResourceType = TypeId;
-type EventType = TypeId;
+pub type ComponentType = TypeId;
+pub type ResourceType = TypeId;
+pub type EventType = TypeId;
 
 pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
@@ -74,6 +77,19 @@ impl World {
         };
 
         vec.insert(entity, component);
+    }
+
+    fn add_component_raw(&mut self, entity: Entity, component_container: ComponentContainer) {
+        let vec = if let Some(x) = self.components.get_mut(&component_container.component_type) {
+            x
+        } else {
+            let vec = SparseRawVec::with_type_descriptor(component_container.type_descriptor);
+            self.components.insert(component_container.component_type, vec);
+
+            self.components.get_mut(&component_container.component_type).unwrap()
+        };
+
+        vec.insert_raw(entity, &component_container.data);
     }
 
     pub fn component<T: 'static + Component>(&self, entity: Entity) -> Option<&T> {
@@ -199,6 +215,27 @@ impl World {
         }
 
         core::mem::swap(&mut event_handlers, &mut self.event_handlers); // TODO remove
+    }
+
+    pub fn run_commands(&mut self, commands: CommandList) {
+        for command in commands.commands {
+            match command {
+                Command::CreateEntity(components) => {
+                    let entity = self.spawn().entity();
+                    for component in components {
+                        self.add_component_raw(entity, component);
+                    }
+                }
+                Command::DestroyEntity(entity) => self.destroy(entity),
+                Command::CreateComponent(entity, components) => {
+                    for component in components {
+                        self.add_component_raw(entity, component);
+                    }
+                }
+                Command::DestroyComponent(_) => (), // TOOD
+                Command::UpdateComponent(()) => (),
+            }
+        }
     }
 
     fn get_component_type<ComponentT>() -> ComponentType

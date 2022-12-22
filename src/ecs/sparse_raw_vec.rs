@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 
 use super::raw_vec::RawVec;
+use super::type_descriptor::TypeDescriptor;
 
 pub struct SparseRawVec<IndexType = usize>
 where
@@ -21,11 +22,26 @@ where
         }
     }
 
+    pub(super) fn with_type_descriptor(type_descriptor: TypeDescriptor) -> Self {
+        Self {
+            data: RawVec::with_type_descriptor(type_descriptor),
+            indices: Vec::new(),
+        }
+    }
+
     pub fn insert<T: 'static>(&mut self, index: IndexType, value: T) {
         // find position
         let pos = self.indices.partition_point(|&x| x < index);
 
         self.data.insert(pos, value);
+        self.indices.insert(pos, index);
+    }
+
+    pub fn insert_raw(&mut self, index: IndexType, value_slice: &[u8]) {
+        // find position
+        let pos = self.indices.partition_point(|&x| x < index);
+
+        self.data.insert_raw(pos, value_slice);
         self.indices.insert(pos, index);
     }
 

@@ -19,13 +19,27 @@ impl RawVec {
         }
     }
 
+    pub(super) fn with_type_descriptor(type_descriptor: TypeDescriptor) -> Self {
+        Self {
+            storage: Vec::new(),
+            type_descriptor,
+        }
+    }
+
     pub fn insert<T: 'static>(&mut self, index: usize, value: T) {
         #[cfg(debug_assertions)]
         assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
 
-        let offset = index * self.type_descriptor.item_size;
+        let value_ptr = &value as *const T as *const u8;
+        let value_slice = unsafe { slice::from_raw_parts(value_ptr, size_of::<T>()) };
+        core::mem::forget(value);
 
-        self.insert_at(offset, value);
+        self.insert_raw(index, value_slice);
+    }
+
+    pub fn insert_raw(&mut self, index: usize, value_slice: &[u8]) {
+        let offset = index * self.type_descriptor.item_size;
+        self.storage.splice(offset..offset, value_slice.iter().cloned());
     }
 
     pub fn get<T: 'static>(&self, index: usize) -> Option<&T> {
@@ -79,17 +93,6 @@ impl RawVec {
         self.storage.drain(offset..offset + self.type_descriptor.item_size);
 
         true
-    }
-
-    fn insert_at<T: 'static>(&mut self, offset: usize, value: T) {
-        #[cfg(debug_assertions)]
-        assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
-
-        let value_ptr = &value as *const T as *const u8;
-        let value_slice = unsafe { slice::from_raw_parts(value_ptr, size_of::<T>()) };
-        self.storage.splice(offset..offset, value_slice.iter().cloned());
-
-        core::mem::forget(value);
     }
 }
 
