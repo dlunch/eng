@@ -7,7 +7,7 @@ use super::{
     transform::Transform,
     Material, Mesh, RenderComponent, Renderer, SimpleVertex,
 };
-use crate::ecs::ComponentBundle;
+use crate::ecs::{ComponentBundle, ComponentContainer, Entity, World};
 
 pub struct RenderBundle {
     pub mesh: Mesh,
@@ -17,7 +17,7 @@ pub struct RenderBundle {
 }
 
 impl ComponentBundle for RenderBundle {
-    fn add_components(self, world: &mut crate::ecs::World, entity: crate::ecs::Entity) {
+    fn add_components(self, world: &mut World, entity: Entity) {
         let index_count = self.mesh.index_count;
 
         world.add_component(
@@ -30,6 +30,19 @@ impl ComponentBundle for RenderBundle {
         );
         world.add_component(entity, TransformComponent { transform: self.transform });
     }
+
+    fn to_component_containers(self, _: &mut World) -> Vec<ComponentContainer> {
+        let index_count = self.mesh.index_count;
+
+        vec![
+            ComponentContainer::new(RenderComponent {
+                mesh: self.mesh,
+                material: self.material,
+                ranges: self.ranges.unwrap_or_else(|| vec![0..index_count as u32]),
+            }),
+            ComponentContainer::new(TransformComponent { transform: self.transform }),
+        ]
+    }
 }
 
 pub struct SpriteBundle {
@@ -38,7 +51,7 @@ pub struct SpriteBundle {
 }
 
 impl ComponentBundle for SpriteBundle {
-    fn add_components(self, world: &mut crate::ecs::World, entity: crate::ecs::Entity) {
+    fn add_components(self, world: &mut World, entity: Entity) {
         let vertices = vec![
             SimpleVertex::new([0.0, 0.0, 0.0, 1.0], [0.0, 0.0]),
             SimpleVertex::new([0.0, 1.0, 0.0, 1.0], [0.0, 1.0]),
@@ -65,5 +78,34 @@ impl ComponentBundle for SpriteBundle {
         };
 
         world.add_bundle(entity, bundle);
+    }
+
+    fn to_component_containers(self, world: &mut World) -> Vec<ComponentContainer> {
+        let vertices = vec![
+            SimpleVertex::new([0.0, 0.0, 0.0, 1.0], [0.0, 0.0]),
+            SimpleVertex::new([0.0, 1.0, 0.0, 1.0], [0.0, 1.0]),
+            SimpleVertex::new([1.0, 0.0, 0.0, 1.0], [1.0, 0.0]),
+            SimpleVertex::new([1.0, 1.0, 0.0, 1.0], [1.0, 1.0]),
+        ];
+
+        let indices = vec![0, 1, 2, 2, 1, 3];
+
+        let bundle = {
+            let renderer = world.resource::<Renderer>().unwrap();
+            let mut asset_loader = world.resource_mut::<AssetLoader>().unwrap();
+            let texture = asset_loader.texture(&renderer, self.texture_asset).unwrap();
+
+            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
+            let material = Material::new(&renderer, texture);
+
+            RenderBundle {
+                mesh,
+                material,
+                transform: self.transform,
+                ranges: None,
+            }
+        };
+
+        bundle.to_component_containers(world)
     }
 }

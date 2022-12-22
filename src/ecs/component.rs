@@ -5,7 +5,7 @@ use super::type_descriptor::TypeDescriptor;
 pub type ComponentType = TypeId;
 pub trait Component {}
 
-pub(super) struct ComponentContainer {
+pub struct ComponentContainer {
     pub component_type: ComponentType,
     pub type_descriptor: TypeDescriptor,
     pub data: Vec<u8>,

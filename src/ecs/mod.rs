@@ -12,7 +12,7 @@ mod world;
 
 pub use bundle::ComponentBundle;
 pub use command::CommandList;
-pub use component::Component;
+pub use component::{Component, ComponentContainer};
 pub use event::KeyboardEvent;
 pub use hierarchy::HierarchyExt;
 pub use world::World;

@@ -6,7 +6,7 @@ use core::{
 
 use crate::utils::round_up;
 
-pub(super) struct TypeDescriptor {
+pub struct TypeDescriptor {
     pub(super) item_size: usize,
     pub(super) drop: Box<dyn Fn(&mut [u8])>,
 

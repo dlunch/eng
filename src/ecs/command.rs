@@ -1,11 +1,10 @@
-use super::{component::ComponentContainer, world::ComponentType, Entity};
+use super::{component::ComponentContainer, world::ComponentType, Component, ComponentBundle, Entity, World};
 
 pub(super) enum Command {
     CreateEntity(Vec<ComponentContainer>),
     DestroyEntity(Entity),
     CreateComponent(Entity, Vec<ComponentContainer>),
     DestroyComponent(Vec<ComponentType>),
-    UpdateComponent(()),
 }
 
 #[derive(Default)]
@@ -18,19 +17,26 @@ impl CommandList {
         Self::default()
     }
 
-    fn create_entity(&mut self, components: Vec<ComponentContainer>) {
-        self.commands.push(Command::CreateEntity(components));
+    pub fn create_entity<T>(&mut self, world: &mut World, bundle: T)
+    where
+        T: ComponentBundle,
+    {
+        self.commands.push(Command::CreateEntity(bundle.to_component_containers(world)));
     }
 
-    fn destroy_entity(&mut self, entity: Entity) {
+    pub fn destroy_entity(&mut self, entity: Entity) {
         self.commands.push(Command::DestroyEntity(entity));
     }
 
-    fn create_component(&mut self, entity: Entity, components: Vec<ComponentContainer>) {
-        self.commands.push(Command::CreateComponent(entity, components));
+    pub fn create_component<T>(&mut self, entity: Entity, component: T)
+    where
+        T: Component + 'static,
+    {
+        self.commands
+            .push(Command::CreateComponent(entity, vec![ComponentContainer::new(component)]));
     }
 
-    fn destroy_component(&mut self, components: Vec<ComponentType>) {
+    pub fn destroy_component(&mut self, components: Vec<ComponentType>) {
         self.commands.push(Command::DestroyComponent(components));
     }
 }

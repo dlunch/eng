@@ -233,7 +233,6 @@ impl World {
                     }
                 }
                 Command::DestroyComponent(_) => (), // TOOD
-                Command::UpdateComponent(()) => (),
             }
         }
     }
