@@ -296,6 +296,8 @@ impl Default for World {
 mod test {
     use alloc::{vec, vec::Vec};
 
+    use crate::ecs::CommandList;
+
     use super::{Component, World};
 
     #[test]
@@ -509,5 +511,34 @@ mod test {
         world.update().await;
 
         assert_eq!(world.components::<TestComponent>().next().unwrap().1.v, 1);
+    }
+
+    #[test]
+    fn test_command() {
+        struct TestComponent1 {
+            a: u32,
+        }
+        impl Component for TestComponent1 {}
+        struct TestComponent2 {
+            a: u32,
+        }
+        impl Component for TestComponent2 {}
+
+        let mut world = World::new();
+
+        let mut cmd_list = CommandList::new();
+        cmd_list.create_entity(&mut world, (TestComponent1 { a: 1 },));
+
+        world.run_commands(cmd_list);
+
+        let (entity, component) = world.components::<TestComponent1>().next().unwrap();
+        assert_eq!(component.a, 1);
+
+        let mut cmd_list = CommandList::new();
+        cmd_list.create_component(entity, TestComponent2 { a: 2 });
+
+        world.run_commands(cmd_list);
+
+        assert_eq!(world.component::<TestComponent2>(entity).unwrap().a, 2);
     }
 }
