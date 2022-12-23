@@ -11,78 +11,52 @@ pub struct UiComponent {}
 impl Component for UiComponent {}
 
 pub struct UiNode {
-    pub x: u32,
-    pub y: u32,
-    pub width: u32,
-    pub height: u32,
+    render_bundle: RenderBundle,
+}
+
+impl UiNode {
+    pub fn new(world: &mut World, x: u32, y: u32, width: u32, height: u32) -> Self {
+        let vertices = vec![
+            SimpleVertex::new([0.0, 0.0, 0.0, 1.0], [0.0, 0.0]),
+            SimpleVertex::new([0.0, 1.0, 0.0, 1.0], [0.0, 1.0]),
+            SimpleVertex::new([1.0, 0.0, 0.0, 1.0], [1.0, 0.0]),
+            SimpleVertex::new([1.0, 1.0, 0.0, 1.0], [1.0, 1.0]),
+        ];
+
+        let indices = vec![0, 1, 2, 2, 1, 3];
+
+        let bundle = {
+            let renderer = world.resource::<Renderer>().unwrap();
+
+            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
+            let material = Material::new(&renderer, &renderer.empty_texture);
+
+            let transform = Transform::with_values(
+                Vec3::new(x as f32, y as f32, 0.0),
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(width as f32, height as f32, 0.0),
+            );
+
+            RenderBundle {
+                mesh,
+                material,
+                transform,
+                ranges: None,
+            }
+        };
+
+        Self { render_bundle: bundle }
+    }
 }
 
 impl ComponentBundle for UiNode {
     fn add_components(self, world: &mut World, entity: Entity) {
-        let vertices = vec![
-            SimpleVertex::new([0.0, 0.0, 0.0, 1.0], [0.0, 0.0]),
-            SimpleVertex::new([0.0, 1.0, 0.0, 1.0], [0.0, 1.0]),
-            SimpleVertex::new([1.0, 0.0, 0.0, 1.0], [1.0, 0.0]),
-            SimpleVertex::new([1.0, 1.0, 0.0, 1.0], [1.0, 1.0]),
-        ];
-
-        let indices = vec![0, 1, 2, 2, 1, 3];
-
-        let bundle = {
-            let renderer = world.resource::<Renderer>().unwrap();
-
-            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
-            let material = Material::new(&renderer, &renderer.empty_texture);
-
-            let transform = Transform::with_values(
-                Vec3::new(self.x as f32, self.y as f32, 0.0),
-                Vec3::new(0.0, 0.0, 0.0),
-                Vec3::new(self.width as f32, self.height as f32, 0.0),
-            );
-
-            RenderBundle {
-                mesh,
-                material,
-                transform,
-                ranges: None,
-            }
-        };
-
-        world.add_bundle(entity, bundle);
+        world.add_bundle(entity, self.render_bundle);
         world.add_component(entity, UiComponent {});
     }
 
     fn to_component_containers(self, world: &mut World) -> Vec<ComponentContainer> {
-        let vertices = vec![
-            SimpleVertex::new([0.0, 0.0, 0.0, 1.0], [0.0, 0.0]),
-            SimpleVertex::new([0.0, 1.0, 0.0, 1.0], [0.0, 1.0]),
-            SimpleVertex::new([1.0, 0.0, 0.0, 1.0], [1.0, 0.0]),
-            SimpleVertex::new([1.0, 1.0, 0.0, 1.0], [1.0, 1.0]),
-        ];
-
-        let indices = vec![0, 1, 2, 2, 1, 3];
-
-        let bundle = {
-            let renderer = world.resource::<Renderer>().unwrap();
-
-            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
-            let material = Material::new(&renderer, &renderer.empty_texture);
-
-            let transform = Transform::with_values(
-                Vec3::new(self.x as f32, self.y as f32, 0.0),
-                Vec3::new(0.0, 0.0, 0.0),
-                Vec3::new(self.width as f32, self.height as f32, 0.0),
-            );
-
-            RenderBundle {
-                mesh,
-                material,
-                transform,
-                ranges: None,
-            }
-        };
-
-        bundle
+        self.render_bundle
             .to_component_containers(world)
             .into_iter()
             .chain(vec![ComponentContainer::new(UiComponent {})])
@@ -91,80 +65,52 @@ impl ComponentBundle for UiNode {
 }
 
 pub struct UiSprite {
-    pub x: u32,
-    pub y: u32,
-    pub width: u32,
-    pub height: u32,
-    pub texture_asset: TextureAsset,
+    render_bundle: RenderBundle,
+}
+impl UiSprite {
+    pub fn new(world: &mut World, x: u32, y: u32, width: u32, height: u32, texture_asset: TextureAsset) -> Self {
+        let vertices = vec![
+            SimpleVertex::new([0.0, 0.0, 0.0, 1.0], [0.0, 0.0]),
+            SimpleVertex::new([0.0, 1.0, 0.0, 1.0], [0.0, 1.0]),
+            SimpleVertex::new([1.0, 0.0, 0.0, 1.0], [1.0, 0.0]),
+            SimpleVertex::new([1.0, 1.0, 0.0, 1.0], [1.0, 1.0]),
+        ];
+
+        let indices = vec![0, 1, 2, 2, 1, 3];
+
+        let bundle = {
+            let renderer = world.resource::<Renderer>().unwrap();
+            let mut asset_loader = world.resource_mut::<AssetLoader>().unwrap();
+
+            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
+            let material = Material::new(&renderer, asset_loader.texture(&renderer, texture_asset).unwrap());
+
+            let transform = Transform::with_values(
+                Vec3::new(x as f32, y as f32, 0.0),
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(width as f32, height as f32, 0.0),
+            );
+
+            RenderBundle {
+                mesh,
+                material,
+                transform,
+                ranges: None,
+            }
+        };
+
+        Self { render_bundle: bundle }
+    }
 }
 
 impl ComponentBundle for UiSprite {
     fn add_components(self, world: &mut World, entity: Entity) {
-        let vertices = vec![
-            SimpleVertex::new([0.0, 0.0, 0.0, 1.0], [0.0, 0.0]),
-            SimpleVertex::new([0.0, 1.0, 0.0, 1.0], [0.0, 1.0]),
-            SimpleVertex::new([1.0, 0.0, 0.0, 1.0], [1.0, 0.0]),
-            SimpleVertex::new([1.0, 1.0, 0.0, 1.0], [1.0, 1.0]),
-        ];
-
-        let indices = vec![0, 1, 2, 2, 1, 3];
-
-        let bundle = {
-            let renderer = world.resource::<Renderer>().unwrap();
-            let mut asset_loader = world.resource_mut::<AssetLoader>().unwrap();
-
-            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
-            let material = Material::new(&renderer, asset_loader.texture(&renderer, self.texture_asset).unwrap());
-
-            let transform = Transform::with_values(
-                Vec3::new(self.x as f32, self.y as f32, 0.0),
-                Vec3::new(0.0, 0.0, 0.0),
-                Vec3::new(self.width as f32, self.height as f32, 0.0),
-            );
-
-            RenderBundle {
-                mesh,
-                material,
-                transform,
-                ranges: None,
-            }
-        };
-
-        world.add_bundle(entity, bundle);
+        world.add_bundle(entity, self.render_bundle);
         world.add_component(entity, UiComponent {});
     }
+
     fn to_component_containers(self, world: &mut World) -> Vec<ComponentContainer> {
-        let vertices = vec![
-            SimpleVertex::new([0.0, 0.0, 0.0, 1.0], [0.0, 0.0]),
-            SimpleVertex::new([0.0, 1.0, 0.0, 1.0], [0.0, 1.0]),
-            SimpleVertex::new([1.0, 0.0, 0.0, 1.0], [1.0, 0.0]),
-            SimpleVertex::new([1.0, 1.0, 0.0, 1.0], [1.0, 1.0]),
-        ];
-
-        let indices = vec![0, 1, 2, 2, 1, 3];
-
-        let bundle = {
-            let renderer = world.resource::<Renderer>().unwrap();
-            let mut asset_loader = world.resource_mut::<AssetLoader>().unwrap();
-
-            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
-            let material = Material::new(&renderer, asset_loader.texture(&renderer, self.texture_asset).unwrap());
-
-            let transform = Transform::with_values(
-                Vec3::new(self.x as f32, self.y as f32, 0.0),
-                Vec3::new(0.0, 0.0, 0.0),
-                Vec3::new(self.width as f32, self.height as f32, 0.0),
-            );
-
-            RenderBundle {
-                mesh,
-                material,
-                transform,
-                ranges: None,
-            }
-        };
-
-        bundle
+        self.render_bundle
             .to_component_containers(world)
             .into_iter()
             .chain(vec![ComponentContainer::new(UiComponent {})])

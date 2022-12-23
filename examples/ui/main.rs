@@ -27,20 +27,11 @@ async fn setup(world: &mut World) {
             .load_texture(img.width(), img.height(), img.as_bytes(), TextureFormat::Rgba8Unorm)
     };
 
-    world.spawn_bundle(UiSprite {
-        x: 500,
-        y: 500,
-        width: 500,
-        height: 500,
-        texture_asset: image_asset,
-    });
+    let sprite = UiSprite::new(world, 500, 500, 500, 500, image_asset);
+    world.spawn_bundle(sprite);
 
-    world.spawn_bundle(UiNode {
-        x: 0,
-        y: 0,
-        width: 500,
-        height: 500,
-    });
+    let node = UiNode::new(world, 0, 0, 500, 500);
+    world.spawn_bundle(node);
 
     let render_bundle = {
         let renderer = world.resource::<Renderer>().unwrap();
