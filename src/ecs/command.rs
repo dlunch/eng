@@ -1,4 +1,4 @@
-use super::{component::ComponentContainer, world::ComponentType, Component, ComponentBundle, Entity, World};
+use super::{component::ComponentContainer, world::ComponentType, Component, ComponentBundle, Entity};
 
 pub(super) enum Command {
     CreateEntity(Vec<ComponentContainer>),
@@ -17,11 +17,11 @@ impl CommandList {
         Self::default()
     }
 
-    pub fn create_entity<T>(&mut self, world: &mut World, bundle: T)
+    pub fn create_entity<T>(&mut self, bundle: T)
     where
         T: ComponentBundle,
     {
-        self.commands.push(Command::CreateEntity(bundle.to_component_containers(world)));
+        self.commands.push(Command::CreateEntity(bundle.to_component_containers()));
     }
 
     pub fn destroy_entity(&mut self, entity: Entity) {

@@ -55,9 +55,9 @@ impl ComponentBundle for UiNode {
         world.add_component(entity, UiComponent {});
     }
 
-    fn to_component_containers(self, world: &mut World) -> Vec<ComponentContainer> {
+    fn to_component_containers(self) -> Vec<ComponentContainer> {
         self.render_bundle
-            .to_component_containers(world)
+            .to_component_containers()
             .into_iter()
             .chain(vec![ComponentContainer::new(UiComponent {})])
             .collect()
@@ -109,9 +109,9 @@ impl ComponentBundle for UiSprite {
         world.add_component(entity, UiComponent {});
     }
 
-    fn to_component_containers(self, world: &mut World) -> Vec<ComponentContainer> {
+    fn to_component_containers(self) -> Vec<ComponentContainer> {
         self.render_bundle
-            .to_component_containers(world)
+            .to_component_containers()
             .into_iter()
             .chain(vec![ComponentContainer::new(UiComponent {})])
             .collect()

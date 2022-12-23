@@ -542,7 +542,7 @@ mod test {
         let mut world = World::new();
 
         let mut cmd_list = CommandList::new();
-        cmd_list.create_entity(&mut world, (TestComponent1 { a: 1 },));
+        cmd_list.create_entity((TestComponent1 { a: 1 },));
 
         world.run_commands(cmd_list.commands);
 

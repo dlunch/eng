@@ -4,7 +4,7 @@ use super::Component;
 
 pub trait ComponentBundle {
     fn add_components(self, world: &mut World, entity: Entity);
-    fn to_component_containers(self, world: &mut World) -> Vec<ComponentContainer>; // TODO we have to remove world from here
+    fn to_component_containers(self) -> Vec<ComponentContainer>;
 }
 
 impl<T1> ComponentBundle for (T1,)
@@ -15,7 +15,7 @@ where
         world.add_component(entity, self.0);
     }
 
-    fn to_component_containers(self, _: &mut World) -> Vec<ComponentContainer> {
+    fn to_component_containers(self) -> Vec<ComponentContainer> {
         vec![ComponentContainer::new(self.0)]
     }
 }
@@ -30,7 +30,7 @@ where
         world.add_component(entity, self.1);
     }
 
-    fn to_component_containers(self, _: &mut World) -> Vec<ComponentContainer> {
+    fn to_component_containers(self) -> Vec<ComponentContainer> {
         vec![ComponentContainer::new(self.0), ComponentContainer::new(self.1)]
     }
 }

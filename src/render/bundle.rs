@@ -31,7 +31,7 @@ impl ComponentBundle for RenderBundle {
         world.add_component(entity, TransformComponent { transform: self.transform });
     }
 
-    fn to_component_containers(self, _: &mut World) -> Vec<ComponentContainer> {
+    fn to_component_containers(self) -> Vec<ComponentContainer> {
         let index_count = self.mesh.index_count;
 
         vec![
@@ -85,7 +85,7 @@ impl ComponentBundle for SpriteBundle {
         world.add_bundle(entity, self.render_bundle);
     }
 
-    fn to_component_containers(self, world: &mut World) -> Vec<ComponentContainer> {
-        self.render_bundle.to_component_containers(world)
+    fn to_component_containers(self) -> Vec<ComponentContainer> {
+        self.render_bundle.to_component_containers()
     }
 }
