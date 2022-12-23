@@ -19,6 +19,7 @@ pub type ResourceType = TypeId;
 pub type EventType = TypeId;
 
 type PendingFuture = BoxFuture<'static, Box<dyn Any>>;
+type System = dyn Fn(&World) -> CommandList;
 
 pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
@@ -26,6 +27,7 @@ pub struct World {
     entities: u32,
     pending: Vec<(PendingFuture, Box<dyn SystemCallback>)>,
     event_handlers: HashMap<EventType, Vec<Box<dyn SystemCallback>>>,
+    systems: Vec<Box<System>>,
 }
 
 impl World {
@@ -36,6 +38,7 @@ impl World {
             entities: 0,
             pending: Vec::new(),
             event_handlers: HashMap::new(),
+            systems: Vec::new(),
         }
     }
 
@@ -182,6 +185,10 @@ impl World {
                 self.pending.push((future, callback));
             }
         }
+
+        let commands = self.systems.iter().flat_map(|x| x(self).commands).collect::<Vec<_>>();
+
+        self.run_commands(commands)
     }
 
     pub fn add_event_handler<EventT, C>(&mut self, callback: C)
@@ -218,8 +225,8 @@ impl World {
         core::mem::swap(&mut event_handlers, &mut self.event_handlers); // TODO remove
     }
 
-    pub fn run_commands(&mut self, commands: CommandList) {
-        for command in commands.commands {
+    fn run_commands(&mut self, commands: Vec<Command>) {
+        for command in commands {
             match command {
                 Command::CreateEntity(components) => {
                     let entity = self.spawn().entity();
@@ -236,6 +243,13 @@ impl World {
                 Command::DestroyComponent(_) => (), // TOOD
             }
         }
+    }
+
+    pub fn add_system<T>(&mut self, system: T)
+    where
+        T: Fn(&World) -> CommandList + 'static,
+    {
+        self.systems.push(Box::new(system));
     }
 
     fn get_component_type<ComponentT>() -> ComponentType
@@ -530,7 +544,7 @@ mod test {
         let mut cmd_list = CommandList::new();
         cmd_list.create_entity(&mut world, (TestComponent1 { a: 1 },));
 
-        world.run_commands(cmd_list);
+        world.run_commands(cmd_list.commands);
 
         let (entity, component) = world.components::<TestComponent1>().next().unwrap();
         assert_eq!(component.a, 1);
@@ -538,7 +552,7 @@ mod test {
         let mut cmd_list = CommandList::new();
         cmd_list.create_component(entity, TestComponent2 { a: 2 });
 
-        world.run_commands(cmd_list);
+        world.run_commands(cmd_list.commands);
 
         assert_eq!(world.component::<TestComponent2>(entity).unwrap().a, 2);
     }
