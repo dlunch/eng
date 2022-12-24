@@ -10,7 +10,13 @@ use futures::{future::BoxFuture, poll, task::Poll, FutureExt};
 use hashbrown::{hash_map::Entry, HashMap};
 
 use super::{
-    builder::EntityBuilder, bundle::ComponentBundle, command::Command, component::ComponentContainer, query::Query, sparse_raw_vec::SparseRawVec,
+    builder::EntityBuilder,
+    bundle::ComponentBundle,
+    command::Command,
+    component::ComponentContainer,
+    query::Query,
+    sparse_raw_vec::SparseRawVec,
+    system::{System, SystemFunction},
     CommandList, Component, Entity,
 };
 
@@ -19,7 +25,6 @@ pub type ResourceType = TypeId;
 pub type EventType = TypeId;
 
 type PendingFuture = BoxFuture<'static, Box<dyn Any>>;
-type System = dyn Fn(&World) -> CommandList;
 
 pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
@@ -27,7 +32,7 @@ pub struct World {
     entities: u32,
     pending: Vec<(PendingFuture, Box<dyn SystemCallback>)>,
     event_handlers: HashMap<EventType, Vec<Box<dyn SystemCallback>>>,
-    systems: Vec<Box<System>>,
+    systems: Vec<Box<dyn System>>,
 }
 
 impl World {
@@ -186,7 +191,7 @@ impl World {
             }
         }
 
-        let commands = self.systems.iter().flat_map(|x| x(self).commands).collect::<Vec<_>>();
+        let commands = self.systems.iter().flat_map(|x| x.run(self).commands).collect::<Vec<_>>();
 
         self.run_commands(commands)
     }
@@ -249,7 +254,7 @@ impl World {
     where
         T: Fn(&World) -> CommandList + 'static,
     {
-        self.systems.push(Box::new(system));
+        self.systems.push(Box::new(SystemFunction::new(system)));
     }
 
     fn get_component_type<ComponentT>() -> ComponentType

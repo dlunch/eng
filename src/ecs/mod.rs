@@ -7,6 +7,7 @@ mod hierarchy;
 mod query;
 mod raw_vec;
 mod sparse_raw_vec;
+mod system;
 mod type_descriptor;
 mod world;
 
