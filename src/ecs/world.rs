@@ -30,8 +30,8 @@ pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
     resources: HashMap<ResourceType, RefCell<Box<dyn Any>>>,
     entities: u32,
-    pending: Vec<(PendingFuture, Box<dyn SystemCallback>)>,
-    event_handlers: HashMap<EventType, Vec<Box<dyn SystemCallback>>>,
+    pending: Vec<(PendingFuture, Box<dyn EventHandler>)>,
+    event_handlers: HashMap<EventType, Vec<Box<dyn EventHandler>>>,
     systems: Vec<Box<dyn System>>,
 }
 
@@ -176,7 +176,7 @@ impl World {
     {
         let fut = func().map(|x| Box::new(x) as Box<dyn Any>).fuse().boxed();
 
-        self.pending.push((fut, Box::new(SystemCallbackWrapper::new(callback))));
+        self.pending.push((fut, Box::new(EventHandlerWrapper::new(callback))));
     }
 
     pub(crate) async fn update(&mut self) {
@@ -202,7 +202,7 @@ impl World {
         EventT: 'static,
     {
         let event_type = Self::get_event_type::<EventT>();
-        let value = Box::new(SystemCallbackWrapper::new(callback));
+        let value = Box::new(EventHandlerWrapper::new(callback));
 
         let entry = self.event_handlers.entry(event_type);
         if let Entry::Occupied(mut entry) = entry {
@@ -279,22 +279,22 @@ impl World {
     }
 }
 
-pub struct SystemCallbackWrapper<F, T>(F, PhantomData<T>);
+pub struct EventHandlerWrapper<F, T>(F, PhantomData<T>);
 
-pub trait SystemCallback {
+pub trait EventHandler {
     fn call(&self, world: &mut World, args: &(dyn Any + 'static));
 }
 
-impl<F, T> SystemCallbackWrapper<F, T>
+impl<F, T> EventHandlerWrapper<F, T>
 where
-    SystemCallbackWrapper<F, T>: SystemCallback,
+    EventHandlerWrapper<F, T>: EventHandler,
 {
     pub fn new(f: F) -> Self {
         Self(f, PhantomData)
     }
 }
 
-impl<T, Ret> SystemCallback for SystemCallbackWrapper<T, Ret>
+impl<T, Ret> EventHandler for EventHandlerWrapper<T, Ret>
 where
     T: Fn(&mut World, &Ret),
     Ret: 'static,
