@@ -3,7 +3,6 @@ use core::{
     any::{Any, TypeId},
     cell::{Ref, RefCell, RefMut},
     future::Future,
-    marker::PhantomData,
 };
 
 use futures::{future::BoxFuture, poll, task::Poll, FutureExt};
@@ -16,7 +15,7 @@ use super::{
     component::ComponentContainer,
     query::Query,
     sparse_raw_vec::SparseRawVec,
-    system::{System, SystemFunction},
+    system::{System, SystemFunction, SystemInput},
     CommandList, Component, Entity,
 };
 
@@ -30,8 +29,8 @@ pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
     resources: HashMap<ResourceType, RefCell<Box<dyn Any>>>,
     entities: u32,
-    pending: Vec<(PendingFuture, Box<dyn EventHandler>)>,
-    event_handlers: HashMap<EventType, Vec<Box<dyn EventHandler>>>,
+    pending: Vec<(PendingFuture, Box<dyn System>)>,
+    event_handlers: HashMap<EventType, Vec<Box<dyn System>>>,
     systems: Vec<Box<dyn System>>,
 }
 
@@ -167,16 +166,16 @@ impl World {
         Some(*self.resources.remove(&resource_type)?.into_inner().downcast::<T>().unwrap())
     }
 
-    pub fn async_job<Func, Fut, C, Ret>(&mut self, func: Func, callback: C)
+    pub fn async_job<Job, JobFut, Callback, Value>(&mut self, job: Job, callback: Callback)
     where
-        Func: FnOnce() -> Fut,
-        for<'a> Fut: Future<Output = Ret> + Sync + Send + 'a,
-        C: Fn(&World, &Ret) -> CommandList + 'static,
-        Ret: 'static,
+        Job: FnOnce() -> JobFut,
+        for<'a> JobFut: Future<Output = Value> + Sync + Send + 'a,
+        Callback: Fn(&World, &Value) -> CommandList + 'static,
+        Value: SystemInput + 'static,
     {
-        let fut = func().map(|x| Box::new(x) as Box<dyn Any>).fuse().boxed();
+        let fut = job().map(|x| Box::new(x) as Box<dyn Any>).fuse().boxed();
 
-        self.pending.push((fut, Box::new(EventHandlerWrapper::new(callback))));
+        self.pending.push((fut, Box::new(SystemFunction::new(callback))));
     }
 
     pub(crate) async fn update(&mut self) {
@@ -186,24 +185,24 @@ impl World {
         let mut commands = Vec::new();
         for (mut future, callback) in pending {
             if let Poll::Ready(x) = poll!(&mut future) {
-                commands.extend(callback.call(self, &*x).commands.into_iter());
+                commands.extend(callback.run(self, Some(&*x)).commands.into_iter());
             } else {
                 self.pending.push((future, callback));
             }
         }
 
-        commands.extend(self.systems.iter().flat_map(|x| x.run(self).commands));
+        commands.extend(self.systems.iter().flat_map(|x| x.run(self, None).commands));
 
         self.run_commands(commands)
     }
 
-    pub fn add_event_handler<EventT, C>(&mut self, callback: C)
+    pub fn add_event_handler<EventType, Callback>(&mut self, callback: Callback)
     where
-        C: Fn(&World, &EventT) -> CommandList + 'static,
-        EventT: 'static,
+        Callback: Fn(&World, &EventType) -> CommandList + 'static,
+        EventType: SystemInput + 'static,
     {
-        let event_type = Self::get_event_type::<EventT>();
-        let value = Box::new(EventHandlerWrapper::new(callback));
+        let event_type = Self::get_event_type::<EventType>();
+        let value = Box::new(SystemFunction::new(callback));
 
         let entry = self.event_handlers.entry(event_type);
         if let Entry::Occupied(mut entry) = entry {
@@ -223,7 +222,7 @@ impl World {
         core::mem::swap(&mut event_handlers, &mut self.event_handlers); // TODO remove
 
         if let Some(callbacks) = event_handlers.get(&event_type) {
-            let commands = callbacks.iter().flat_map(|x| x.call(self, &event).commands).collect::<Vec<_>>();
+            let commands = callbacks.iter().flat_map(|x| x.run(self, Some(&event)).commands).collect::<Vec<_>>();
             self.run_commands(commands)
         }
 
@@ -276,30 +275,6 @@ impl World {
         EventT: 'static,
     {
         TypeId::of::<EventT>()
-    }
-}
-
-pub struct EventHandlerWrapper<F, T>(F, PhantomData<T>);
-
-pub trait EventHandler {
-    fn call(&self, world: &World, args: &(dyn Any + 'static)) -> CommandList;
-}
-
-impl<F, T> EventHandlerWrapper<F, T> {
-    pub fn new(f: F) -> Self {
-        Self(f, PhantomData)
-    }
-}
-
-impl<T, Ret> EventHandler for EventHandlerWrapper<T, Ret>
-where
-    T: Fn(&World, &Ret) -> CommandList,
-    Ret: 'static,
-{
-    fn call(&self, world: &World, args: &(dyn Any + 'static)) -> CommandList {
-        let args = args.downcast_ref::<Ret>().unwrap();
-
-        (self.0)(world, args)
     }
 }
 

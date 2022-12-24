@@ -1,19 +1,25 @@
-use core::marker::PhantomData;
+use core::{any::Any, marker::PhantomData};
 
 use super::{CommandList, World};
 
 pub trait SystemInput {
-    fn from_world(world: &World) -> &Self;
+    fn new<'a>(world: &'a World, extra: Option<&'a dyn Any>) -> &'a Self;
 }
 
 impl SystemInput for World {
-    fn from_world(world: &World) -> &Self {
+    fn new<'a>(world: &'a World, _: Option<&'a dyn Any>) -> &'a Self {
         world
     }
 }
 
+impl SystemInput for u32 {
+    fn new<'a>(_: &'a World, extra: Option<&'a dyn Any>) -> &'a Self {
+        extra.unwrap().downcast_ref::<Self>().unwrap()
+    }
+}
+
 pub trait System {
-    fn run(&self, world: &World) -> CommandList;
+    fn run(&self, world: &World, extra: Option<&dyn Any>) -> CommandList;
 }
 
 pub struct SystemFunction<F, Input>(F, PhantomData<Input>);
@@ -29,8 +35,8 @@ where
     T: Fn(&Input1) -> CommandList,
     Input1: SystemInput,
 {
-    fn run(&self, world: &World) -> CommandList {
-        (self.0)(Input1::from_world(world))
+    fn run(&self, world: &World, extra: Option<&dyn Any>) -> CommandList {
+        (self.0)(Input1::new(world, extra))
     }
 }
 
@@ -40,7 +46,7 @@ where
     Input1: SystemInput,
     Input2: SystemInput,
 {
-    fn run(&self, world: &World) -> CommandList {
-        (self.0)(Input1::from_world(world), Input2::from_world(world))
+    fn run(&self, world: &World, extra: Option<&dyn Any>) -> CommandList {
+        (self.0)(Input1::new(world, extra), Input2::new(world, extra))
     }
 }
