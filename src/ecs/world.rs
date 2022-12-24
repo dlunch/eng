@@ -171,7 +171,7 @@ impl World {
     where
         Func: FnOnce() -> Fut,
         for<'a> Fut: Future<Output = Ret> + Sync + Send + 'a,
-        C: Fn(&mut World, &Ret) + 'static,
+        C: Fn(&World, &Ret) -> CommandList + 'static,
         Ret: 'static,
     {
         let fut = func().map(|x| Box::new(x) as Box<dyn Any>).fuse().boxed();
@@ -183,22 +183,23 @@ impl World {
         let mut pending = Vec::with_capacity(self.pending.len());
         core::mem::swap(&mut self.pending, &mut pending);
 
+        let mut commands = Vec::new();
         for (mut future, callback) in pending {
             if let Poll::Ready(x) = poll!(&mut future) {
-                callback.call(self, &*x);
+                commands.extend(callback.call(self, &*x).commands.into_iter());
             } else {
                 self.pending.push((future, callback));
             }
         }
 
-        let commands = self.systems.iter().flat_map(|x| x.run(self).commands).collect::<Vec<_>>();
+        commands.extend(self.systems.iter().flat_map(|x| x.run(self).commands));
 
         self.run_commands(commands)
     }
 
     pub fn add_event_handler<EventT, C>(&mut self, callback: C)
     where
-        C: Fn(&mut World, &EventT) + 'static,
+        C: Fn(&World, &EventT) -> CommandList + 'static,
         EventT: 'static,
     {
         let event_type = Self::get_event_type::<EventT>();
@@ -222,9 +223,8 @@ impl World {
         core::mem::swap(&mut event_handlers, &mut self.event_handlers); // TODO remove
 
         if let Some(callbacks) = event_handlers.get(&event_type) {
-            for callback in callbacks {
-                callback.call(self, &event);
-            }
+            let commands = callbacks.iter().flat_map(|x| x.call(self, &event).commands).collect::<Vec<_>>();
+            self.run_commands(commands)
         }
 
         core::mem::swap(&mut event_handlers, &mut self.event_handlers); // TODO remove
@@ -282,13 +282,10 @@ impl World {
 pub struct EventHandlerWrapper<F, T>(F, PhantomData<T>);
 
 pub trait EventHandler {
-    fn call(&self, world: &mut World, args: &(dyn Any + 'static));
+    fn call(&self, world: &World, args: &(dyn Any + 'static)) -> CommandList;
 }
 
-impl<F, T> EventHandlerWrapper<F, T>
-where
-    EventHandlerWrapper<F, T>: EventHandler,
-{
+impl<F, T> EventHandlerWrapper<F, T> {
     pub fn new(f: F) -> Self {
         Self(f, PhantomData)
     }
@@ -296,13 +293,13 @@ where
 
 impl<T, Ret> EventHandler for EventHandlerWrapper<T, Ret>
 where
-    T: Fn(&mut World, &Ret),
+    T: Fn(&World, &Ret) -> CommandList,
     Ret: 'static,
 {
-    fn call(&self, world: &mut World, args: &(dyn Any + 'static)) {
+    fn call(&self, world: &World, args: &(dyn Any + 'static)) -> CommandList {
         let args = args.downcast_ref::<Ret>().unwrap();
 
-        (self.0)(world, args);
+        (self.0)(world, args)
     }
 }
 
@@ -523,8 +520,11 @@ mod test {
 
         world.async_job(
             || async { 1 },
-            |world, &v| {
-                world.spawn().with(TestComponent { v });
+            |_, &v| {
+                let mut cmd_list = CommandList::new();
+                cmd_list.create_entity((TestComponent { v },));
+
+                cmd_list
             },
         );
 
