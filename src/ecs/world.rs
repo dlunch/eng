@@ -218,15 +218,10 @@ impl World {
     {
         let event_type = Self::get_event_type::<EventT>();
 
-        let mut event_handlers = HashMap::new();
-        core::mem::swap(&mut event_handlers, &mut self.event_handlers); // TODO remove
-
-        if let Some(callbacks) = event_handlers.get(&event_type) {
+        if let Some(callbacks) = self.event_handlers.get(&event_type) {
             let commands = callbacks.iter().flat_map(|x| x.run(self, Some(&event)).commands).collect::<Vec<_>>();
             self.run_commands(commands)
         }
-
-        core::mem::swap(&mut event_handlers, &mut self.event_handlers); // TODO remove
     }
 
     fn run_commands(&mut self, commands: Vec<Command>) {
