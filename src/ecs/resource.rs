@@ -30,3 +30,37 @@ impl<'a, T> Resource<'a, T> {
         self.world.resource::<T>().unwrap()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::ecs::CommandList;
+
+    #[tokio::test]
+    async fn test_resource() {
+        struct TestResource1 {
+            a: u32,
+        }
+        struct TestResource2 {
+            b: Vec<u32>,
+        }
+        let mut world = World::new();
+
+        world.add_resource(TestResource1 { a: 123 });
+        world.add_resource(TestResource2 { b: vec![1234] });
+
+        world.add_system(|x: Resource<TestResource1>| {
+            assert_eq!(x.get().a, 123);
+
+            CommandList::new()
+        });
+
+        world.add_system(|x: Resource<TestResource2>| {
+            assert_eq!(x.get().b[0], 1234);
+
+            CommandList::new()
+        });
+
+        world.update().await;
+    }
+}
