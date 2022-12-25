@@ -73,6 +73,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::ecs::CommandList;
 
     #[test]
     fn test_query1() {
@@ -110,5 +111,28 @@ mod test {
 
         assert!(it.next().unwrap() == entity1);
         assert!(it.next().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_query_system() {
+        struct TestComponent {}
+
+        impl Component for TestComponent {}
+
+        let mut world = World::new();
+
+        let entity1 = world.spawn().with(TestComponent {}).entity();
+        world.spawn().entity();
+
+        world.add_system(move |x: Query<(TestComponent,)>| {
+            let mut it = x.iter();
+
+            assert!(it.next().unwrap() == entity1);
+            assert!(it.next().is_none());
+
+            CommandList::new()
+        });
+
+        world.update().await;
     }
 }
