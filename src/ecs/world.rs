@@ -13,7 +13,6 @@ use super::{
     bundle::ComponentBundle,
     command::Command,
     component::ComponentContainer,
-    query::Query,
     sparse_raw_vec::SparseRawVec,
     system::{IntoSystem, System, SystemInput},
     Component, Entity,
@@ -124,10 +123,6 @@ impl World {
         self.components.get_mut(&component_type).unwrap().iter_mut()
     }
 
-    pub fn query<T: 'static + Query>(&self) -> impl Iterator<Item = Entity> + '_ {
-        (0..self.entities).map(|x| Entity { id: x }).filter(|&x| T::matches(self, x))
-    }
-
     pub fn has_component<T: 'static + Component>(&self, entity: Entity) -> bool {
         let component_type = Self::get_component_type::<T>();
 
@@ -164,6 +159,10 @@ impl World {
         let resource_type = Self::get_resource_type::<T>();
 
         Some(*self.resources.remove(&resource_type)?.into_inner().downcast::<T>().unwrap())
+    }
+
+    pub fn entities(&self) -> impl Iterator<Item = Entity> {
+        (0..self.entities).map(|x| Entity { id: x })
     }
 
     pub fn async_job<'w, Job, JobFut, Callback, Output>(&mut self, job: Job, callback: Callback)
@@ -434,39 +433,6 @@ mod test {
 
         assert!(world.has_component::<TestComponent>(entity1));
         assert!(!world.has_component::<TestComponent>(entity2));
-    }
-
-    #[test]
-    fn test_quer1y() {
-        struct TestComponent {}
-
-        impl Component for TestComponent {}
-
-        let mut world = World::new();
-
-        let entity1 = world.spawn().with(TestComponent {}).entity();
-        world.spawn().entity();
-
-        let mut query = world.query::<(TestComponent,)>();
-        assert!(query.next().unwrap() == entity1);
-        assert!(query.next().is_none());
-    }
-
-    #[test]
-    fn test_query2() {
-        struct TestComponent1 {}
-        impl Component for TestComponent1 {}
-        struct TestComponent2 {}
-        impl Component for TestComponent2 {}
-
-        let mut world = World::new();
-
-        let entity1 = world.spawn().with(TestComponent1 {}).with(TestComponent2 {}).entity();
-        world.spawn().with(TestComponent1 {}).entity();
-
-        let mut query = world.query::<(TestComponent1, TestComponent2)>();
-        assert!(query.next().unwrap() == entity1);
-        assert!(query.next().is_none());
     }
 
     #[test]

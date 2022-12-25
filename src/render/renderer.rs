@@ -16,7 +16,7 @@ use super::{
     WindowRenderTarget,
 };
 use crate::{
-    ecs::{Entity, World},
+    ecs::{Entity, Query, World},
     ui::UiComponent,
     utils,
 };
@@ -111,7 +111,7 @@ impl Renderer {
     }
 
     pub fn render_world(&mut self, world: &World) {
-        let entities = world.query::<(RenderComponent, TransformComponent)>().collect::<Vec<_>>();
+        let entities = Query::<(RenderComponent, TransformComponent)>::new(world).iter().collect::<Vec<_>>();
         let camera = &world.components::<CameraComponent>().next().unwrap().1.camera;
         let ui_camera = OrthographicCamera::new();
 

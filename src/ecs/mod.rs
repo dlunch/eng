@@ -17,6 +17,7 @@ pub use command::CommandList;
 pub use component::{Component, ComponentContainer};
 pub use event::KeyboardEvent;
 pub use hierarchy::HierarchyExt;
+pub use query::Query;
 pub use resource::Resource;
 pub use world::World;
 
