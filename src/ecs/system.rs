@@ -98,3 +98,36 @@ where
         Box::new(SystemFunction::new(self))
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::ecs::{CommandList, Component};
+
+    #[tokio::test]
+    async fn test_system() {
+        struct TestComponent1 {
+            a: u32,
+        }
+        impl Component for TestComponent1 {}
+        struct TestComponent2 {
+            a: u32,
+        }
+        impl Component for TestComponent2 {}
+
+        let mut world = World::new();
+        let entity = world.spawn().with(TestComponent1 { a: 2 }).entity();
+
+        world.add_system(move |_: &World| {
+            let mut cmd_list = CommandList::new();
+            cmd_list.create_component(entity, TestComponent2 { a: 3 });
+
+            cmd_list
+        });
+
+        world.update().await;
+
+        assert_eq!(world.component::<TestComponent1>(entity).unwrap().a, 2);
+        assert_eq!(world.component::<TestComponent2>(entity).unwrap().a, 3);
+    }
+}
