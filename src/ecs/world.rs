@@ -15,8 +15,8 @@ use super::{
     component::ComponentContainer,
     query::Query,
     sparse_raw_vec::SparseRawVec,
-    system::{IntoSystem, System, SystemFunction, SystemInput},
-    CommandList, Component, Entity,
+    system::{IntoSystem, System, SystemInput},
+    Component, Entity,
 };
 
 pub type ComponentType = TypeId;
@@ -166,17 +166,16 @@ impl World {
         Some(*self.resources.remove(&resource_type)?.into_inner().downcast::<T>().unwrap())
     }
 
-    pub fn async_job<Job, JobFut, Callback, Value>(&mut self, job: Job, callback: Callback)
+    pub fn async_job<'w, Job, JobFut, Callback, Output>(&mut self, job: Job, callback: Callback)
     where
         Job: FnOnce() -> JobFut,
-        for<'a> JobFut: Future<Output = Value> + Sync + Send + 'a,
-        Callback: Fn(&World, Value::ActualInput<'_>) -> CommandList + 'static,
-        Value: SystemInput + 'static,
+        for<'a> JobFut: Future<Output = Output> + Sync + Send + 'a,
+        Callback: IntoSystem<(&'w World, Output)>,
+        Output: SystemInput + 'static,
     {
         let fut = job().map(|x| Box::new(x) as Box<dyn Any>).fuse().boxed();
 
-        self.pending
-            .push((fut, Box::new(SystemFunction::new(callback) as SystemFunction<Callback, (&World, Value)>)));
+        self.pending.push((fut, callback.into_system()));
     }
 
     pub(crate) async fn update(&mut self) {
@@ -197,13 +196,13 @@ impl World {
         self.run_commands(commands)
     }
 
-    pub fn add_event_handler<EventType, Callback>(&mut self, callback: Callback)
+    pub fn add_event_handler<'w, EventType, Callback>(&mut self, callback: Callback)
     where
-        Callback: Fn(&World, EventType::ActualInput<'_>) -> CommandList + 'static,
+        Callback: IntoSystem<(&'w World, EventType)>,
         EventType: SystemInput + 'static,
     {
         let event_type = Self::get_event_type::<EventType>();
-        let value = Box::new(SystemFunction::new(callback) as SystemFunction<Callback, (&World, EventType)>);
+        let value = callback.into_system();
 
         let entry = self.event_handlers.entry(event_type);
         if let Entry::Occupied(mut entry) = entry {
@@ -491,7 +490,7 @@ mod test {
 
         world.async_job(
             || async { 1 },
-            |_, v| {
+            |_: &World, v| {
                 let mut cmd_list = CommandList::new();
                 cmd_list.create_entity((TestComponent { v },));
 

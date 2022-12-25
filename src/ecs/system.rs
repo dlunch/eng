@@ -28,7 +28,7 @@ pub trait System {
     fn run(&self, world: &World, extra: Option<&dyn Any>) -> CommandList;
 }
 
-pub struct SystemFunction<F, Input>(F, PhantomData<Input>);
+struct SystemFunction<F, Input>(F, PhantomData<Input>);
 
 impl<F, Input> SystemFunction<F, Input> {
     pub fn new(f: F) -> Self {
@@ -73,6 +73,26 @@ where
             Input1: SystemInput + 'static,
         {
             Box::new(SystemFunction::new(f) as SystemFunction<F, (Input1,)>)
+        }
+
+        inner(self)
+    }
+}
+
+impl<Func, Input1, Input2> IntoSystem<(Input1, Input2)> for Func
+where
+    Func: Fn(Input1, Input2) -> CommandList + Fn(Input1::ActualInput<'_>, Input2::ActualInput<'_>) -> CommandList + 'static,
+    Input1: SystemInput + 'static,
+    Input2: SystemInput + 'static,
+{
+    fn into_system(self) -> Box<dyn System> {
+        fn inner<F, Input1, Input2>(f: F) -> Box<dyn System>
+        where
+            F: Fn(Input1::ActualInput<'_>, Input2::ActualInput<'_>) -> CommandList + 'static,
+            Input1: SystemInput + 'static,
+            Input2: SystemInput + 'static,
+        {
+            Box::new(SystemFunction::new(f) as SystemFunction<F, (Input1, Input2)>)
         }
 
         inner(self)
