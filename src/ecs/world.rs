@@ -170,12 +170,13 @@ impl World {
     where
         Job: FnOnce() -> JobFut,
         for<'a> JobFut: Future<Output = Value> + Sync + Send + 'a,
-        Callback: Fn(&World, &Value) -> CommandList + 'static,
+        Callback: Fn(&World, Value::ActualInput<'_>) -> CommandList + 'static,
         Value: SystemInput + 'static,
     {
         let fut = job().map(|x| Box::new(x) as Box<dyn Any>).fuse().boxed();
 
-        self.pending.push((fut, Box::new(SystemFunction::new(callback))));
+        self.pending
+            .push((fut, Box::new(SystemFunction::new(callback) as SystemFunction<Callback, (&World, Value)>)));
     }
 
     pub(crate) async fn update(&mut self) {
@@ -198,11 +199,11 @@ impl World {
 
     pub fn add_event_handler<EventType, Callback>(&mut self, callback: Callback)
     where
-        Callback: Fn(&World, &EventType) -> CommandList + 'static,
+        Callback: Fn(&World, EventType::ActualInput<'_>) -> CommandList + 'static,
         EventType: SystemInput + 'static,
     {
         let event_type = Self::get_event_type::<EventType>();
-        let value = Box::new(SystemFunction::new(callback));
+        let value = Box::new(SystemFunction::new(callback) as SystemFunction<Callback, (&World, EventType)>);
 
         let entry = self.event_handlers.entry(event_type);
         if let Entry::Occupied(mut entry) = entry {
@@ -248,7 +249,7 @@ impl World {
     where
         T: Fn(&World) -> CommandList + 'static,
     {
-        self.systems.push(Box::new(SystemFunction::new(system)));
+        self.systems.push(Box::new(SystemFunction::new(system) as SystemFunction<T, (&World,)>));
     }
 
     fn get_component_type<ComponentT>() -> ComponentType
@@ -490,7 +491,7 @@ mod test {
 
         world.async_job(
             || async { 1 },
-            |_, &v| {
+            |_, v| {
                 let mut cmd_list = CommandList::new();
                 cmd_list.create_entity((TestComponent { v },));
 

@@ -3,18 +3,24 @@ use core::{any::Any, marker::PhantomData};
 use super::{CommandList, World};
 
 pub trait SystemInput {
-    fn new<'a>(world: &'a World, extra: Option<&'a dyn Any>) -> &'a Self;
+    type ActualInput<'i>: SystemInput;
+
+    fn new<'w>(world: &'w World, extra: Option<&dyn Any>) -> Self::ActualInput<'w>;
 }
 
-impl SystemInput for World {
-    fn new<'a>(world: &'a World, _: Option<&'a dyn Any>) -> &'a Self {
+impl<'a> SystemInput for &'a World {
+    type ActualInput<'i> = &'i World;
+
+    fn new<'w>(world: &'w World, _: Option<&dyn Any>) -> Self::ActualInput<'w> {
         world
     }
 }
 
 impl SystemInput for u32 {
-    fn new<'a>(_: &'a World, extra: Option<&'a dyn Any>) -> &'a Self {
-        extra.unwrap().downcast_ref::<Self>().unwrap()
+    type ActualInput<'i> = u32;
+
+    fn new<'w>(_: &'w World, extra: Option<&dyn Any>) -> Self::ActualInput<'w> {
+        *extra.unwrap().downcast_ref::<Self>().unwrap()
     }
 }
 
@@ -30,9 +36,9 @@ impl<F, Input> SystemFunction<F, Input> {
     }
 }
 
-impl<T, Input1> System for SystemFunction<T, (Input1,)>
+impl<Func, Input1> System for SystemFunction<Func, (Input1,)>
 where
-    T: Fn(&Input1) -> CommandList,
+    Func: Fn(Input1::ActualInput<'_>) -> CommandList,
     Input1: SystemInput,
 {
     fn run(&self, world: &World, extra: Option<&dyn Any>) -> CommandList {
@@ -40,9 +46,9 @@ where
     }
 }
 
-impl<T, Input1, Input2> System for SystemFunction<T, (Input1, Input2)>
+impl<Func, Input1, Input2> System for SystemFunction<Func, (Input1, Input2)>
 where
-    T: Fn(&Input1, &Input2) -> CommandList,
+    Func: Fn(Input1::ActualInput<'_>, Input2::ActualInput<'_>) -> CommandList,
     Input1: SystemInput,
     Input2: SystemInput,
 {
