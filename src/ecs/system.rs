@@ -5,11 +5,16 @@ use super::{CommandList, World};
 pub trait SystemInput {
     type ActualInput<'i>: SystemInput;
 
+    fn is_available(world: &World) -> bool;
     fn new<'w>(world: &'w World, extra: Option<&dyn Any>) -> Self::ActualInput<'w>;
 }
 
 impl<'a> SystemInput for &'a World {
     type ActualInput<'i> = &'i World;
+
+    fn is_available(_: &World) -> bool {
+        true
+    }
 
     fn new<'w>(world: &'w World, _: Option<&dyn Any>) -> Self::ActualInput<'w> {
         world
@@ -18,6 +23,9 @@ impl<'a> SystemInput for &'a World {
 
 impl SystemInput for u32 {
     type ActualInput<'i> = u32;
+    fn is_available(_: &World) -> bool {
+        true
+    }
 
     fn new<'w>(_: &'w World, extra: Option<&dyn Any>) -> Self::ActualInput<'w> {
         *extra.unwrap().downcast_ref::<Self>().unwrap()
@@ -25,6 +33,7 @@ impl SystemInput for u32 {
 }
 
 pub trait System {
+    fn is_available(&self, world: &World) -> bool;
     fn run(&self, world: &World, extra: Option<&dyn Any>) -> CommandList;
 }
 
@@ -41,6 +50,10 @@ where
     Func: Fn(Input1::ActualInput<'_>) -> CommandList,
     Input1: SystemInput,
 {
+    fn is_available(&self, world: &World) -> bool {
+        Input1::is_available(world)
+    }
+
     fn run(&self, world: &World, extra: Option<&dyn Any>) -> CommandList {
         (self.0)(Input1::new(world, extra))
     }
@@ -52,6 +65,10 @@ where
     Input1: SystemInput,
     Input2: SystemInput,
 {
+    fn is_available(&self, world: &World) -> bool {
+        Input1::is_available(world) && Input2::is_available(world)
+    }
+
     fn run(&self, world: &World, extra: Option<&dyn Any>) -> CommandList {
         (self.0)(Input1::new(world, extra), Input2::new(world, extra))
     }

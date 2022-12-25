@@ -191,7 +191,12 @@ impl World {
             }
         }
 
-        commands.extend(self.systems.iter().flat_map(|x| x.run(self, None).commands));
+        commands.extend(
+            self.systems
+                .iter()
+                .filter(|x| x.is_available(self))
+                .flat_map(|x| x.run(self, None).commands),
+        );
 
         self.run_commands(commands)
     }

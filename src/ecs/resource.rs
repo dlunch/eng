@@ -10,6 +10,10 @@ pub struct Resource<'a, T: 'static> {
 impl<'a, T> SystemInput for Resource<'a, T> {
     type ActualInput<'i> = Resource<'i, T>;
 
+    fn is_available(_: &World) -> bool {
+        true
+    }
+
     fn new<'w>(world: &'w World, _: Option<&dyn Any>) -> Self::ActualInput<'w> {
         Self::ActualInput::<'w> {
             world,
