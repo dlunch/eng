@@ -15,7 +15,7 @@ use super::{
     component::ComponentContainer,
     query::Query,
     sparse_raw_vec::SparseRawVec,
-    system::{System, SystemFunction, SystemInput},
+    system::{IntoSystem, System, SystemFunction, SystemInput},
     CommandList, Component, Entity,
 };
 
@@ -245,11 +245,11 @@ impl World {
         }
     }
 
-    pub fn add_system<T>(&mut self, system: T)
+    pub fn add_system<T, P>(&mut self, system: T)
     where
-        T: Fn(&World) -> CommandList + 'static,
+        T: IntoSystem<P>,
     {
-        self.systems.push(Box::new(SystemFunction::new(system) as SystemFunction<T, (&World,)>));
+        self.systems.push(system.into_system());
     }
 
     fn get_component_type<ComponentT>() -> ComponentType
@@ -547,7 +547,7 @@ mod test {
         let mut world = World::new();
         let entity = world.spawn().with(TestComponent1 { a: 2 }).entity();
 
-        world.add_system(move |_| {
+        world.add_system(move |_: &World| {
             let mut cmd_list = CommandList::new();
             cmd_list.create_component(entity, TestComponent2 { a: 3 });
 

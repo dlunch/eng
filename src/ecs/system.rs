@@ -56,3 +56,25 @@ where
         (self.0)(Input1::new(world, extra), Input2::new(world, extra))
     }
 }
+
+pub trait IntoSystem<T> {
+    fn into_system(self) -> Box<dyn System>;
+}
+
+impl<Func, Input1> IntoSystem<(Input1,)> for Func
+where
+    Func: Fn(Input1) -> CommandList + Fn(Input1::ActualInput<'_>) -> CommandList + 'static,
+    Input1: SystemInput + 'static,
+{
+    fn into_system(self) -> Box<dyn System> {
+        fn inner<F, Input1>(f: F) -> Box<dyn System>
+        where
+            F: Fn(Input1::ActualInput<'_>) -> CommandList + 'static,
+            Input1: SystemInput + 'static,
+        {
+            Box::new(SystemFunction::new(f) as SystemFunction<F, (Input1,)>)
+        }
+
+        inner(self)
+    }
+}
