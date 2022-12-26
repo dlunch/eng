@@ -1,5 +1,3 @@
-use alloc::vec::Vec;
-
 use hashbrown::HashMap;
 
 use super::{Renderer, Texture, TextureFormat};
@@ -9,7 +7,7 @@ pub type TextureAsset = u64;
 struct TextureData {
     width: u32,
     height: u32,
-    texels: Vec<u8>,
+    texels: Box<[u8]>,
     format: TextureFormat,
 }
 
@@ -42,7 +40,7 @@ impl AssetLoader {
             TextureData {
                 width,
                 height,
-                texels: texels.to_vec(),
+                texels: texels.into(),
                 format,
             },
         );

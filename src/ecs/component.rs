@@ -8,7 +8,7 @@ pub trait Component {}
 pub struct ComponentContainer {
     pub component_type: ComponentType,
     pub type_descriptor: TypeDescriptor,
-    pub data: Vec<u8>,
+    pub data: Box<[u8]>,
 }
 
 impl ComponentContainer {
@@ -19,7 +19,7 @@ impl ComponentContainer {
         Self {
             component_type: Self::to_component_type::<T>(),
             type_descriptor: TypeDescriptor::new::<T>(),
-            data: data.to_vec(),
+            data: data.into(),
         }
     }
 
