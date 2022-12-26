@@ -11,12 +11,7 @@ pub struct RawVec {
 
 impl RawVec {
     pub fn new<T: 'static>() -> Self {
-        let type_descriptor = TypeDescriptor::new::<T>();
-
-        Self {
-            storage: Vec::new(),
-            type_descriptor,
-        }
+        Self::with_type_descriptor(TypeDescriptor::new::<T>())
     }
 
     pub(super) fn with_type_descriptor(type_descriptor: TypeDescriptor) -> Self {
