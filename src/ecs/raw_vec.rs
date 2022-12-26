@@ -33,7 +33,9 @@ impl RawVec {
     }
 
     pub fn insert_raw(&mut self, index: usize, value_slice: &[u8]) {
-        let offset = index * self.type_descriptor.item_size;
+        let offset = self.get_offset(index);
+        let value_slice = if self.type_descriptor.item_size == 0 { &[0] } else { value_slice };
+
         self.storage.splice(offset..offset, value_slice.iter().cloned());
     }
 
@@ -41,9 +43,8 @@ impl RawVec {
         #[cfg(debug_assertions)]
         assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
 
-        let offset = index * self.type_descriptor.item_size;
-
-        if self.type_descriptor.item_size != 0 && offset >= self.storage.len() {
+        let offset = self.get_offset(index);
+        if offset >= self.storage.len() {
             return None;
         }
 
@@ -55,8 +56,8 @@ impl RawVec {
         #[cfg(debug_assertions)]
         assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
 
-        let offset = index * self.type_descriptor.item_size;
-        if self.type_descriptor.item_size != 0 && offset >= self.storage.len() {
+        let offset = self.get_offset(index);
+        if offset >= self.storage.len() {
             return None;
         }
 
@@ -68,26 +69,50 @@ impl RawVec {
         #[cfg(debug_assertions)]
         assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
 
-        self.storage
-            .chunks(self.type_descriptor.item_size)
-            .map(move |x| unsafe { &*(x as *const [u8] as *const T) })
+        let chunk_size = if self.type_descriptor.item_size != 0 {
+            self.type_descriptor.item_size
+        } else {
+            1
+        };
+
+        self.storage.chunks(chunk_size).map(move |x| unsafe { &*(x as *const [u8] as *const T) })
     }
 
     pub fn iter_mut<T: 'static>(&mut self) -> impl Iterator<Item = &mut T> {
         #[cfg(debug_assertions)]
         assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
 
+        let chunk_size = if self.type_descriptor.item_size != 0 {
+            self.type_descriptor.item_size
+        } else {
+            1
+        };
+
         self.storage
-            .chunks_mut(self.type_descriptor.item_size)
+            .chunks_mut(chunk_size)
             .map(move |x| unsafe { &mut *(x as *mut [u8] as *mut T) })
     }
 
     pub fn remove(&mut self, index: usize) -> bool {
-        let offset = index * self.type_descriptor.item_size;
+        let start = self.get_offset(index);
 
-        self.storage.drain(offset..offset + self.type_descriptor.item_size);
+        let end = if self.type_descriptor.item_size != 0 {
+            start + self.type_descriptor.item_size
+        } else {
+            start + 1
+        };
+
+        self.storage.drain(start..end);
 
         true
+    }
+
+    fn get_offset(&self, index: usize) -> usize {
+        if self.type_descriptor.item_size == 0 {
+            index
+        } else {
+            index * self.type_descriptor.item_size
+        }
     }
 }
 
@@ -205,5 +230,21 @@ mod test {
 
         assert_eq!(vec.get::<TestStruct>(1).unwrap().a, 4);
         assert_eq!(vec.get::<TestStruct>(1).unwrap().b, 5);
+    }
+
+    #[test]
+    fn test_zero_size() {
+        struct TestStruct {}
+
+        let mut vec = RawVec::new::<TestStruct>();
+
+        vec.insert(0, TestStruct {});
+        vec.insert(1, TestStruct {});
+        vec.insert(2, TestStruct {});
+
+        assert_eq!(vec.iter::<TestStruct>().count(), 3);
+
+        vec.remove(1);
+        assert_eq!(vec.iter::<TestStruct>().count(), 2);
     }
 }
