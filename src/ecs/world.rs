@@ -6,7 +6,7 @@ use core::{
 };
 
 use futures::{future::BoxFuture, poll, task::Poll, FutureExt};
-use hashbrown::{hash_map::Entry, HashMap};
+use hashbrown::HashMap;
 
 use super::{
     builder::EntityBuilder,
@@ -29,7 +29,7 @@ pub struct World {
     resources: HashMap<ResourceType, RefCell<Box<dyn Any>>>,
     entities: u32,
     pending: Vec<(PendingFuture, Box<dyn System>)>,
-    event_handlers: HashMap<EventType, Vec<Box<dyn System>>>,
+    events: HashMap<EventType, Box<dyn Any>>,
     systems: Vec<Box<dyn System>>,
 }
 
@@ -40,7 +40,7 @@ impl World {
             resources: HashMap::new(),
             entities: 0,
             pending: Vec::new(),
-            event_handlers: HashMap::new(),
+            events: HashMap::new(),
             systems: Vec::new(),
         }
     }
@@ -165,6 +165,13 @@ impl World {
         (0..self.entities).map(|x| Entity { id: x })
     }
 
+    pub fn event<T>(&self) -> Option<&T>
+    where
+        T: 'static,
+    {
+        self.events.get(&Self::get_event_type::<T>()).map(|x| x.downcast_ref::<T>().unwrap())
+    }
+
     pub fn async_job<'w, Job, JobFut, Callback, Output>(&mut self, job: Job, callback: Callback)
     where
         Job: FnOnce() -> JobFut,
@@ -197,23 +204,8 @@ impl World {
                 .flat_map(|x| x.run(self, None).commands),
         );
 
-        self.run_commands(commands)
-    }
-
-    pub fn add_event_handler<'w, EventType, Callback>(&mut self, callback: Callback)
-    where
-        Callback: IntoSystem<(&'w World, EventType)>,
-        EventType: SystemInput + 'static,
-    {
-        let event_type = Self::get_event_type::<EventType>();
-        let value = callback.into_system();
-
-        let entry = self.event_handlers.entry(event_type);
-        if let Entry::Occupied(mut entry) = entry {
-            entry.get_mut().push(value);
-        } else {
-            entry.insert(vec![value]);
-        }
+        self.run_commands(commands);
+        self.events.clear();
     }
 
     pub(crate) fn on_event<EventT>(&mut self, event: EventT)
@@ -222,10 +214,7 @@ impl World {
     {
         let event_type = Self::get_event_type::<EventT>();
 
-        if let Some(callbacks) = self.event_handlers.get(&event_type) {
-            let commands = callbacks.iter().flat_map(|x| x.run(self, Some(&event)).commands).collect::<Vec<_>>();
-            self.run_commands(commands)
-        }
+        self.events.insert(event_type, Box::new(event));
     }
 
     fn run_commands(&mut self, commands: Vec<Command>) {
