@@ -51,8 +51,8 @@ impl App {
     pub async fn run(mut self) {
         loop {
             let events = self.window.next_events(false).await;
-            for event in events {
-                println!("{:?}", event); // TODO
+            for _ in events {
+                // TODO
             }
 
             self.world.update().await;
