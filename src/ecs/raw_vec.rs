@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use core::{any::TypeId, mem::size_of, ops::Drop, slice};
+use core::{mem::size_of, ops::Drop, slice};
 
 use super::type_descriptor::TypeDescriptor;
 
@@ -23,7 +23,7 @@ impl RawVec {
 
     pub fn insert<T: 'static>(&mut self, index: usize, value: T) {
         #[cfg(debug_assertions)]
-        assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
+        assert!(core::any::TypeId::of::<T>() == self.type_descriptor.actual_type);
 
         let value_ptr = &value as *const T as *const u8;
         let value_slice = unsafe { slice::from_raw_parts(value_ptr, size_of::<T>()) };
@@ -41,7 +41,7 @@ impl RawVec {
 
     pub fn get<T: 'static>(&self, index: usize) -> Option<&T> {
         #[cfg(debug_assertions)]
-        assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
+        assert!(core::any::TypeId::of::<T>() == self.type_descriptor.actual_type);
 
         let offset = self.get_offset(index);
         if offset >= self.storage.len() {
@@ -54,7 +54,7 @@ impl RawVec {
 
     pub fn get_mut<T: 'static>(&mut self, index: usize) -> Option<&mut T> {
         #[cfg(debug_assertions)]
-        assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
+        assert!(core::any::TypeId::of::<T>() == self.type_descriptor.actual_type);
 
         let offset = self.get_offset(index);
         if offset >= self.storage.len() {
@@ -67,7 +67,7 @@ impl RawVec {
 
     pub fn iter<T: 'static>(&self) -> impl Iterator<Item = &T> {
         #[cfg(debug_assertions)]
-        assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
+        assert!(core::any::TypeId::of::<T>() == self.type_descriptor.actual_type);
 
         let chunk_size = if self.type_descriptor.item_size != 0 {
             self.type_descriptor.item_size
@@ -80,7 +80,7 @@ impl RawVec {
 
     pub fn iter_mut<T: 'static>(&mut self) -> impl Iterator<Item = &mut T> {
         #[cfg(debug_assertions)]
-        assert!(TypeId::of::<T>() == self.type_descriptor.actual_type);
+        assert!(core::any::TypeId::of::<T>() == self.type_descriptor.actual_type);
 
         let chunk_size = if self.type_descriptor.item_size != 0 {
             self.type_descriptor.item_size
