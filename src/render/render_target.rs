@@ -53,6 +53,7 @@ impl RenderTarget for WindowRenderTarget {
         (self.width, self.height)
     }
 
+    // blocks until next frame(PresentMode::AutoVsync)
     fn submit(&mut self) {
         self.frame.take().unwrap().present();
 
