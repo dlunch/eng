@@ -63,7 +63,7 @@ async fn setup(world: &mut World) {
 async fn main() {
     pretty_env_logger::init();
 
-    App::new().await.setup(setup).await.run()
+    App::new().await.setup(setup).await.run().await
 }
 
 // Copied from https://github.com/gfx-rs/wgpu-rs/blob/master/examples/cube/main.rs#L23

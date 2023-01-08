@@ -208,6 +208,7 @@ impl World {
         self.events.clear();
     }
 
+    #[allow(dead_code)]
     pub(crate) fn on_event<EventT>(&mut self, event: EventT)
     where
         EventT: 'static,

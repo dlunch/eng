@@ -1,13 +1,11 @@
 use core::{any::Any, marker::PhantomData};
 
-use winit::event::VirtualKeyCode;
-
 use super::{system::SystemInput, World};
 
 #[derive(Eq, PartialEq)]
 pub enum KeyboardEvent {
-    KeyDown(VirtualKeyCode),
-    KeyUp(VirtualKeyCode),
+    KeyDown(u8),
+    KeyUp(u8),
 }
 
 pub struct Event<'a, T>
@@ -54,7 +52,7 @@ mod test {
         let mut world = World::new();
 
         world.add_system(|x: Event<KeyboardEvent>| {
-            assert!(*x.get() == KeyboardEvent::KeyDown(VirtualKeyCode::A));
+            assert!(*x.get() == KeyboardEvent::KeyDown(0));
 
             let mut cmd_list = CommandList::new();
             cmd_list.create_entity((TestComponent { a: 1 },));
@@ -62,7 +60,7 @@ mod test {
             cmd_list
         });
 
-        world.on_event(KeyboardEvent::KeyDown(VirtualKeyCode::A));
+        world.on_event(KeyboardEvent::KeyDown(0));
         world.update().await;
 
         assert!(world.components::<TestComponent>().any(|x| x.1.a == 1))

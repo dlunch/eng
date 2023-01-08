@@ -1,7 +1,7 @@
 use alloc::{boxed::Box, sync::Arc, vec, vec::Vec};
 use core::ops::Range;
 
-use winit::window::Window;
+use windowing::Window;
 use zerocopy::AsBytes;
 
 use super::{
