@@ -15,7 +15,7 @@ pub struct App {
 
 impl App {
     pub async fn new() -> Self {
-        let window = Window::new(1920, 1080, "test");
+        let window = Window::new(1920, 1080, "test").await;
 
         let renderer = render::Renderer::new(&window, 1920, 1080).await;
         let asset_loader = render::AssetLoader::new();
