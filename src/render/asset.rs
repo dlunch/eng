@@ -1,3 +1,5 @@
+use core::cell::{RefCell, RefMut};
+
 use hashbrown::HashMap;
 
 use super::{Renderer, Texture, TextureFormat};
@@ -14,7 +16,7 @@ struct TextureData {
 pub struct AssetLoader {
     last_id: u64,
     textures: HashMap<TextureAsset, TextureData>,
-    loaded_textures: HashMap<TextureAsset, Texture>,
+    loaded_textures: RefCell<HashMap<TextureAsset, Texture>>,
 }
 
 impl AssetLoader {
@@ -22,7 +24,7 @@ impl AssetLoader {
         Self {
             last_id: 0,
             textures: HashMap::new(),
-            loaded_textures: HashMap::new(),
+            loaded_textures: RefCell::new(HashMap::new()),
         }
     }
 
@@ -48,17 +50,22 @@ impl AssetLoader {
         id
     }
 
-    pub fn texture(&mut self, renderer: &Renderer, id: TextureAsset) -> Option<&Texture> {
-        if !(self.loaded_textures.contains_key(&id) || self.textures.contains_key(&id)) {
+    // should this function return Ref<Texture>?
+    pub fn texture(&self, renderer: &Renderer, id: TextureAsset) -> Option<RefMut<Texture>> {
+        let loaded_textures = self.loaded_textures.borrow_mut();
+
+        if !(loaded_textures.contains_key(&id) || self.textures.contains_key(&id)) {
             return None;
         }
 
-        let entry = self.loaded_textures.entry(id);
+        Some(RefMut::map(loaded_textures, |x| {
+            let entry = x.entry(id);
 
-        Some(entry.or_insert_with(|| {
-            let x = self.textures.get(&id).unwrap();
+            entry.or_insert_with(|| {
+                let x = self.textures.get(&id).unwrap();
 
-            Texture::with_texels(renderer, x.width, x.height, &x.texels, x.format)
+                Texture::with_texels(renderer, x.width, x.height, &x.texels, x.format)
+            })
         }))
     }
 }
