@@ -1,4 +1,4 @@
-use core::{any::Any, cell::Ref, marker::PhantomData};
+use core::{any::Any, marker::PhantomData};
 
 use super::{system::SystemInput, World};
 
@@ -23,7 +23,7 @@ impl<'a, T> SystemInput for Resource<'a, T> {
 }
 
 impl<'a, T> Resource<'a, T> {
-    pub fn get<'r>(&self) -> Ref<'r, T>
+    pub fn get<'r>(&self) -> &T
     where
         'a: 'r,
     {

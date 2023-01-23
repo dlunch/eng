@@ -60,8 +60,10 @@ impl App {
                 update(&mut self.world);
             }
 
-            let mut renderer = self.world.resource_mut::<render::Renderer>().unwrap();
+            let mut renderer = self.world.take_resource::<render::Renderer>().unwrap();
             renderer.render_world(&self.world);
+
+            self.world.add_resource(renderer);
         }
     }
 }

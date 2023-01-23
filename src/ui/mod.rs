@@ -80,10 +80,10 @@ impl UiSprite {
 
         let bundle = {
             let renderer = world.resource::<Renderer>().unwrap();
-            let mut asset_loader = world.resource_mut::<AssetLoader>().unwrap();
+            let asset_loader = world.resource::<AssetLoader>().unwrap();
 
             let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
-            let material = Material::new(&renderer, asset_loader.texture(&renderer, texture_asset).unwrap());
+            let material = Material::new(&renderer, &asset_loader.texture(&renderer, texture_asset).unwrap());
 
             let transform = Transform::with_values(
                 Vec3::new(x as f32, y as f32, 0.0),

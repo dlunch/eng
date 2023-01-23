@@ -1,7 +1,6 @@
 use alloc::{boxed::Box, vec::Vec};
 use core::{
     any::{Any, TypeId},
-    cell::{Ref, RefCell, RefMut},
     future::Future,
 };
 
@@ -26,7 +25,7 @@ type PendingFuture = BoxFuture<'static, Box<dyn Any>>;
 
 pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
-    resources: HashMap<ResourceType, RefCell<Box<dyn Any>>>,
+    resources: HashMap<ResourceType, Box<dyn Any>>,
     entities: u32,
     pending: Vec<(PendingFuture, Box<dyn System>)>,
     events: HashMap<EventType, Box<dyn Any>>,
@@ -136,29 +135,29 @@ impl World {
     pub fn add_resource<T: 'static>(&mut self, resource: T) {
         let resource_type = Self::get_resource_type::<T>();
 
-        self.resources.insert(resource_type, RefCell::new(Box::new(resource)));
+        self.resources.insert(resource_type, Box::new(resource));
     }
 
-    pub fn resource<T: 'static>(&self) -> Option<Ref<'_, T>> {
+    pub fn resource<T: 'static>(&self) -> Option<&T> {
         let resource_type = Self::get_resource_type::<T>();
 
-        let storage = self.resources.get(&resource_type)?.borrow();
+        let storage = self.resources.get(&resource_type)?;
 
-        Some(Ref::map(storage, |x| x.downcast_ref::<T>().unwrap()))
+        Some(storage.downcast_ref::<T>().unwrap())
     }
 
-    pub fn resource_mut<T: 'static>(&self) -> Option<RefMut<'_, T>> {
+    pub fn resource_mut<T: 'static>(&mut self) -> Option<&mut T> {
         let resource_type = Self::get_resource_type::<T>();
 
-        let storage = self.resources.get(&resource_type)?.borrow_mut();
+        let storage = self.resources.get_mut(&resource_type)?;
 
-        Some(RefMut::map(storage, |x| x.downcast_mut::<T>().unwrap()))
+        Some(storage.downcast_mut::<T>().unwrap())
     }
 
     pub fn take_resource<T: 'static>(&mut self) -> Option<T> {
         let resource_type = Self::get_resource_type::<T>();
 
-        Some(*self.resources.remove(&resource_type)?.into_inner().downcast::<T>().unwrap())
+        Some(*self.resources.remove(&resource_type)?.downcast::<T>().unwrap())
     }
 
     pub fn entities(&self) -> impl Iterator<Item = Entity> {
