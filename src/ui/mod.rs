@@ -28,8 +28,8 @@ impl UiNode {
         let bundle = {
             let renderer = world.resource::<Renderer>().unwrap();
 
-            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
-            let material = Material::new(&renderer, &renderer.empty_texture);
+            let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
+            let material = Material::new(renderer, &renderer.empty_texture);
 
             let transform = Transform::with_values(
                 Vec3::new(x as f32, y as f32, 0.0),
@@ -82,8 +82,8 @@ impl UiSprite {
             let renderer = world.resource::<Renderer>().unwrap();
             let asset_loader = world.resource::<AssetLoader>().unwrap();
 
-            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
-            let material = Material::new(&renderer, &asset_loader.texture(&renderer, texture_asset).unwrap());
+            let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
+            let material = Material::new(renderer, &asset_loader.texture(renderer, texture_asset).unwrap());
 
             let transform = Transform::with_values(
                 Vec3::new(x as f32, y as f32, 0.0),

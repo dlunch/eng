@@ -63,10 +63,10 @@ impl SpriteBundle {
         let bundle = {
             let renderer = world.resource::<Renderer>().unwrap();
             let asset_loader = world.resource::<AssetLoader>().unwrap();
-            let texture = asset_loader.texture(&renderer, texture_asset).unwrap();
+            let texture = asset_loader.texture(renderer, texture_asset).unwrap();
 
-            let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
-            let material = Material::new(&renderer, &texture);
+            let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
+            let material = Material::new(renderer, &texture);
 
             RenderBundle {
                 mesh,
