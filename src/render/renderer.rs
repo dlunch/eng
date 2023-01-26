@@ -269,8 +269,8 @@ impl Renderer {
     }
 
     fn create_offscreen_target(device: &wgpu::Device, buffer_pool: &BufferPool, width: u32, height: u32) -> (OffscreenRenderTarget, Mesh, Material) {
-        let texture_width = utils::round_up_power_of_two(width);
-        let texture_height = utils::round_up_power_of_two(height);
+        let texture_width = width.next_power_of_two();
+        let texture_height = height.next_power_of_two();
         let offscreen_target = OffscreenRenderTarget::with_device(device, texture_width, texture_height);
 
         let right = width as f32 / texture_width as f32;
