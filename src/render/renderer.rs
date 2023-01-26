@@ -18,7 +18,6 @@ use super::{
 use crate::{
     ecs::{Entity, Query, World},
     ui::UiComponent,
-    utils,
 };
 
 #[derive(AsBytes)]
