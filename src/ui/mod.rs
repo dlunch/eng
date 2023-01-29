@@ -15,7 +15,7 @@ pub struct UiNode {
 }
 
 impl UiNode {
-    pub fn new(world: &mut World, x: u32, y: u32, width: u32, height: u32) -> Self {
+    pub fn new(world: &World, x: u32, y: u32, width: u32, height: u32) -> Self {
         let vertices = vec![
             SimpleVertex::new([0.0, 0.0, 0.0, 1.0], [0.0, 0.0]),
             SimpleVertex::new([0.0, 1.0, 0.0, 1.0], [0.0, 1.0]),
@@ -68,7 +68,7 @@ pub struct UiSprite {
     render_bundle: RenderBundle,
 }
 impl UiSprite {
-    pub fn new(world: &mut World, x: u32, y: u32, width: u32, height: u32, texture_asset: TextureAsset) -> Self {
+    pub fn new(world: &World, x: u32, y: u32, width: u32, height: u32, texture_asset: TextureAsset) -> Self {
         let vertices = vec![
             SimpleVertex::new([0.0, 0.0, 0.0, 1.0], [0.0, 0.0]),
             SimpleVertex::new([0.0, 1.0, 0.0, 1.0], [0.0, 1.0]),

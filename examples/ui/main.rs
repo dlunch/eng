@@ -1,48 +1,47 @@
 use std::f32::consts::PI;
-use std::io::Cursor;
 
 use glam::Vec3;
-use image::{io::Reader as ImageReader, EncodableLayout};
 
-use eng::render::{
-    ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderBundle, Renderer, SimpleVertex, Texture, TextureFormat,
-    Transform,
+use eng::{
+    ecs::{CommandList, World},
+    render::{
+        ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderBundle, Renderer, SimpleVertex, Texture, TextureFormat,
+        Transform,
+    },
+    ui::UiNode,
+    App,
 };
-use eng::ui::{UiNode, UiSprite};
-use eng::App;
-use eng::{ecs::World, render::AssetLoader};
 
-async fn setup(world: &mut World) {
+async fn setup(world: &World) -> CommandList {
+    /*
     let img = ImageReader::new(Cursor::new(include_bytes!("./image.png")))
         .with_guessed_format()
         .unwrap()
         .decode()
         .unwrap();
 
-    let img = img.into_rgba8();
+    let _img = img.into_rgba8();
     let image_asset = {
         world
-            .resource_mut::<AssetLoader>()
+            .resource::<AssetLoader>()
             .unwrap()
             .load_texture(img.width(), img.height(), img.as_bytes(), TextureFormat::Rgba8Unorm)
     };
 
     let sprite = UiSprite::new(world, 500, 500, 500, 500, image_asset);
-    world.spawn_bundle(sprite);
-
+    */
     let node = UiNode::new(world, 0, 0, 500, 500);
-    world.spawn_bundle(node);
 
     let render_bundle = {
         let renderer = world.resource::<Renderer>().unwrap();
 
         let (vertices, indices) = create_vertices();
-        let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
+        let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
 
         let texture_data = create_texels(512, 512);
-        let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
+        let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let material = Material::new(&renderer, &texture);
+        let material = Material::new(renderer, &texture);
         RenderBundle {
             mesh,
             material,
@@ -51,12 +50,17 @@ async fn setup(world: &mut World) {
         }
     };
 
-    world.spawn_bundle(render_bundle);
-
     let controller = ArcballCameraController::new(Vec3::new(0.0, 0.0, 0.0), 5.0);
     let camera = PerspectiveCamera::new(45.0 * PI / 180.0, 0.1, 100.0, controller);
 
-    world.spawn().with(CameraComponent { camera: Box::new(camera) });
+    let mut cmd_list = CommandList::new();
+
+    // cmd_list.create_entity(sprite);
+    cmd_list.create_entity(node);
+    cmd_list.create_entity(render_bundle);
+    cmd_list.create_entity((CameraComponent { camera: Box::new(camera) },));
+
+    cmd_list
 }
 
 #[tokio::main]

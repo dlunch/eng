@@ -1,16 +1,10 @@
-use alloc::vec::Vec;
-use core::future::Future;
-
 use windowing::Window;
 
 use super::{ecs, render};
 
-type UpdateFn = fn(&mut ecs::World) -> ();
-
 pub struct App {
     window: Window,
     world: ecs::World,
-    update_fn: Vec<UpdateFn>,
 }
 
 impl App {
@@ -24,27 +18,24 @@ impl App {
         world.add_resource(renderer);
         world.add_resource(asset_loader);
 
-        Self {
-            window,
-            world,
-            update_fn: Vec::new(),
-        }
+        Self { window, world }
     }
 
-    pub async fn setup<'a, F, Fut>(mut self, setup: F) -> Self
+    pub fn add_system<T, P>(mut self, system: T) -> Self
     where
-        F: FnOnce(&'a mut ecs::World) -> Fut,
-        Fut: Future<Output = ()>,
+        T: ecs::IntoSystem<P>,
     {
-        // why do we need to remove lifetime here?
-        let world = unsafe { core::mem::transmute(&mut self.world) };
-        setup(world).await;
+        self.world.add_system(system);
 
         self
     }
 
-    pub fn update(mut self, update: UpdateFn) -> Self {
-        self.update_fn.push(update);
+    pub async fn setup<F>(mut self, setup_fn: F) -> Self
+    where
+        F: for<'a> ecs::AsyncSingleArgFnOnce<&'a ecs::World, Output = ecs::CommandList>,
+    {
+        self.world.setup(setup_fn).await;
+
         self
     }
 
@@ -56,9 +47,6 @@ impl App {
             }
 
             self.world.update().await;
-            for update in self.update_fn.iter() {
-                update(&mut self.world);
-            }
 
             let mut renderer = self.world.take_resource::<render::Renderer>().unwrap();
             renderer.render_world(&self.world);

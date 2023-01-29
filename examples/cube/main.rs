@@ -2,14 +2,16 @@ use std::f32::consts::PI;
 
 use glam::Vec3;
 
-use eng::ecs::World;
-use eng::render::{
-    ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderBundle, Renderer, SimpleVertex, Texture, TextureFormat,
-    Transform, TransformComponent,
+use eng::{
+    ecs::{CommandList, World},
+    render::{
+        ArcballCameraController, CameraComponent, Material, Mesh, PerspectiveCamera, RenderBundle, Renderer, SimpleVertex, Texture, TextureFormat,
+        Transform,
+    },
+    App,
 };
-use eng::App;
 
-async fn setup(world: &mut World) {
+async fn setup(world: &World) -> CommandList {
     let render_bundle1 = {
         let renderer = world.resource::<Renderer>().unwrap();
 
@@ -27,8 +29,6 @@ async fn setup(world: &mut World) {
             ranges: None,
         }
     };
-
-    world.spawn_bundle(render_bundle1);
 
     let render_bundle2 = {
         let renderer = world.resource::<Renderer>().unwrap();
@@ -48,27 +48,38 @@ async fn setup(world: &mut World) {
         }
     };
 
-    world.spawn_bundle(render_bundle2);
-
     let controller = ArcballCameraController::new(Vec3::new(0.0, 0.0, 0.0), 5.0);
     let camera = PerspectiveCamera::new(45.0 * PI / 180.0, 0.1, 100.0, controller);
 
-    world.spawn().with(CameraComponent { camera: Box::new(camera) });
+    let mut cmd_list = CommandList::new();
+
+    cmd_list.create_entity(render_bundle1);
+    cmd_list.create_entity(render_bundle2);
+    cmd_list.create_entity((CameraComponent { camera: Box::new(camera) },));
+
+    cmd_list
 }
 
-fn update(world: &mut World) {
+fn update(_: &World) -> CommandList {
+    // TODO
+    /*
     let transforms = world.components_mut::<TransformComponent>();
 
     for (_, transform) in transforms {
         transform.transform.rotate(Vec3::new(0.0, 0.01, 0.0));
     }
+    */
+
+    let cmd_list = CommandList::new();
+
+    cmd_list
 }
 
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
 
-    App::new().await.setup(setup).await.update(update).run().await
+    App::new().await.setup(setup).await.add_system(update).run().await
 }
 
 // Copied from https://github.com/gfx-rs/wgpu-rs/blob/master/examples/cube/main.rs#L23

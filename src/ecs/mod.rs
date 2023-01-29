@@ -20,7 +20,10 @@ pub use event::KeyboardEvent;
 pub use hierarchy::HierarchyExt;
 pub use query::Query;
 pub use resource::Resource;
+pub use system::IntoSystem;
 pub use world::World;
+
+pub(crate) use world::AsyncSingleArgFnOnce;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct Entity {

@@ -10,7 +10,7 @@ use hashbrown::HashMap;
 use super::{
     builder::EntityBuilder,
     bundle::ComponentBundle,
-    command::Command,
+    command::{Command, CommandList},
     component::ComponentContainer,
     sparse_raw_vec::SparseRawVec,
     system::{IntoSystem, System, SystemInput},
@@ -22,6 +22,20 @@ pub type ResourceType = TypeId;
 pub type EventType = TypeId;
 
 type PendingFuture = BoxFuture<'static, Box<dyn Any>>;
+
+pub trait AsyncSingleArgFnOnce<Arg>: FnOnce(Arg) -> <Self as AsyncSingleArgFnOnce<Arg>>::Fut {
+    type Fut: Future<Output = <Self as AsyncSingleArgFnOnce<Arg>>::Output>;
+    type Output;
+}
+
+impl<Arg, F, Fut> AsyncSingleArgFnOnce<Arg> for F
+where
+    F: FnOnce(Arg) -> Fut,
+    Fut: Future,
+{
+    type Fut = Fut;
+    type Output = Fut::Output;
+}
 
 pub struct World {
     components: HashMap<ComponentType, SparseRawVec<Entity>>,
@@ -42,6 +56,15 @@ impl World {
             events: HashMap::new(),
             systems: Vec::new(),
         }
+    }
+
+    pub async fn setup<F>(&mut self, setup_fn: F)
+    where
+        F: for<'a> AsyncSingleArgFnOnce<&'a Self, Output = CommandList>,
+    {
+        let commands = setup_fn(self).await.commands;
+
+        self.run_commands(commands)
     }
 
     pub fn spawn(&mut self) -> EntityBuilder<'_> {
