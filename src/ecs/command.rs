@@ -17,26 +17,34 @@ impl CommandList {
         Self::default()
     }
 
-    pub fn create_entity<T>(&mut self, bundle: T)
+    pub fn create_entity<T>(mut self, bundle: T) -> Self
     where
         T: ComponentBundle,
     {
         self.commands.push(Command::CreateEntity(bundle.to_component_containers()));
+
+        self
     }
 
-    pub fn destroy_entity(&mut self, entity: Entity) {
+    pub fn destroy_entity(mut self, entity: Entity) -> Self {
         self.commands.push(Command::DestroyEntity(entity));
+
+        self
     }
 
-    pub fn create_component<T>(&mut self, entity: Entity, component: T)
+    pub fn create_component<T>(mut self, entity: Entity, component: T) -> Self
     where
         T: Component + 'static,
     {
         self.commands
             .push(Command::CreateComponent(entity, vec![ComponentContainer::new(component)]));
+
+        self
     }
 
-    pub fn destroy_component(&mut self, components: Vec<ComponentType>) {
+    pub fn destroy_component(mut self, components: Vec<ComponentType>) -> Self {
         self.commands.push(Command::DestroyComponent(components));
+
+        self
     }
 }

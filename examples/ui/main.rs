@@ -53,14 +53,11 @@ async fn setup(world: &World) -> CommandList {
     let controller = ArcballCameraController::new(Vec3::new(0.0, 0.0, 0.0), 5.0);
     let camera = PerspectiveCamera::new(45.0 * PI / 180.0, 0.1, 100.0, controller);
 
-    let mut cmd_list = CommandList::new();
-
-    // cmd_list.create_entity(sprite);
-    cmd_list.create_entity(node);
-    cmd_list.create_entity(render_bundle);
-    cmd_list.create_entity((CameraComponent { camera: Box::new(camera) },));
-
-    cmd_list
+    CommandList::new()
+        // .create_entity(sprite)
+        .create_entity(node)
+        .create_entity(render_bundle)
+        .create_entity((CameraComponent { camera: Box::new(camera) },))
 }
 
 #[tokio::main]

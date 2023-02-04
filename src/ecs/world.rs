@@ -471,15 +471,7 @@ mod test {
 
         let mut world = World::new();
 
-        world.async_job(
-            || async { 1 },
-            |_: &World, v| {
-                let mut cmd_list = CommandList::new();
-                cmd_list.create_entity((TestComponent { v },));
-
-                cmd_list
-            },
-        );
+        world.async_job(|| async { 1 }, |_: &World, v| CommandList::new().create_entity((TestComponent { v },)));
 
         world.update().await;
 
@@ -499,16 +491,14 @@ mod test {
 
         let mut world = World::new();
 
-        let mut cmd_list = CommandList::new();
-        cmd_list.create_entity((TestComponent1 { a: 1 },));
+        let cmd_list = CommandList::new().create_entity((TestComponent1 { a: 1 },));
 
         world.run_commands(cmd_list.commands);
 
         let (entity, component) = world.components::<TestComponent1>().next().unwrap();
         assert_eq!(component.a, 1);
 
-        let mut cmd_list = CommandList::new();
-        cmd_list.create_component(entity, TestComponent2 { a: 2 });
+        let cmd_list = CommandList::new().create_component(entity, TestComponent2 { a: 2 });
 
         world.run_commands(cmd_list.commands);
 

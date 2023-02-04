@@ -118,12 +118,7 @@ mod test {
         let mut world = World::new();
         let entity = world.spawn().with(TestComponent1 { a: 2 }).entity();
 
-        world.add_system(move |_: &World| {
-            let mut cmd_list = CommandList::new();
-            cmd_list.create_component(entity, TestComponent2 { a: 3 });
-
-            cmd_list
-        });
+        world.add_system(move |_: &World| CommandList::new().create_component(entity, TestComponent2 { a: 3 }));
 
         world.update().await;
 

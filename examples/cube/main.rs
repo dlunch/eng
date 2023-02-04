@@ -16,12 +16,12 @@ async fn setup(world: &World) -> CommandList {
         let renderer = world.resource::<Renderer>().unwrap();
 
         let (vertices, indices) = create_vertices();
-        let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
+        let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
 
         let texture_data = create_texels(512, 512);
-        let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
+        let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let material = Material::new(&renderer, &texture);
+        let material = Material::new(renderer, &texture);
         RenderBundle {
             mesh,
             material,
@@ -34,12 +34,12 @@ async fn setup(world: &World) -> CommandList {
         let renderer = world.resource::<Renderer>().unwrap();
 
         let (vertices, indices) = create_vertices();
-        let mesh = Mesh::with_simple_vertex(&renderer, &vertices, &indices);
+        let mesh = Mesh::with_simple_vertex(renderer, &vertices, &indices);
 
         let texture_data = create_texels(512, 512);
-        let texture = Texture::with_texels(&renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
+        let texture = Texture::with_texels(renderer, 512, 512, &texture_data, TextureFormat::Rgba8Unorm);
 
-        let material = Material::new(&renderer, &texture);
+        let material = Material::new(renderer, &texture);
         RenderBundle {
             mesh,
             material,
@@ -51,13 +51,10 @@ async fn setup(world: &World) -> CommandList {
     let controller = ArcballCameraController::new(Vec3::new(0.0, 0.0, 0.0), 5.0);
     let camera = PerspectiveCamera::new(45.0 * PI / 180.0, 0.1, 100.0, controller);
 
-    let mut cmd_list = CommandList::new();
-
-    cmd_list.create_entity(render_bundle1);
-    cmd_list.create_entity(render_bundle2);
-    cmd_list.create_entity((CameraComponent { camera: Box::new(camera) },));
-
-    cmd_list
+    CommandList::new()
+        .create_entity(render_bundle1)
+        .create_entity(render_bundle2)
+        .create_entity((CameraComponent { camera: Box::new(camera) },))
 }
 
 fn update(_: &World) -> CommandList {
@@ -70,9 +67,7 @@ fn update(_: &World) -> CommandList {
     }
     */
 
-    let cmd_list = CommandList::new();
-
-    cmd_list
+    CommandList::new()
 }
 
 #[tokio::main]

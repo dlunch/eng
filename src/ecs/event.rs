@@ -54,10 +54,7 @@ mod test {
         world.add_system(|x: Event<KeyboardEvent>| {
             assert!(*x.get() == KeyboardEvent::KeyDown(0));
 
-            let mut cmd_list = CommandList::new();
-            cmd_list.create_entity((TestComponent { a: 1 },));
-
-            cmd_list
+            CommandList::new().create_entity((TestComponent { a: 1 },))
         });
 
         world.on_event(KeyboardEvent::KeyDown(0));
