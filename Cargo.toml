@@ -11,7 +11,7 @@ doctest = false
 log = { version = "^0.4", default-features = false }
 wgpu = { version = "^0.14", features = ["webgl", "naga"], default-features = false }
 zerocopy = { version = "^0.6", default-features = false }
-glam = { version = "^0.22", features = ["libm"], default-features = false }
+glam = { version = "^0.23", features = ["libm"], default-features = false }
 squish = { version = "^1", default-features = false }
 hashbrown = { version = "^0.12", features = ["ahash", "inline-more"], default-features = false }
 spinning_top = { version = "^0.2", default-features = false }
